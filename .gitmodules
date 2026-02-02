@@ -1,0 +1,3 @@
+[submodule "ai-coding-roles"]
+	path = ai-coding-roles
+	url = https://github.com/ofircohen205/ai-coding-roles.git
