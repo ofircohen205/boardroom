@@ -7,6 +7,7 @@ from .base import (
 )
 from .fundamental import FundamentalAgent
 from .technical import TechnicalAgent
+from .risk_manager import RiskManagerAgent
 
 __all__ = [
     "BaseLLMClient",
@@ -16,4 +17,5 @@ __all__ = [
     "get_llm_client",
     "FundamentalAgent",
     "TechnicalAgent",
+    "RiskManagerAgent",
 ]
