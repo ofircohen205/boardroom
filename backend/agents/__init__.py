@@ -8,6 +8,7 @@ from .base import (
 from .fundamental import FundamentalAgent
 from .technical import TechnicalAgent
 from .risk_manager import RiskManagerAgent
+from .chairperson import ChairpersonAgent
 
 __all__ = [
     "BaseLLMClient",
@@ -18,4 +19,5 @@ __all__ = [
     "FundamentalAgent",
     "TechnicalAgent",
     "RiskManagerAgent",
+    "ChairpersonAgent",
 ]
