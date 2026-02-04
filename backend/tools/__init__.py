@@ -6,6 +6,7 @@ from .market_data import (
     StockData,
 )
 from .technical_indicators import calculate_ma, calculate_rsi, calculate_trend
+from .search import ExaSearchClient, SearchResult, get_search_client
 
 __all__ = [
     "BaseMarketDataClient",
@@ -16,4 +17,7 @@ __all__ = [
     "calculate_ma",
     "calculate_rsi",
     "calculate_trend",
+    "ExaSearchClient",
+    "SearchResult",
+    "get_search_client",
 ]
