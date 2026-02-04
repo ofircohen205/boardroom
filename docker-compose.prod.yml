@@ -1,0 +1,47 @@
+# Production Docker Compose
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    expose:
+      - "8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://boardroom:${DB_PASSWORD}@db:5432/boardroom
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - EXA_API_KEY=${EXA_API_KEY}
+      - ALPHA_VANTAGE_API_KEY=${ALPHA_VANTAGE_API_KEY}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=boardroom
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=boardroom
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U boardroom"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
