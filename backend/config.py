@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     llm_provider: LLMProvider = LLMProvider.ANTHROPIC
     anthropic_api_key: str = ""
     openai_api_key: str = ""
-    gemini_api_key: str = ""
+    google_api_key: str = ""
 
     # Market Data
     market_data_provider: MarketDataProvider = MarketDataProvider.YAHOO

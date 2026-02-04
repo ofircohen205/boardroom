@@ -2,8 +2,8 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 import anthropic
-import google.generativeai as genai
 import openai
+from google import genai
 
 from backend.config import LLMProvider, settings
 
@@ -87,8 +87,8 @@ class OpenAIClient(BaseLLMClient):
 
 class GeminiClient(BaseLLMClient):
     def __init__(self, model: str = "gemini-2.0-flash"):
-        genai.configure(api_key=settings.gemini_api_key)
-        self.model = genai.GenerativeModel(model)
+        self.client = genai.Client(api_key=settings.google_api_key)
+        self.model = model
 
     async def complete(
         self, messages: list[dict], tools: list[dict] | None = None
@@ -97,8 +97,11 @@ class GeminiClient(BaseLLMClient):
         contents = []
         for msg in messages:
             role = "user" if msg["role"] == "user" else "model"
-            contents.append({"role": role, "parts": [msg["content"]]})
-        response = await self.model.generate_content_async(contents)
+            contents.append({"role": role, "parts": [{"text": msg["content"]}]})
+        response = self.client.models.generate_content(
+            model=self.model,
+            contents=contents,
+        )
         return response.text
 
     async def complete_with_tools(
