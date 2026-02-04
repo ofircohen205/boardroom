@@ -5,6 +5,7 @@ from .base import (
     GeminiClient,
     get_llm_client,
 )
+from .fundamental import FundamentalAgent
 
 __all__ = [
     "BaseLLMClient",
@@ -12,4 +13,5 @@ __all__ = [
     "OpenAIClient",
     "GeminiClient",
     "get_llm_client",
+    "FundamentalAgent",
 ]
