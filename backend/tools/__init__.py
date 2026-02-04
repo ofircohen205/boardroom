@@ -5,6 +5,7 @@ from .market_data import (
     get_market_data_client,
     StockData,
 )
+from .technical_indicators import calculate_ma, calculate_rsi, calculate_trend
 
 __all__ = [
     "BaseMarketDataClient",
@@ -12,4 +13,7 @@ __all__ = [
     "AlphaVantageClient",
     "get_market_data_client",
     "StockData",
+    "calculate_ma",
+    "calculate_rsi",
+    "calculate_trend",
 ]
