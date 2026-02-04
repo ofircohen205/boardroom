@@ -10,7 +10,7 @@ def test_analysis_session_creation():
         id=uuid4(),
         ticker="AAPL",
         market=Market.US,
-        created_at=datetime.utcnow(),
+        created_at=datetime.now(),
     )
     assert session.ticker == "AAPL"
     assert session.market == Market.US
@@ -22,7 +22,7 @@ def test_agent_report_creation():
         session_id=uuid4(),
         agent_type=AgentType.FUNDAMENTAL,
         report_data={"pe_ratio": 15.5},
-        created_at=datetime.utcnow(),
+        created_at=datetime.now(),
     )
     assert report.agent_type == AgentType.FUNDAMENTAL
     assert report.report_data["pe_ratio"] == 15.5
@@ -36,7 +36,7 @@ def test_final_decision_creation():
         confidence=0.85,
         rationale="Strong fundamentals",
         vetoed=False,
-        created_at=datetime.utcnow(),
+        created_at=datetime.now(),
     )
     assert decision.action == Action.BUY
     assert decision.confidence == 0.85

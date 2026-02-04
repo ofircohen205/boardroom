@@ -21,7 +21,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     "type": event["type"].value,
                     "agent": event["agent"].value if event["agent"] else None,
                     "data": _serialize(event["data"]),
-                    "timestamp": datetime.utcnow().isoformat(),
+                    "timestamp": datetime.now().isoformat(),
                 })
 
     except WebSocketDisconnect:

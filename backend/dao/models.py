@@ -19,7 +19,7 @@ class AnalysisSession(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     ticker: Mapped[str] = mapped_column(String(20))
     market: Mapped[Market] = mapped_column(SQLEnum(Market))
-    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(default=datetime.now)
     completed_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
 
     agent_reports: Mapped[list["AgentReport"]] = relationship(back_populates="session", cascade="all, delete-orphan")
@@ -33,7 +33,7 @@ class AgentReport(Base):
     session_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("analysis_sessions.id"))
     agent_type: Mapped[AgentType] = mapped_column(SQLEnum(AgentType))
     report_data: Mapped[dict] = mapped_column(JSONB)
-    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(default=datetime.now)
 
     session: Mapped["AnalysisSession"] = relationship(back_populates="agent_reports")
 
@@ -48,6 +48,6 @@ class FinalDecision(Base):
     rationale: Mapped[str] = mapped_column(Text)
     vetoed: Mapped[bool] = mapped_column(Boolean, default=False)
     veto_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(default=datetime.now)
 
     session: Mapped["AnalysisSession"] = relationship(back_populates="final_decision")

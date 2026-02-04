@@ -23,7 +23,7 @@ class SentimentAgent:
                     source=SentimentSource.NEWS,
                     title=r["title"],
                     url=r["url"],
-                    published_at=datetime.fromisoformat(r["published_at"].replace("Z", "+00:00")) if r["published_at"] else datetime.utcnow(),
+                    published_at=datetime.fromisoformat(r["published_at"].replace("Z", "+00:00")) if r["published_at"] else datetime.now(),
                     sentiment=0.0,
                     snippet=r["snippet"],
                 )
@@ -38,7 +38,7 @@ class SentimentAgent:
                     content=r["snippet"],
                     author="",
                     url=r["url"],
-                    timestamp=datetime.utcnow(),
+                    timestamp=datetime.now(),
                     engagement=0,
                 )
             )
