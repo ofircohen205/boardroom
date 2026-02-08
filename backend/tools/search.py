@@ -1,8 +1,8 @@
-from datetime import datetime, timedelta
 from typing import TypedDict
 
-from exa_py import Exa
+from openai import AsyncOpenAI
 
+from backend.cache import cached
 from backend.config import settings
 
 
@@ -14,46 +14,80 @@ class SearchResult(TypedDict):
     source: str
 
 
-class ExaSearchClient:
+class OpenAISearchClient:
     def __init__(self, api_key: str | None = None):
-        self.api_key = api_key or settings.exa_api_key
-        self._client: Exa | None = None
+        self.api_key = api_key or settings.openai_api_key
+        self._client: AsyncOpenAI | None = None
 
     @property
-    def client(self) -> Exa:
+    def client(self) -> AsyncOpenAI:
         if self._client is None:
-            self._client = Exa(api_key=self.api_key)
+            self._client = AsyncOpenAI(api_key=self.api_key)
         return self._client
 
     async def _search(self, query: str, num_results: int = 10) -> list[SearchResult]:
-        response = self.client.search_and_contents(
-            query,
-            num_results=num_results,
-            text=True,
-            use_autoprompt=True,
+        response = await self.client.responses.create(
+            model="gpt-4o-mini",
+            tools=[{"type": "web_search_preview"}],
+            input=query,
         )
-        return [
-            SearchResult(
-                title=r.title or "",
-                url=r.url,
-                snippet=r.text[:500] if r.text else "",
-                published_at=r.published_date or "",
-                source="news",
-            )
-            for r in response.results
-        ]
 
-    async def search_news(
-        self, ticker: str, hours: int = 48, num_results: int = 10
-    ) -> list[SearchResult]:
-        query = f"{ticker} stock news financial analysis"
-        results = await self._search(query, num_results)
+        results: list[SearchResult] = []
+        seen_urls: set[str] = set()
+
+        for item in response.output:
+            if item.type == "message":
+                for block in item.content:
+                    text = getattr(block, "text", "") or ""
+                    for ann in getattr(block, "annotations", None) or []:
+                        url = getattr(ann, "url", None)
+                        if not url or url in seen_urls:
+                            continue
+                        seen_urls.add(url)
+                        title = getattr(ann, "title", "") or ""
+
+                        # Extract context around the citation for a snippet
+                        snippet = title
+                        start_idx = getattr(ann, "start_index", None)
+                        if start_idx is not None and text:
+                            context_start = max(0, start_idx - 300)
+                            context_end = min(len(text), start_idx + 100)
+                            snippet = text[context_start:context_end].strip()
+
+                        results.append(
+                            SearchResult(
+                                title=title,
+                                url=url,
+                                snippet=snippet[:500],
+                                published_at="",
+                                source="news",
+                            )
+                        )
+                        if len(results) >= num_results:
+                            break
+
         return results
 
-    async def search_social(
-        self, ticker: str, hours: int = 48, num_results: int = 10
+    @cached(ttl=900, skip_self=True)
+    async def search_news(
+        self, ticker: str, market: str = "US", hours: int = 48, num_results: int = 15
     ) -> list[SearchResult]:
-        query = f"{ticker} stock reddit twitter sentiment"
+        context = ""
+        if market == "TASE":
+            context = " from Israeli financial news sources (Globes, Calcalist, TheMarker, Bizportal) and international coverage"
+        
+        query = f"Latest financial news and analysis for {ticker} stock{context} in the last {hours} hours"
+        return await self._search(query, num_results)
+
+    @cached(ttl=900, skip_self=True)
+    async def search_social(
+        self, ticker: str, market: str = "US", hours: int = 48, num_results: int = 15
+    ) -> list[SearchResult]:
+        context = ""
+        if market == "TASE":
+            context = " in Israel market context"
+
+        query = f"Recent Reddit and Twitter/X discussions about {ticker} stock{context} sentiment"
         results = await self._search(query, num_results)
         for r in results:
             if "reddit" in r["url"].lower():
@@ -63,5 +97,5 @@ class ExaSearchClient:
         return results
 
 
-def get_search_client() -> ExaSearchClient:
-    return ExaSearchClient()
+def get_search_client() -> OpenAISearchClient:
+    return OpenAISearchClient()

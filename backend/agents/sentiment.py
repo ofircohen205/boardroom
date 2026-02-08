@@ -13,8 +13,10 @@ class SentimentAgent:
         self.search = get_search_client()
 
     async def analyze(self, ticker: str, market: Market) -> SentimentReport:
-        news_results = await self.search.search_news(ticker, hours=48)
-        social_results = await self.search.search_social(ticker, hours=48)
+        # Search with market context
+        market_str = "TASE" if market == Market.TASE else "US"
+        news_results = await self.search.search_news(ticker, market=market_str, hours=48, num_results=15)
+        social_results = await self.search.search_social(ticker, market=market_str, hours=48, num_results=15)
 
         news_items: list[NewsItem] = []
         for r in news_results:
@@ -43,14 +45,24 @@ class SentimentAgent:
                 )
             )
 
-        # Get LLM to analyze sentiment
-        content_summary = "\n".join([f"- {n['title']}: {n['snippet'][:100]}" for n in news_items[:5]])
-        prompt = f"""Analyze sentiment for {ticker} based on recent news:
+        # Build richer context for LLM
+        news_text = "\n".join([f"- [NEWS] {n['title']} ({n['published_at']}): {n['snippet']}" for n in news_items])
+        social_text = "\n".join([f"- [SOCIAL] {s['content'][:300]}" for s in social_mentions])
+        
+        content_summary = f"""RECENT NEWS:
+{news_text if news_text else "No specific news found."}
+
+SOCIAL MEDIA DISCUSSIONS:
+{social_text if social_text else "No significant social chatter found."}
+"""
+
+        prompt = f"""Analyze sentiment for {ticker} ({market_str} Market) based on the following data:
+
 {content_summary}
 
 Respond with:
 1. Overall sentiment score from -1.0 (very negative) to 1.0 (very positive)
-2. Brief summary (2-3 sentences)
+2. Brief summary (2-3 sentences) highlighting key drivers.
 
 Format: SENTIMENT: <score>
 SUMMARY: <text>"""

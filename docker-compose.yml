@@ -1,6 +1,6 @@
 # Development Docker Compose
 services:
-  backend:
+  boardroom-backend:
     build:
       context: .
       dockerfile: backend/Dockerfile
@@ -8,19 +8,19 @@ services:
       - "8000:8000"
     environment:
       - DATABASE_URL=postgresql+asyncpg://boardroom:boardroom@db:5432/boardroom
+      - LLM_PROVIDER=openai
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
-      - EXA_API_KEY=${EXA_API_KEY}
       - ALPHA_VANTAGE_API_KEY=${ALPHA_VANTAGE_API_KEY}
     depends_on:
-      db:
+      boardroom-postgres-db:
         condition: service_healthy
     volumes:
       - ./backend:/app/backend
     command: uv run uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
 
-  frontend:
+  boardroom-frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile.dev
@@ -32,7 +32,7 @@ services:
     environment:
       - VITE_WS_URL=ws://localhost:8000/ws
 
-  db:
+  boardroom-postgres-db:
     image: postgres:16-alpine
     environment:
       - POSTGRES_USER=boardroom

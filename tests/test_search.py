@@ -1,20 +1,6 @@
 import pytest
 from unittest.mock import AsyncMock, patch
-from backend.tools.search import ExaSearchClient, SearchResult
-
-
-@pytest.fixture
-def mock_exa_response():
-    return {
-        "results": [
-            {
-                "title": "TEVA stock rises on news",
-                "url": "https://example.com/news/1",
-                "text": "Teva Pharmaceutical announced...",
-                "published_date": "2026-02-01T10:00:00Z",
-            }
-        ]
-    }
+from backend.tools.search import OpenAISearchClient, SearchResult
 
 
 def test_search_result_structure():
@@ -30,8 +16,8 @@ def test_search_result_structure():
 
 
 @pytest.mark.asyncio
-async def test_exa_search_formats_query():
-    client = ExaSearchClient(api_key="test")
+async def test_search_client_formats_query():
+    client = OpenAISearchClient(api_key="test")
     with patch.object(client, "_search", new_callable=AsyncMock) as mock:
         mock.return_value = []
         await client.search_news("TEVA", hours=48)

@@ -4,53 +4,48 @@ Multi-agent financial analysis system with React dashboard.
 
 ## Quick Start
 
-### Backend
-
 ```bash
-# Install dependencies
-uv sync
-
-# Copy environment file and add your API keys
+# Clone and configure
 cp .env.example .env
+# Edit .env to add your API keys (ANTHROPIC_API_KEY, OPENAI_API_KEY, or GOOGLE_API_KEY)
 
-# Run the server
-uv run uvicorn backend.main:app --reload
+# Start with Docker (recommended)
+make dev
 ```
 
-### Frontend
+- **Frontend**: http://localhost:5173
+- **Backend API**: http://localhost:8000
+
+## Documentation
+
+| Guide                                      | Description                                                |
+| ------------------------------------------ | ---------------------------------------------------------- |
+| [Getting Started](docs/getting-started.md) | Full setup guide with Docker and local development options |
+| [Usage Guide](docs/usage-guide.md)         | How to use the dashboard and run stock analysis            |
+
+## Make Commands
 
 ```bash
-cd frontend
-npm install
-npm run dev
+make dev      # Start development environment
+make down     # Stop all containers
+make logs     # View container logs
+make test     # Run tests
+make clean    # Remove containers and artifacts
 ```
 
-Open http://localhost:5173
-
-### Database
-
-```bash
-# Option 1: Docker
-docker run -d --name boardroom-db \
-  -e POSTGRES_DB=boardroom \
-  -e POSTGRES_PASSWORD=postgres \
-  -p 5432:5432 postgres:16
-
-# Option 2: Local PostgreSQL
-createdb boardroom
-```
+Run `make help` for all available commands.
 
 ## Environment Variables
 
-```
-LLM_PROVIDER=anthropic  # or openai or gemini
-ANTHROPIC_API_KEY=
-OPENAI_API_KEY=
-GEMINI_API_KEY=
-EXA_API_KEY=
-DATABASE_URL=postgresql+asyncpg://localhost/boardroom
-```
+| Variable                | Description                        |
+| ----------------------- | ---------------------------------- |
+| `LLM_PROVIDER`          | `anthropic`, `openai`, or `gemini` |
+| `ANTHROPIC_API_KEY`     | Anthropic API key                  |
+| `OPENAI_API_KEY`        | OpenAI API key                     |
+| `GOOGLE_API_KEY`        | Google AI API key                  |
+| `EXA_API_KEY`           | Exa search API key                 |
+| `ALPHA_VANTAGE_API_KEY` | Market data API key                |
 
 ## Architecture
 
-See `docs/plans/2026-02-02-boardroom-design.md` for full architecture documentation.
+See [Architecture Documentation](docs/plans/2026-02-02-boardroom-design.md) for technical details.

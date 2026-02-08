@@ -126,11 +126,11 @@ dependencies = [
     { name = "alembic" },
     { name = "anthropic" },
     { name = "asyncpg" },
-    { name = "exa-py" },
     { name = "fastapi" },
     { name = "google-genai" },
     { name = "httpx" },
     { name = "langgraph" },
+    { name = "numpy" },
     { name = "openai" },
     { name = "pydantic-settings" },
     { name = "sqlalchemy", extra = ["asyncio"] },
@@ -151,11 +151,11 @@ requires-dist = [
     { name = "alembic", specifier = ">=1.14.0" },
     { name = "anthropic", specifier = ">=0.40.0" },
     { name = "asyncpg", specifier = ">=0.30.0" },
-    { name = "exa-py", specifier = ">=1.0.0" },
     { name = "fastapi", specifier = ">=0.115.0" },
     { name = "google-genai", specifier = ">=1.0.0" },
     { name = "httpx", specifier = ">=0.28.0" },
     { name = "langgraph", specifier = ">=0.2.0" },
+    { name = "numpy", specifier = ">=2.0.0" },
     { name = "openai", specifier = ">=1.55.0" },
     { name = "pydantic-settings", specifier = ">=2.6.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0.0" },
@@ -435,24 +435,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/b2/9d/c3b43da9515bd270df0f80548d9944e389870713cc1fe2b8fb35fe2bcefd/docstring_parser-0.17.0.tar.gz", hash = "sha256:583de4a309722b3315439bb31d64ba3eebada841f2e2cee23b99df001434c912", size = 27442, upload-time = "2025-07-21T07:35:01.868Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/55/e2/2537ebcff11c1ee1ff17d8d0b6f4db75873e3b0fb32c2d4a2ee31ecb310a/docstring_parser-0.17.0-py3-none-any.whl", hash = "sha256:cf2569abd23dce8099b300f9b4fa8191e9582dda731fd533daf54c4551658708", size = 36896, upload-time = "2025-07-21T07:35:00.684Z" },
-]
-
-[[package]]
-name = "exa-py"
-version = "2.3.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "httpcore" },
-    { name = "httpx" },
-    { name = "openai" },
-    { name = "pydantic" },
-    { name = "python-dotenv" },
-    { name = "requests" },
-    { name = "typing-extensions" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/5c/3b/36b15e7fd1e3bd85237378a5ef22f0d84eeb74ae50b72f4aeea5a6e8a84b/exa_py-2.3.0.tar.gz", hash = "sha256:9511848795e2bc6e37c00868a2a85ba4ce6784254d4b5f514c8b29eca6ad362a", size = 47929, upload-time = "2026-02-01T23:51:18.851Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/7c/9b/e44cac030097e63e8d41d3d1746d18b279b91fc7e68df5e4601f278d3bc2/exa_py-2.3.0-py3-none-any.whl", hash = "sha256:d42506bbcd8826cb933b1588815a6c12c4060c01e52101338ad8fa186cce55aa", size = 62983, upload-time = "2026-02-01T23:51:17.857Z" },
 ]
 
 [[package]]

@@ -27,6 +27,7 @@ class FundamentalReport(TypedDict):
     pe_ratio: float
     debt_to_equity: float
     market_cap: float
+    sector: Optional[str]
     summary: str
 
 

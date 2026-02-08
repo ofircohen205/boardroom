@@ -1,3 +1,4 @@
+import asyncio
 import uuid
 from typing import AsyncGenerator
 
@@ -31,13 +32,17 @@ class BoardroomGraph:
             "audit_id": str(uuid.uuid4()),
         }
 
-        # Run analysts in parallel (simulated)
-        state["fundamental_report"] = await self.fundamental.analyze(ticker, market)
-        state["sentiment_report"] = await self.sentiment.analyze(ticker, market)
-        state["technical_report"] = await self.technical.analyze(ticker, market)
+        # Run analysts in parallel
+        fundamental, sentiment, technical = await asyncio.gather(
+            self.fundamental.analyze(ticker, market),
+            self.sentiment.analyze(ticker, market),
+            self.technical.analyze(ticker, market),
+        )
+        state["fundamental_report"] = fundamental
+        state["sentiment_report"] = sentiment
+        state["technical_report"] = technical
 
-        # Get sector from fundamental report
-        sector = "Technology"  # Default, would come from market data
+        sector = fundamental.get("sector") or "Unknown"
 
         # Risk assessment
         state["risk_assessment"] = await self.risk_manager.assess(
@@ -70,26 +75,44 @@ class BoardroomGraph:
 
         yield {"type": WSMessageType.ANALYSIS_STARTED, "agent": None, "data": {"ticker": ticker, "audit_id": audit_id}}
 
-        # Fundamental
-        yield {"type": WSMessageType.AGENT_STARTED, "agent": AgentType.FUNDAMENTAL, "data": {}}
-        fundamental = await self.fundamental.analyze(ticker, market)
-        yield {"type": WSMessageType.AGENT_COMPLETED, "agent": AgentType.FUNDAMENTAL, "data": fundamental}
+        # Emit all 3 analyst started events
+        for agent_type in [AgentType.FUNDAMENTAL, AgentType.SENTIMENT, AgentType.TECHNICAL]:
+            yield {"type": WSMessageType.AGENT_STARTED, "agent": agent_type, "data": {}}
 
-        # Sentiment
-        yield {"type": WSMessageType.AGENT_STARTED, "agent": AgentType.SENTIMENT, "data": {}}
-        sentiment = await self.sentiment.analyze(ticker, market)
-        yield {"type": WSMessageType.AGENT_COMPLETED, "agent": AgentType.SENTIMENT, "data": sentiment}
+        # Run analysts in parallel, streaming completions as they finish
+        completion_queue: asyncio.Queue[tuple[AgentType, dict]] = asyncio.Queue()
 
-        # Technical
-        yield {"type": WSMessageType.AGENT_STARTED, "agent": AgentType.TECHNICAL, "data": {}}
-        technical = await self.technical.analyze(ticker, market)
-        yield {"type": WSMessageType.AGENT_COMPLETED, "agent": AgentType.TECHNICAL, "data": technical}
+        async def _run_agent(agent_type: AgentType, coro):
+            result = await coro
+            await completion_queue.put((agent_type, result))
+            return result
+
+        tasks = [
+            asyncio.create_task(_run_agent(AgentType.FUNDAMENTAL, self.fundamental.analyze(ticker, market))),
+            asyncio.create_task(_run_agent(AgentType.SENTIMENT, self.sentiment.analyze(ticker, market))),
+            asyncio.create_task(_run_agent(AgentType.TECHNICAL, self.technical.analyze(ticker, market))),
+        ]
+
+        results: dict[AgentType, dict] = {}
+        for _ in range(3):
+            agent_type, result = await completion_queue.get()
+            results[agent_type] = result
+            yield {"type": WSMessageType.AGENT_COMPLETED, "agent": agent_type, "data": result}
+
+        # Ensure no exceptions are lost
+        await asyncio.gather(*tasks)
+
+        fundamental = results[AgentType.FUNDAMENTAL]
+        sentiment = results[AgentType.SENTIMENT]
+        technical = results[AgentType.TECHNICAL]
+
+        sector = fundamental.get("sector") or "Unknown"
 
         # Risk
         yield {"type": WSMessageType.AGENT_STARTED, "agent": AgentType.RISK, "data": {}}
         risk = await self.risk_manager.assess(
             ticker=ticker,
-            sector="Technology",
+            sector=sector,
             portfolio_tech_weight=portfolio_sector_weight,
             fundamental=fundamental,
             sentiment=sentiment,

@@ -28,5 +28,6 @@ Provide a brief fundamental analysis summary (2-3 sentences)."""
             pe_ratio=stock_data.get("pe_ratio") or 0.0,
             debt_to_equity=stock_data.get("debt_to_equity") or 0.0,
             market_cap=stock_data.get("market_cap") or 0.0,
+            sector=stock_data.get("sector"),
             summary=summary,
         )

@@ -1,3 +1,162 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@plugin "tailwindcss-animate";
+
+@theme {
+  --font-sans: "Inter", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+}
+
+/* Base adjustments */
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground antialiased font-sans selection:bg-primary/20 selection:text-primary;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply tracking-tight;
+  }
+}
+
+/* Utilities */
+@layer utilities {
+  .glass {
+    @apply bg-card backdrop-blur-md border border-white/10 shadow-xl;
+  }
+
+  .glass-hover {
+    @apply hover:bg-white/10 hover:border-white/20 transition-all duration-300;
+  }
+
+  .text-glow {
+    text-shadow: 0 0 10px var(--color-primary);
+  }
+
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+}
+
+/* Animations declared as standard CSS checking documentation if needed, but keeping existing keyframes */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 5px var(--color-primary);
+  }
+  50% {
+    box-shadow: 0 0 20px var(--color-primary), 0 0 10px var(--color-primary);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s infinite ease-in-out;
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* CSS Variables for Theme */
+:root {
+  --radius: 0.5rem;
+
+  /* Deep Void Theme */
+  --background: oklch(0.08 0.02 265);
+  --foreground: oklch(0.98 0 0);
+
+  /* Glassmorphism Surface */
+  --card: oklch(0.12 0.03 265 / 0.7);
+  --card-foreground: oklch(0.98 0 0);
+
+  --popover: oklch(0.12 0.03 265 / 0.9);
+  --popover-foreground: oklch(0.98 0 0);
+
+  /* Electric Blue/Purple */
+  --primary: oklch(0.65 0.22 265);
+  --primary-foreground: oklch(0.98 0 0);
+
+  --secondary: oklch(0.25 0.05 265);
+  --secondary-foreground: oklch(0.98 0 0);
+
+  --muted: oklch(0.2 0.03 265);
+  --muted-foreground: oklch(0.7 0.02 265);
+
+  --accent: oklch(0.65 0.22 265);
+  --accent-foreground: oklch(0.98 0 0);
+
+  --destructive: oklch(0.6 0.2 20);
+  --destructive-foreground: oklch(0.98 0 0);
+
+  --border: oklch(0.25 0.05 265 / 0.5);
+  --input: oklch(0.2 0.03 265);
+  --ring: oklch(0.65 0.22 265);
+
+  /* Updated Charts */
+  --chart-1: oklch(0.65 0.22 265);
+  --chart-2: oklch(0.6 0.18 180);
+  --chart-3: oklch(0.55 0.15 300);
+  --chart-4: oklch(0.7 0.15 80);
+  --chart-5: oklch(0.65 0.18 340);
+
+  --success: oklch(0.65 0.18 150);
+  --success-foreground: oklch(0.98 0 0);
+
+  --warning: oklch(0.8 0.15 80);
+  --warning-foreground: oklch(0.1 0 0);
+}

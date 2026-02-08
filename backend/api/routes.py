@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 
+from backend.cache import get_cache
 from backend.state.enums import Market
 from backend.tools.stock_search import StockSuggestion, search_stocks
 
@@ -24,4 +25,15 @@ async def search_stocks_endpoint(q: str = "", market: str = "US") -> list[dict]:
         }
         for r in results
     ]
+
+
+@router.get("/cache/stats")
+async def cache_stats():
+    return await get_cache().stats()
+
+
+@router.post("/cache/clear")
+async def cache_clear():
+    await get_cache().clear()
+    return {"status": "cleared"}
 
