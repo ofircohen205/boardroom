@@ -2,6 +2,8 @@ from backend.state.enums import Trend
 
 
 def calculate_ma(prices: list[float], period: int) -> float:
+    if not prices or period == 0:
+        return 0.0
     if len(prices) < period:
         return sum(prices) / len(prices)
     return sum(prices[-period:]) / period
