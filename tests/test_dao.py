@@ -40,3 +40,78 @@ def test_final_decision_creation():
     )
     assert decision.action == Action.BUY
     assert decision.confidence == 0.85
+
+
+# ============================================================================
+# DAO Tests (Unit tests with mocks - no database required)
+# ============================================================================
+
+from unittest.mock import AsyncMock, MagicMock
+
+
+def test_user_dao_initialization():
+    """Test UserDAO can be initialized."""
+    from backend.dao.user import UserDAO
+    from backend.db.models import User
+
+    mock_session = MagicMock()
+    dao = UserDAO(mock_session)
+
+    assert dao.session == mock_session
+    assert dao.model == User
+
+
+def test_watchlist_dao_initialization():
+    """Test WatchlistDAO can be initialized."""
+    from backend.dao.portfolio import WatchlistDAO
+    from backend.db.models import Watchlist
+
+    mock_session = MagicMock()
+    dao = WatchlistDAO(mock_session)
+
+    assert dao.session == mock_session
+    assert dao.model == Watchlist
+
+
+def test_analysis_dao_initialization():
+    """Test AnalysisDAO can be initialized."""
+    from backend.dao.analysis import AnalysisDAO
+    from backend.db.models import AnalysisSession
+
+    mock_session = MagicMock()
+    dao = AnalysisDAO(mock_session)
+
+    assert dao.session == mock_session
+    assert dao.model == AnalysisSession
+
+
+def test_performance_dao_initialization():
+    """Test PerformanceDAO can be initialized."""
+    from backend.dao.performance import PerformanceDAO
+    from backend.db.models import AnalysisOutcome
+
+    mock_session = MagicMock()
+    dao = PerformanceDAO(mock_session)
+
+    assert dao.session == mock_session
+    assert dao.model == AnalysisOutcome
+
+
+def test_dao_imports():
+    """Test all DAOs can be imported from backend.dao."""
+    from backend.dao import (
+        BaseDAO,
+        UserDAO,
+        WatchlistDAO,
+        PortfolioDAO,
+        AnalysisDAO,
+        PerformanceDAO,
+    )
+
+    # All imports should succeed
+    assert BaseDAO is not None
+    assert UserDAO is not None
+    assert WatchlistDAO is not None
+    assert PortfolioDAO is not None
+    assert AnalysisDAO is not None
+    assert PerformanceDAO is not None
