@@ -1,16 +1,12 @@
 # backend/core/logging.py
 """Logging configuration for the application."""
-import logging
 import sys
+from loguru import logger
 
-# Configure basic logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[logging.StreamHandler(sys.stdout)],
-)
+# Configure Loguru to output to stdout
+logger.configure(handlers=[{"sink": sys.stdout, "level": "INFO"}])
 
 
-def get_logger(name: str) -> logging.Logger:
+def get_logger(name: str):
     """Get a logger instance with the given name."""
-    return logging.getLogger(name)
+    return logger.bind(name=name)

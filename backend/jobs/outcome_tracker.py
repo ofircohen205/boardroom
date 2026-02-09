@@ -8,7 +8,6 @@ Runs periodically to:
 """
 
 import asyncio
-import logging
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -24,8 +23,9 @@ from backend.db.models import (
 )
 from backend.ai.state.enums import Action, AgentType
 from backend.ai.tools.market_data import get_market_data_client
+from backend.core.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 async def update_outcome_prices(db: AsyncSession) -> int:

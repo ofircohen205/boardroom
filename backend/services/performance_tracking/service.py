@@ -5,7 +5,6 @@ When a stock analysis completes with a recommendation, we create an
 AnalysisOutcome record to track what actually happens to the price.
 """
 
-import logging
 from datetime import datetime
 from typing import Optional
 from uuid import UUID
@@ -16,8 +15,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.db.models import AnalysisOutcome, AnalysisSession, FinalDecision
 from backend.ai.state.enums import Action, Market
 from backend.ai.tools.market_data import get_market_data_client
+from backend.core.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 async def create_analysis_outcome(

@@ -6,7 +6,6 @@ and agent accuracy metrics.
 """
 
 import asyncio
-import logging
 from datetime import datetime
 from typing import Optional
 
@@ -15,8 +14,9 @@ from sqlalchemy.orm import sessionmaker
 
 from backend.core.settings import settings
 from backend.jobs.outcome_tracker import run_outcome_tracker_job
+from backend.core.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class JobScheduler:

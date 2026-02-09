@@ -1,4 +1,4 @@
-import logging
+from backend.core.logging import get_logger
 from abc import ABC, abstractmethod
 from typing import Optional, TypedDict
 
@@ -10,7 +10,7 @@ from backend.core.enums import MarketDataProvider
 from backend.core.settings import settings
 from backend.ai.state.enums import Market
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class StockData(TypedDict):

@@ -5,7 +5,7 @@ from sqlalchemy.orm import selectinload
 from jose import jwt, JWTError
 from datetime import datetime
 import uuid
-import logging
+from backend.core.logging import get_logger
 
 from backend.ai.workflow import BoardroomGraph
 from backend.ai.state.enums import Market, AgentType, WSMessageType, AnalysisMode, Action
@@ -15,7 +15,7 @@ from backend.db.database import get_db
 from backend.services.performance_tracking.service import create_analysis_outcome
 from backend.ai.tools.market_data import get_market_data_client
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 async def get_current_user_ws(token: str, db: AsyncSession) -> User | None:
     if not token:
