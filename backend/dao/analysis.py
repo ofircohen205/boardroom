@@ -2,11 +2,9 @@
 """Analysis session data access objects."""
 from typing import Optional, List
 from uuid import UUID
-from datetime import datetime
 
 from sqlalchemy import select, desc
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
 from backend.db.models import AnalysisSession, AgentReport, FinalDecision
 from backend.ai.state.enums import Market, AgentType, Action

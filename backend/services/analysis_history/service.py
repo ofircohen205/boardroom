@@ -9,6 +9,10 @@ from backend.dao.analysis import AnalysisDAO
 from backend.db.models import AnalysisSession, AgentReport, FinalDecision
 from backend.ai.state.enums import Market, AgentType, Action
 
+class AnalysisHistoryService:
+
+    def __init__(self):
+        pass
 
 async def create_analysis_session(
     ticker: str,
@@ -17,7 +21,7 @@ async def create_analysis_session(
     db: AsyncSession
 ) -> AnalysisSession:
     """Create a new analysis session."""
-    dao = AnalysisDAO(db)
+    dao = AnalysisDAO.get_instance(db)
     session = await dao.create_session(ticker, market, user_id)
     await db.commit()
     await db.refresh(session)
@@ -31,7 +35,7 @@ async def save_agent_report(
     db: AsyncSession
 ) -> AgentReport:
     """Save an agent's report to a session."""
-    dao = AnalysisDAO(db)
+    dao = AnalysisDAO.get_instance(db)
     report = await dao.add_report(session_id, agent_type, report_data)
     await db.commit()
     await db.refresh(report)
@@ -48,7 +52,7 @@ async def save_final_decision(
     db: AsyncSession
 ) -> FinalDecision:
     """Save the final trading decision for a session."""
-    dao = AnalysisDAO(db)
+    dao = AnalysisDAO.get_instance(db)
     decision = await dao.add_decision(
         session_id=session_id,
         action=action,
@@ -68,5 +72,5 @@ async def get_user_analysis_history(
     db: AsyncSession
 ) -> List[AnalysisSession]:
     """Get analysis history for a user."""
-    dao = AnalysisDAO(db)
+    dao = AnalysisDAO.get_instance(db)
     return await dao.get_user_sessions(user_id, limit)

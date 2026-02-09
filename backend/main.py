@@ -3,10 +3,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.api.routes import router
+from backend.api import api_router
 from backend.api.websocket import websocket_endpoint
-from backend.api.comparison import router as comparison_router
-from backend.api.performance import router as performance_router
 
 from backend.jobs.scheduler import start_scheduler, stop_scheduler
 
@@ -31,9 +29,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(router)
-app.include_router(comparison_router)
-app.include_router(performance_router)
+# Include modular API router
+app.include_router(api_router)
+
+# WebSocket endpoint
 app.websocket("/ws/analyze")(websocket_endpoint)
 
 

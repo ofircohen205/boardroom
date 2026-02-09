@@ -1,8 +1,8 @@
 # backend/dao/portfolio.py
 """Portfolio and watchlist data access objects."""
+from functools import lru_cache
 from typing import Optional, List
 from uuid import UUID
-from datetime import datetime
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -16,8 +16,11 @@ from .base import BaseDAO
 class WatchlistDAO(BaseDAO[Watchlist]):
     """Data access object for Watchlist operations."""
 
-    def __init__(self, session: AsyncSession):
-        super().__init__(session, Watchlist)
+    @classmethod
+    @lru_cache(maxsize=None)
+    def get_instance(cls, session: AsyncSession):
+        """Get a singleton instance of the WatchlistDAO."""
+        return super().get_instance(session, Watchlist)
 
     async def get_user_watchlists(self, user_id: UUID) -> List[Watchlist]:
         """Get all watchlists for a user with items loaded."""
@@ -74,8 +77,11 @@ class WatchlistDAO(BaseDAO[Watchlist]):
 class PortfolioDAO(BaseDAO[Portfolio]):
     """Data access object for Portfolio operations."""
 
-    def __init__(self, session: AsyncSession):
-        super().__init__(session, Portfolio)
+    @classmethod
+    @lru_cache(maxsize=None)
+    def get_instance(cls, session: AsyncSession):
+        """Get a singleton instance of the PortfolioDAO."""
+        return super().get_instance(session, Portfolio)
 
     async def get_user_portfolios(self, user_id: UUID) -> List[Portfolio]:
         """Get all portfolios for a user with positions loaded."""

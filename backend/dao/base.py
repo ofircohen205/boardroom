@@ -1,5 +1,6 @@
 # backend/dao/base.py
 """Base DAO with common CRUD operations."""
+from functools import lru_cache
 from typing import Generic, TypeVar, Type, Optional, List
 from uuid import UUID
 
@@ -18,9 +19,22 @@ class BaseDAO(Generic[T]):
     Generic type T must be a SQLAlchemy model (subclass of Base).
     """
 
+    _instances = {}
+
     def __init__(self, session: AsyncSession, model: Type[T]):
         self.session = session
         self.model = model
+
+    @classmethod
+    @lru_cache(maxsize=None)
+    def get_instance(cls, session: AsyncSession, model: Type[T]):
+        """
+        Get a singleton instance of the DAO.
+        Uses LRU cache for optimization.
+        """
+        if cls not in cls._instances:
+            cls._instances[cls] = cls(session, model)
+        return cls._instances[cls]
 
     async def get_by_id(self, id: UUID) -> Optional[T]:
         """Get a single record by ID."""

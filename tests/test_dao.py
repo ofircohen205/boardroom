@@ -55,7 +55,7 @@ def test_user_dao_initialization():
     from backend.db.models import User
 
     mock_session = MagicMock()
-    dao = UserDAO(mock_session)
+    dao = UserDAO.get_instance(mock_session)
 
     assert dao.session == mock_session
     assert dao.model == User
@@ -67,7 +67,7 @@ def test_watchlist_dao_initialization():
     from backend.db.models import Watchlist
 
     mock_session = MagicMock()
-    dao = WatchlistDAO(mock_session)
+    dao = WatchlistDAO.get_instance(mock_session)
 
     assert dao.session == mock_session
     assert dao.model == Watchlist
@@ -91,7 +91,7 @@ def test_performance_dao_initialization():
     from backend.db.models import AnalysisOutcome
 
     mock_session = MagicMock()
-    dao = PerformanceDAO(mock_session)
+    dao = PerformanceDAO.get_instance(mock_session)
 
     assert dao.session == mock_session
     assert dao.model == AnalysisOutcome

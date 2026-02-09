@@ -1,5 +1,6 @@
 # backend/dao/user.py
 """User data access objects."""
+from functools import lru_cache
 from typing import Optional, List
 from uuid import UUID
 
@@ -15,8 +16,11 @@ from .base import BaseDAO
 class UserDAO(BaseDAO[User]):
     """Data access object for User operations."""
 
-    def __init__(self, session: AsyncSession):
-        super().__init__(session, User)
+    @classmethod
+    @lru_cache(maxsize=None)
+    def get_instance(cls, session: AsyncSession):
+        """Get a singleton instance of the UserDAO."""
+        return super().get_instance(session, User)
 
     async def find_by_email(self, email: str) -> Optional[User]:
         """Find a user by email address."""

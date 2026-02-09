@@ -1,8 +1,8 @@
 # backend/dao/performance.py
 """Performance tracking data access objects."""
+from functools import lru_cache
 from typing import Optional, List
 from uuid import UUID
-from datetime import datetime
 
 from sqlalchemy import select, desc
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,8 +15,11 @@ from .base import BaseDAO
 class PerformanceDAO(BaseDAO[AnalysisOutcome]):
     """Data access object for Performance tracking operations."""
 
-    def __init__(self, session: AsyncSession):
-        super().__init__(session, AnalysisOutcome)
+    @classmethod
+    @lru_cache(maxsize=None)
+    def get_instance(cls, session: AsyncSession):
+        """Get a singleton instance of the PerformanceDAO."""
+        return super().get_instance(session, AnalysisOutcome)
 
     async def create_outcome(
         self,
