@@ -6,7 +6,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Boardroom is a multi-agent financial analysis system using LangGraph. Agents pass a "Token of Authority" between them to collaboratively analyze stocks and make trading decisions.
 
-**Current Status:** Phase 0 (Core System) is complete. All 6 planned phases + quick wins remain to be implemented.
+**Current Status:**
+- ✅ Phase 0 (Core System) complete - 5-agent pipeline, WebSocket streaming
+- ✅ Backend Refactoring (50% complete) - Core, DB, and AI layers reorganized
+- ⏳ Phases 1-6 (Features) remain to be implemented
+
+**Recent Changes:**
+- **Backend layered architecture refactoring** (50% complete - see `docs/REFACTORING_SUMMARY.md`)
+  - ✅ Phase 1: Core module (`backend/core/` - settings, security, exceptions)
+  - ✅ Phase 2: Database layer (`backend/db/` - modular models)
+  - ✅ Phase 6: AI module (`backend/ai/` - unified AI components)
+  - ⏳ Phases 3-5 pending: DAO, Services, API layers
 
 **Key Documentation:**
 - [AGENTS.md](./AGENTS.md) — Detailed agent system architecture
@@ -82,15 +92,15 @@ The project follows the **project-root/package-name/** Python layout pattern:
 ### Agent Hierarchy
 
 **Analyst Agents (Workers):**
-- **Fundamental Agent** (`backend/agents/fundamental.py`): Pulls hard data via Yahoo Finance
-- **Sentiment Agent** (`backend/agents/sentiment.py`): Scans news/social via Exa
-- **Technical Agent** (`backend/agents/technical.py`): Analyzes price trends (MA, RSI)
+- **Fundamental Agent** (`backend/ai/agents/fundamental.py`): Pulls hard data via Yahoo Finance
+- **Sentiment Agent** (`backend/ai/agents/sentiment.py`): Scans news/social via Exa
+- **Technical Agent** (`backend/ai/agents/technical.py`): Analyzes price trends (MA, RSI)
 
-**Risk Manager (Brake)** (`backend/agents/risk_manager.py`):
+**Risk Manager (Brake)** (`backend/ai/agents/risk_manager.py`):
 - Checks portfolio sector weight (max 30%)
 - Has veto power over trades
 
-**Chairperson (Closer)** (`backend/agents/chairperson.py`):
+**Chairperson (Closer)** (`backend/ai/agents/chairperson.py`):
 - Weighs all reports
 - Makes final BUY/SELL/HOLD decision
 
@@ -100,25 +110,65 @@ See [AGENTS.md](./AGENTS.md) for detailed agent documentation.
 
 ```
 backend/
-├── agents/          # All 5 agents + LLM abstraction
+├── core/            # ✨ Application fundamentals (NEW)
+│   ├── settings.py  # Pydantic Settings (formerly config.py)
+│   ├── enums.py     # LLMProvider, MarketDataProvider
+│   ├── security.py  # JWT, password hashing (formerly auth/jwt.py)
+│   ├── logging.py   # Structured logging
+│   └── exceptions.py # Base exceptions, error handlers
+│
+├── db/              # ✨ Database layer (NEW)
+│   ├── database.py  # Engine, session maker, get_db() (formerly dao/database.py)
+│   └── models/      # ✨ Modular models (split from dao/models.py)
+│       ├── base.py  # DeclarativeBase
+│       ├── user.py  # User, UserAPIKey
+│       ├── portfolio.py  # Watchlist, Portfolio, Position
+│       ├── analysis.py   # AnalysisSession, AgentReport, FinalDecision
+│       └── performance.py  # AnalysisOutcome, AgentAccuracy
+│
+├── ai/              # ✨ AI/LLM analysis system (NEW - unified module)
+│   ├── workflow.py  # LangGraph orchestration (formerly graph/workflow.py)
+│   ├── agents/      # All 5 agents + LLM abstraction (formerly backend/agents/)
+│   │   ├── base.py
+│   │   ├── fundamental.py
+│   │   ├── sentiment.py
+│   │   ├── technical.py
+│   │   ├── risk_manager.py
+│   │   └── chairperson.py
+│   ├── state/       # TypedDicts and enums (formerly backend/state/)
+│   │   ├── agent_state.py  # State definitions
+│   │   └── enums.py        # Action, Market, AgentType enums
+│   └── tools/       # Market data, search, indicators (formerly backend/tools/)
+│       ├── market_data.py       # Yahoo Finance integration
+│       ├── search.py            # Exa search for news/social
+│       ├── stock_search.py      # Stock symbol autocomplete
+│       ├── technical_indicators.py  # MA, RSI calculations
+│       ├── relative_strength.py     # Comparative metrics
+│       └── sector_data.py           # Sector information
+│
 ├── api/             # FastAPI routes + WebSocket
 │   ├── routes.py    # REST endpoints
-│   └── websocket.py # Real-time analysis streaming
-├── auth/            # JWT authentication (Phase 1 - not yet implemented)
-├── dao/             # SQLAlchemy models for audit trail
-│   └── models.py    # Database models
-├── graph/           # LangGraph workflow
-│   └── workflow.py  # Agent orchestration logic
-├── state/           # TypedDicts and enums
-│   ├── agent_state.py  # State definitions
-│   └── enums.py        # Action, Market, AgentType enums
-├── tools/           # Market data, search, technical indicators
-│   ├── market_data.py       # Yahoo Finance integration
-│   ├── search.py            # Exa search for news/social
-│   ├── stock_search.py      # Stock symbol autocomplete
-│   └── technical_indicators.py  # MA, RSI calculations
+│   ├── websocket.py # Real-time analysis streaming
+│   ├── comparison.py # Multi-stock comparison
+│   └── performance.py # Performance metrics
+│
+├── auth/            # Authentication utilities
+│   ├── dependencies.py # get_current_user dependency
+│   └── jwt.py       # (DEPRECATED - moved to core/security.py)
+│
+├── services/        # Business logic layer
+│   └── outcome_service.py  # Performance tracking service
+│
+├── jobs/            # Background jobs (APScheduler)
+│   ├── scheduler.py
+│   └── outcome_tracker.py
+│
+├── dao/             # (DEPRECATED - being replaced by db/)
+│   ├── database.py  # (moved to db/database.py)
+│   └── models.py    # (split into db/models/)
+│
 ├── cache.py         # Caching layer
-├── config.py        # Settings and configuration
+├── config.py        # (DEPRECATED - moved to core/settings.py)
 └── main.py          # FastAPI app entry point
 
 frontend/
@@ -184,6 +234,45 @@ AgentState = {
 ```
 
 ## Best Practices
+
+### Import Patterns (Updated Architecture)
+
+After the layered architecture refactoring, use these import patterns:
+
+```python
+# Core utilities
+from backend.core.settings import settings
+from backend.core.security import create_access_token, get_password_hash
+from backend.core.enums import LLMProvider, MarketDataProvider
+
+# Database
+from backend.db.models import User, AnalysisSession, Portfolio
+from backend.db.database import get_db, init_db
+
+# AI system (preferred - uses module exports)
+from backend.ai import (
+    create_boardroom_graph,
+    Market,
+    Action,
+    AgentType,
+    FundamentalAgent,
+    get_llm_client,
+)
+
+# AI system (alternative - direct imports)
+from backend.ai.workflow import create_boardroom_graph
+from backend.ai.state.enums import Market, Action, AgentType
+from backend.ai.agents.fundamental import FundamentalAgent
+from backend.ai.tools.market_data import get_market_data_client
+```
+
+**Deprecated imports** (for reference, do not use in new code):
+- ❌ `from backend.config import settings` → ✅ `from backend.core.settings import settings`
+- ❌ `from backend.auth.jwt import create_access_token` → ✅ `from backend.core.security import create_access_token`
+- ❌ `from backend.dao.models import User` → ✅ `from backend.db.models import User`
+- ❌ `from backend.agents.fundamental import FundamentalAgent` → ✅ `from backend.ai.agents.fundamental import FundamentalAgent`
+- ❌ `from backend.state.enums import Market` → ✅ `from backend.ai.state.enums import Market`
+- ❌ `from backend.tools.market_data import get_market_data_client` → ✅ `from backend.ai.tools.market_data import get_market_data_client`
 
 ### Code Style
 - **Backend:** Follow PEP 8, use type hints, async/await for I/O
