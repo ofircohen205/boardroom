@@ -8,7 +8,7 @@ from sqlalchemy import ForeignKey, String, Float, Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from backend.state.enums import Market
+from backend.ai.state.enums import Market
 from .base import Base
 
 if TYPE_CHECKING:

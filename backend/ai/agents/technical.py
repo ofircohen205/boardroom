@@ -1,8 +1,8 @@
-from backend.agents.base import get_llm_client
-from backend.state.agent_state import TechnicalReport
-from backend.state.enums import Market
-from backend.tools.market_data import get_market_data_client
-from backend.tools.technical_indicators import calculate_ma, calculate_rsi, calculate_trend
+from backend.ai.agents.base import get_llm_client
+from backend.ai.state.agent_state import TechnicalReport
+from backend.ai.state.enums import Market
+from backend.ai.tools.market_data import get_market_data_client
+from backend.ai.tools.technical_indicators import calculate_ma, calculate_rsi, calculate_trend
 
 
 class TechnicalAgent:

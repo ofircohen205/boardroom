@@ -4,8 +4,8 @@ import time
 import pytest
 from unittest.mock import AsyncMock, patch
 
-from backend.graph.workflow import create_boardroom_graph, BoardroomGraph
-from backend.state.enums import Market, Action, AgentType, WSMessageType
+from backend.ai.workflow import create_boardroom_graph, BoardroomGraph
+from backend.ai.state.enums import Market, Action, AgentType, WSMessageType
 
 
 @pytest.mark.asyncio
@@ -43,11 +43,11 @@ async def test_graph_run_no_veto():
     fund_report, sent_report, tech_report, risk_report, decision = _make_mocks()
 
     with (
-        patch("backend.graph.workflow.FundamentalAgent") as mock_fund,
-        patch("backend.graph.workflow.SentimentAgent") as mock_sent,
-        patch("backend.graph.workflow.TechnicalAgent") as mock_tech,
-        patch("backend.graph.workflow.RiskManagerAgent") as mock_risk,
-        patch("backend.graph.workflow.ChairpersonAgent") as mock_chair,
+        patch("backend.ai.workflow.FundamentalAgent") as mock_fund,
+        patch("backend.ai.workflow.SentimentAgent") as mock_sent,
+        patch("backend.ai.workflow.TechnicalAgent") as mock_tech,
+        patch("backend.ai.workflow.RiskManagerAgent") as mock_risk,
+        patch("backend.ai.workflow.ChairpersonAgent") as mock_chair,
     ):
         mock_fund.return_value.analyze = AsyncMock(return_value=fund_report)
         mock_sent.return_value.analyze = AsyncMock(return_value=sent_report)
@@ -72,11 +72,11 @@ async def test_graph_run_veto():
     }
 
     with (
-        patch("backend.graph.workflow.FundamentalAgent") as mock_fund,
-        patch("backend.graph.workflow.SentimentAgent") as mock_sent,
-        patch("backend.graph.workflow.TechnicalAgent") as mock_tech,
-        patch("backend.graph.workflow.RiskManagerAgent") as mock_risk,
-        patch("backend.graph.workflow.ChairpersonAgent") as mock_chair,
+        patch("backend.ai.workflow.FundamentalAgent") as mock_fund,
+        patch("backend.ai.workflow.SentimentAgent") as mock_sent,
+        patch("backend.ai.workflow.TechnicalAgent") as mock_tech,
+        patch("backend.ai.workflow.RiskManagerAgent") as mock_risk,
+        patch("backend.ai.workflow.ChairpersonAgent") as mock_chair,
     ):
         mock_fund.return_value.analyze = AsyncMock(return_value=fund_report)
         mock_sent.return_value.analyze = AsyncMock(return_value=sent_report)
@@ -112,11 +112,11 @@ async def test_parallel_execution_timing():
                 "trend": "neutral", "price_history": [{"close": 100}], "summary": "Flat"}
 
     with (
-        patch("backend.graph.workflow.FundamentalAgent") as mock_fund,
-        patch("backend.graph.workflow.SentimentAgent") as mock_sent,
-        patch("backend.graph.workflow.TechnicalAgent") as mock_tech,
-        patch("backend.graph.workflow.RiskManagerAgent") as mock_risk,
-        patch("backend.graph.workflow.ChairpersonAgent") as mock_chair,
+        patch("backend.ai.workflow.FundamentalAgent") as mock_fund,
+        patch("backend.ai.workflow.SentimentAgent") as mock_sent,
+        patch("backend.ai.workflow.TechnicalAgent") as mock_tech,
+        patch("backend.ai.workflow.RiskManagerAgent") as mock_risk,
+        patch("backend.ai.workflow.ChairpersonAgent") as mock_chair,
     ):
         mock_fund.return_value.analyze = slow_analyze
         mock_sent.return_value.analyze = slow_sentiment
@@ -144,11 +144,11 @@ async def test_streaming_event_order():
     fund_report, sent_report, tech_report, risk_report, decision = _make_mocks()
 
     with (
-        patch("backend.graph.workflow.FundamentalAgent") as mock_fund,
-        patch("backend.graph.workflow.SentimentAgent") as mock_sent,
-        patch("backend.graph.workflow.TechnicalAgent") as mock_tech,
-        patch("backend.graph.workflow.RiskManagerAgent") as mock_risk,
-        patch("backend.graph.workflow.ChairpersonAgent") as mock_chair,
+        patch("backend.ai.workflow.FundamentalAgent") as mock_fund,
+        patch("backend.ai.workflow.SentimentAgent") as mock_sent,
+        patch("backend.ai.workflow.TechnicalAgent") as mock_tech,
+        patch("backend.ai.workflow.RiskManagerAgent") as mock_risk,
+        patch("backend.ai.workflow.ChairpersonAgent") as mock_chair,
     ):
         mock_fund.return_value.analyze = AsyncMock(return_value=fund_report)
         mock_sent.return_value.analyze = AsyncMock(return_value=sent_report)
@@ -198,11 +198,11 @@ async def test_streaming_veto_stops_early():
     }
 
     with (
-        patch("backend.graph.workflow.FundamentalAgent") as mock_fund,
-        patch("backend.graph.workflow.SentimentAgent") as mock_sent,
-        patch("backend.graph.workflow.TechnicalAgent") as mock_tech,
-        patch("backend.graph.workflow.RiskManagerAgent") as mock_risk,
-        patch("backend.graph.workflow.ChairpersonAgent") as mock_chair,
+        patch("backend.ai.workflow.FundamentalAgent") as mock_fund,
+        patch("backend.ai.workflow.SentimentAgent") as mock_sent,
+        patch("backend.ai.workflow.TechnicalAgent") as mock_tech,
+        patch("backend.ai.workflow.RiskManagerAgent") as mock_risk,
+        patch("backend.ai.workflow.ChairpersonAgent") as mock_chair,
     ):
         mock_fund.return_value.analyze = AsyncMock(return_value=fund_report)
         mock_sent.return_value.analyze = AsyncMock(return_value=sent_report)
@@ -228,11 +228,11 @@ async def test_sector_from_fundamental_report():
     fund_report["sector"] = "Healthcare"
 
     with (
-        patch("backend.graph.workflow.FundamentalAgent") as mock_fund,
-        patch("backend.graph.workflow.SentimentAgent") as mock_sent,
-        patch("backend.graph.workflow.TechnicalAgent") as mock_tech,
-        patch("backend.graph.workflow.RiskManagerAgent") as mock_risk,
-        patch("backend.graph.workflow.ChairpersonAgent") as mock_chair,
+        patch("backend.ai.workflow.FundamentalAgent") as mock_fund,
+        patch("backend.ai.workflow.SentimentAgent") as mock_sent,
+        patch("backend.ai.workflow.TechnicalAgent") as mock_tech,
+        patch("backend.ai.workflow.RiskManagerAgent") as mock_risk,
+        patch("backend.ai.workflow.ChairpersonAgent") as mock_chair,
     ):
         mock_fund.return_value.analyze = AsyncMock(return_value=fund_report)
         mock_sent.return_value.analyze = AsyncMock(return_value=sent_report)

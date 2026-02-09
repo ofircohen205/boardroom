@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import AsyncMock, patch
-from backend.agents.sentiment import SentimentAgent
-from backend.state.enums import Market
+from backend.ai.agents.sentiment import SentimentAgent
+from backend.ai.state.enums import Market
 
 
 @pytest.fixture
@@ -19,8 +19,8 @@ def mock_search_results():
 
 @pytest.mark.asyncio
 async def test_sentiment_agent_analyze(mock_search_results):
-    with patch("backend.agents.sentiment.get_search_client") as mock_search:
-        with patch("backend.agents.sentiment.get_llm_client") as mock_llm:
+    with patch("backend.ai.agents.sentiment.get_search_client") as mock_search:
+        with patch("backend.ai.agents.sentiment.get_llm_client") as mock_llm:
             mock_search.return_value.search_news = AsyncMock(return_value=mock_search_results)
             mock_search.return_value.search_social = AsyncMock(return_value=[])
             mock_llm.return_value.complete = AsyncMock(return_value="SENTIMENT: 0.7\nSUMMARY: Positive news coverage.")

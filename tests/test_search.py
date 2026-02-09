@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import AsyncMock, patch
-from backend.tools.search import OpenAISearchClient, SearchResult
+from backend.ai.tools.search import OpenAISearchClient, SearchResult
 
 
 def test_search_result_structure():

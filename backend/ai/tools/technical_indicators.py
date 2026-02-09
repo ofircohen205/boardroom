@@ -1,4 +1,4 @@
-from backend.state.enums import Trend
+from backend.ai.state.enums import Trend
 
 
 def calculate_ma(prices: list[float], period: int) -> float:

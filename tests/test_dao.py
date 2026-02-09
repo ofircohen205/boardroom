@@ -2,7 +2,7 @@ import pytest
 from datetime import datetime
 from uuid import uuid4
 from backend.db.models import AnalysisSession, AgentReport, FinalDecision
-from backend.state.enums import Market, AgentType, Action
+from backend.ai.state.enums import Market, AgentType, Action
 
 
 def test_analysis_session_creation():

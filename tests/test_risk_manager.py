@@ -1,8 +1,8 @@
 import pytest
 from unittest.mock import AsyncMock, patch
-from backend.agents.risk_manager import RiskManagerAgent, calculate_var_95
-from backend.state.agent_state import FundamentalReport, SentimentReport, TechnicalReport
-from backend.state.enums import Trend
+from backend.ai.agents.risk_manager import RiskManagerAgent, calculate_var_95
+from backend.ai.state.agent_state import FundamentalReport, SentimentReport, TechnicalReport
+from backend.ai.state.enums import Trend
 
 
 @pytest.fixture
@@ -36,7 +36,7 @@ def sample_reports():
 
 @pytest.mark.asyncio
 async def test_risk_manager_no_veto(sample_reports):
-    with patch("backend.agents.risk_manager.get_llm_client") as mock_llm:
+    with patch("backend.ai.agents.risk_manager.get_llm_client") as mock_llm:
         mock_llm.return_value.complete = AsyncMock(return_value="VETO: NO\nRisk acceptable.")
 
         agent = RiskManagerAgent()
@@ -54,7 +54,7 @@ async def test_risk_manager_no_veto(sample_reports):
 
 @pytest.mark.asyncio
 async def test_risk_manager_veto_overweight():
-    with patch("backend.agents.risk_manager.get_llm_client") as mock_llm:
+    with patch("backend.ai.agents.risk_manager.get_llm_client") as mock_llm:
         mock_llm.return_value.complete = AsyncMock(return_value="VETO: YES\nREASON: Portfolio already 45% Tech.")
 
         agent = RiskManagerAgent()
@@ -118,7 +118,7 @@ async def test_risk_manager_uses_var(sample_reports):
         summary="Bullish trend",
     )
 
-    with patch("backend.agents.risk_manager.get_llm_client") as mock_llm:
+    with patch("backend.ai.agents.risk_manager.get_llm_client") as mock_llm:
         mock_llm.return_value.complete = AsyncMock(return_value="VETO: NO\nRisk acceptable.")
 
         agent = RiskManagerAgent()

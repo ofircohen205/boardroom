@@ -2,14 +2,14 @@ import asyncio
 import uuid
 from typing import AsyncGenerator
 
-from backend.agents.fundamental import FundamentalAgent
-from backend.agents.sentiment import SentimentAgent
-from backend.agents.technical import TechnicalAgent
-from backend.agents.risk_manager import RiskManagerAgent
-from backend.agents.chairperson import ChairpersonAgent
-from backend.state.agent_state import AgentState, ComparisonResult, StockRanking
-from backend.state.enums import Market, AgentType, WSMessageType, AnalysisMode, Action
-from backend.tools.relative_strength import calculate_relative_strength
+from backend.ai.agents.fundamental import FundamentalAgent
+from backend.ai.agents.sentiment import SentimentAgent
+from backend.ai.agents.technical import TechnicalAgent
+from backend.ai.agents.risk_manager import RiskManagerAgent
+from backend.ai.agents.chairperson import ChairpersonAgent
+from backend.ai.state.agent_state import AgentState, ComparisonResult, StockRanking
+from backend.ai.state.enums import Market, AgentType, WSMessageType, AnalysisMode, Action
+from backend.ai.tools.relative_strength import calculate_relative_strength
 
 
 class BoardroomGraph:

@@ -3,8 +3,8 @@ from typing import Optional
 
 import numpy as np
 
-from backend.agents.base import get_llm_client
-from backend.state.agent_state import (
+from backend.ai.agents.base import get_llm_client
+from backend.ai.state.agent_state import (
     FundamentalReport,
     RiskAssessment,
     SentimentReport,

@@ -1,6 +1,6 @@
 import pytest
-from backend.tools.technical_indicators import calculate_rsi, calculate_ma, calculate_trend
-from backend.state.enums import Trend
+from backend.ai.tools.technical_indicators import calculate_rsi, calculate_ma, calculate_trend
+from backend.ai.state.enums import Trend
 
 
 # --- Moving Average tests ---

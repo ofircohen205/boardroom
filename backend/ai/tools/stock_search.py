@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 import yfinance as yf
 
-from backend.state.enums import Market
+from backend.ai.state.enums import Market
 
 
 @dataclass

@@ -3,7 +3,7 @@
 import numpy as np
 from typing import Optional
 
-from backend.state.agent_state import RelativeStrength, FundamentalReport
+from backend.ai.state.agent_state import RelativeStrength, FundamentalReport
 
 
 def calculate_correlation_matrix(price_histories: dict[str, list[dict]]) -> dict[str, dict[str, float]]:

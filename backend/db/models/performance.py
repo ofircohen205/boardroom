@@ -8,7 +8,7 @@ from sqlalchemy import ForeignKey, String, Float, Boolean, Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from backend.state.enums import AgentType, Action
+from backend.ai.state.enums import AgentType, Action
 from .base import Base
 
 

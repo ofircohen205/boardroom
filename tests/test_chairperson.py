@@ -1,8 +1,8 @@
 import pytest
 from unittest.mock import AsyncMock, patch
-from backend.agents.chairperson import ChairpersonAgent
-from backend.state.agent_state import FundamentalReport, SentimentReport, TechnicalReport
-from backend.state.enums import Trend, Action
+from backend.ai.agents.chairperson import ChairpersonAgent
+from backend.ai.state.agent_state import FundamentalReport, SentimentReport, TechnicalReport
+from backend.ai.state.enums import Trend, Action
 
 
 @pytest.fixture
@@ -35,7 +35,7 @@ def bullish_reports():
 
 @pytest.mark.asyncio
 async def test_chairperson_buy_decision(bullish_reports):
-    with patch("backend.agents.chairperson.get_llm_client") as mock_llm:
+    with patch("backend.ai.agents.chairperson.get_llm_client") as mock_llm:
         mock_llm.return_value.complete = AsyncMock(
             return_value="ACTION: BUY\nCONFIDENCE: 0.85\nRATIONALE: Strong fundamentals and positive sentiment."
         )

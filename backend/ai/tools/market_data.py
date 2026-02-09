@@ -8,7 +8,7 @@ import yfinance as yf
 from backend.cache import cached
 from backend.core.enums import MarketDataProvider
 from backend.core.settings import settings
-from backend.state.enums import Market
+from backend.ai.state.enums import Market
 
 logger = logging.getLogger(__name__)
 

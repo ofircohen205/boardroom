@@ -21,7 +21,7 @@ from backend.services.outcome_service import (
     get_performance_summary,
     get_recent_outcomes,
 )
-from backend.state.enums import AgentType
+from backend.ai.state.enums import AgentType
 
 router = APIRouter(prefix="/api/performance", tags=["performance"])
 

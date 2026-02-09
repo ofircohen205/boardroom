@@ -3,9 +3,9 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from backend.graph.workflow import create_boardroom_graph
-from backend.state.enums import Market
-from backend.tools.sector_data import get_sector_tickers, get_all_sectors
+from backend.ai.workflow import create_boardroom_graph
+from backend.ai.state.enums import Market
+from backend.ai.tools.sector_data import get_sector_tickers, get_all_sectors
 
 router = APIRouter(prefix="/api/compare", tags=["comparison"])
 

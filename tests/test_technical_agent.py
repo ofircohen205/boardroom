@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import AsyncMock, patch
-from backend.agents.technical import TechnicalAgent
-from backend.state.enums import Market, Trend
+from backend.ai.agents.technical import TechnicalAgent
+from backend.ai.state.enums import Market, Trend
 
 
 @pytest.fixture
@@ -17,8 +17,8 @@ def mock_stock_data():
 
 @pytest.mark.asyncio
 async def test_technical_agent_analyze(mock_stock_data):
-    with patch("backend.agents.technical.get_market_data_client") as mock_market:
-        with patch("backend.agents.technical.get_llm_client") as mock_llm:
+    with patch("backend.ai.agents.technical.get_market_data_client") as mock_market:
+        with patch("backend.ai.agents.technical.get_llm_client") as mock_llm:
             mock_market.return_value.get_stock_data = AsyncMock(return_value=mock_stock_data)
             mock_llm.return_value.complete = AsyncMock(return_value="Bullish trend with strong momentum.")
 

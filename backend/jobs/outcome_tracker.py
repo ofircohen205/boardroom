@@ -22,8 +22,8 @@ from backend.db.models import (
     AgentReport,
     FinalDecision,
 )
-from backend.state.enums import Action, AgentType
-from backend.tools.market_data import get_market_data_client
+from backend.ai.state.enums import Action, AgentType
+from backend.ai.tools.market_data import get_market_data_client
 
 logger = logging.getLogger(__name__)
 

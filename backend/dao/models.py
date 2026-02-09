@@ -7,7 +7,7 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 from backend.core.enums import LLMProvider
-from backend.state.enums import Market, AgentType, Action
+from backend.ai.state.enums import Market, AgentType, Action
 
 
 class Base(DeclarativeBase):

@@ -14,8 +14,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.db.models import AnalysisOutcome, AnalysisSession, FinalDecision
-from backend.state.enums import Action, Market
-from backend.tools.market_data import get_market_data_client
+from backend.ai.state.enums import Action, Market
+from backend.ai.tools.market_data import get_market_data_client
 
 logger = logging.getLogger(__name__)
 

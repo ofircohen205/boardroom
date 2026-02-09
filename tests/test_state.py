@@ -1,4 +1,4 @@
-from backend.state.enums import (
+from backend.ai.state.enums import (
     Market,
     Trend,
     Action,
