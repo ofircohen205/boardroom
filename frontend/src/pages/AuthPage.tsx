@@ -11,9 +11,11 @@ export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -23,12 +25,10 @@ export default function AuthPage() {
     setError(null);
 
     const endpoint = isLogin ? 'http://localhost:8000/api/auth/login' : 'http://localhost:8000/api/auth/register';
-    const payload = isLogin 
-      // OAuth2PasswordRequestForm expects form data, but our backend pydantic model for register expects JSON?
-      // Wait, backend login uses OAuth2PasswordRequestForm (form data), register uses JSON (UserCreate).
-      // Let's adjust payload accordingly.
-      ? new URLSearchParams({ username: email, password }) 
-      : JSON.stringify({ email, password });
+    const payload = isLogin
+      // OAuth2PasswordRequestForm expects form data, register uses JSON (UserCreate)
+      ? new URLSearchParams({ username: email, password })
+      : JSON.stringify({ email, password, first_name: firstName, last_name: lastName });
       
     const headers = isLogin 
       ? { 'Content-Type': 'application/x-www-form-urlencoded' }
@@ -75,6 +75,34 @@ export default function AuthPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            {!isLogin && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="firstName">First Name</Label>
+                  <Input
+                    id="firstName"
+                    type="text"
+                    placeholder="John"
+                    className="bg-background/50 border-white/10 focus:border-primary/50"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lastName">Last Name</Label>
+                  <Input
+                    id="lastName"
+                    type="text"
+                    placeholder="Doe"
+                    className="bg-background/50 border-white/10 focus:border-primary/50"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    required
+                  />
+                </div>
+              </>
+            )}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <div className="relative">
@@ -138,6 +166,8 @@ export default function AuthPage() {
             onClick={() => {
                 setIsLogin(!isLogin);
                 setError(null);
+                setFirstName('');
+                setLastName('');
             }}
           >
             {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}

@@ -16,7 +16,8 @@ help:
 	@echo "Database:"
 	@echo "  db-up        Start database only"
 	@echo "  db-down      Stop database"
-	@echo "  migrate      Run database migrations"
+	@echo "  migrate      Run database migrations (local)"
+	@echo "  migrate-docker Run database migrations in Docker"
 	@echo "  migrate-new  Create new migration (usage: make migrate-new msg='description')"
 	@echo ""
 	@echo "Testing:"
@@ -36,36 +37,40 @@ help:
 
 # Development
 dev:
-	docker compose up -d --build --force-recreate -V
+	docker compose -p boardroom -f docker/docker-compose.dev.yml up -d --build --force-recreate -V
 	@echo "Development environment started"
 	@echo "  Frontend: http://localhost:5173"
 	@echo "  Backend:  http://localhost:8000"
 	@echo "  Database: localhost:5432"
+	@echo "  Redis:    localhost:6379"
 
 down:
-	docker compose down
+	docker compose -p boardroom -f docker/docker-compose.dev.yml down
 
 logs:
-	docker compose logs -f
+	docker compose -p boardroom -f docker/docker-compose.dev.yml logs -f
 
 logs-backend:
-	docker compose logs -f backend
+	docker compose -p boardroom -f docker/docker-compose.dev.yml logs -f boardroom-backend
 
 logs-frontend:
-	docker compose logs -f frontend
+	docker compose -p boardroom -f docker/docker-compose.dev.yml logs -f boardroom-frontend
 
 # Database
 db-up:
-	docker compose up -d db
+	docker compose -p boardroom -f docker/docker-compose.dev.yml up -d boardroom-postgres-db
 	@echo "Waiting for database to be ready..."
 	@sleep 3
-	@docker compose exec db pg_isready -U boardroom
+	@docker compose -p boardroom -f docker/docker-compose.dev.yml exec boardroom-postgres-db pg_isready -U boardroom
 
 db-down:
-	docker compose stop db
+	docker compose -p boardroom -f docker/docker-compose.dev.yml stop boardroom-postgres-db
 
 migrate:
 	uv run alembic upgrade head
+
+migrate-docker:
+	docker compose -p boardroom -f docker/docker-compose.dev.yml exec backend uv run alembic upgrade head
 
 migrate-new:
 	uv run alembic revision --autogenerate -m "$(msg)"
@@ -79,15 +84,15 @@ test-cov:
 
 # Production
 prod:
-	docker compose -f docker-compose.prod.yml up -d
+	docker compose -f docker/docker-compose.prod.yml up -d
 	@echo "Production environment started"
 	@echo "  Frontend: http://localhost:80"
 
 prod-down:
-	docker compose -f docker-compose.prod.yml down
+	docker compose -f docker/docker-compose.prod.yml down
 
 build:
-	docker compose -f docker-compose.prod.yml build
+	docker compose -f docker/docker-compose.prod.yml build
 
 # Utilities
 install:
@@ -95,13 +100,13 @@ install:
 	cd frontend && npm install
 
 clean:
-	docker compose down -v --remove-orphans
-	docker compose -f docker-compose.prod.yml down -v --remove-orphans 2>/dev/null || true
+	docker compose -p boardroom -f docker/docker-compose.dev.yml down -v --remove-orphans
+	docker compose -p boardroom -f docker/docker-compose.prod.yml down -v --remove-orphans 2>/dev/null || true
 	rm -rf .venv frontend/node_modules frontend/dist
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 
 shell-backend:
-	docker compose exec backend /bin/sh
+	docker compose -p boardroom -f docker/docker-compose.dev.yml exec boardroom-backend /bin/sh
 
 shell-db:
-	docker compose exec db psql -U boardroom -d boardroom
+	docker compose -p boardroom -f docker/docker-compose.dev.yml exec boardroom-postgres-db psql -U boardroom -d boardroom

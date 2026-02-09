@@ -46,6 +46,10 @@ async def update_outcome_prices(db: AsyncSession) -> int:
     result = await db.execute(query)
     outcomes = result.scalars().all()
 
+    if not outcomes:
+        logger.info("No outcomes to track yet")
+        return 0
+
     for outcome in outcomes:
         session_query = select(AnalysisSession).where(
             AnalysisSession.id == outcome.session_id
@@ -101,9 +105,21 @@ async def update_outcome_prices(db: AsyncSession) -> int:
             outcome.last_updated = now
             await db.commit()
 
+        except OSError as e:
+            # Network/DNS errors - log as warning and continue
+            if e.errno == -2 or "Name or service not known" in str(e):
+                logger.warning(
+                    f"Network error updating {outcome.ticker} (DNS resolution failed). "
+                    "Check internet connection or try again later."
+                )
+            else:
+                logger.warning(f"Network error updating {outcome.ticker}: {e}")
+            await db.rollback()
+            continue
         except Exception as e:
             logger.error(f"Failed to update outcome for {outcome.ticker}: {e}")
             await db.rollback()
+            continue
 
     return updated_count
 

@@ -13,26 +13,33 @@ from backend.db.models import User
 from .exceptions import UserAlreadyExistsError, InvalidCredentialsError
 
 
-async def register_user(email: str, password: str, db: AsyncSession) -> tuple[User, str]:
+async def register_user(
+    email: str, password: str, first_name: str, last_name: str, db: AsyncSession
+) -> tuple[User, str]:
     """
-    Register a new user with email and password.
-    
+    Register a new user with email, password, and name.
+
     Creates default watchlist and portfolio for the user.
     Returns (user, access_token).
-    
+
     Raises:
         UserAlreadyExistsError: If email is already registered
     """
     user_dao = UserDAO.get_instance(db)
-    
+
     # Check if user exists
     existing = await user_dao.find_by_email(email)
     if existing:
         raise UserAlreadyExistsError(f"Email {email} already registered")
-    
+
     # Create user
     hashed_password = get_password_hash(password)
-    user = await user_dao.create_user(email=email, password_hash=hashed_password)
+    user = await user_dao.create_user(
+        email=email,
+        password_hash=hashed_password,
+        first_name=first_name,
+        last_name=last_name,
+    )
     
     # Create default watchlist and portfolio
     watchlist_dao = WatchlistDAO.get_instance(db)

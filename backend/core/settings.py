@@ -30,6 +30,9 @@ class Settings(BaseSettings):
     # Database Configuration
     database_url: str = "postgresql+asyncpg://localhost/boardroom"
 
+    # Redis Configuration
+    redis_url: str = "redis://localhost:6379/0"
+
     model_config = {
         "env_file": ".env",
         "env_file_encoding": "utf-8",

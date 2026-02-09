@@ -91,3 +91,6 @@ export interface AnalysisState {
   vetoed: boolean;
   error: string | null;
 }
+
+// Re-export performance types
+export type { AgentPerformance } from './performance';

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { PerformanceSummary as PerformanceSummaryType } from '@/types/performance';
+import type { PerformanceSummary as PerformanceSummaryType } from '@/types/performance';
+import { fetchAPI } from '@/lib/api';
 
 const PerformanceSummary: React.FC = () => {
   const [summary, setSummary] = useState<PerformanceSummaryType | null>(null);
@@ -9,11 +10,7 @@ const PerformanceSummary: React.FC = () => {
   useEffect(() => {
     const fetchSummary = async () => {
       try {
-        const response = await fetch('/api/performance/summary');
-        if (!response.ok) {
-          throw new Error('Failed to fetch performance summary');
-        }
-        const data = await response.json();
+        const data = await fetchAPI('/api/performance/summary');
         setSummary(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An unknown error occurred');

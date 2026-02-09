@@ -2,7 +2,7 @@ from typing import TypedDict
 
 from openai import AsyncOpenAI
 
-from backend.cache import cached
+from backend.core.cache import cached
 from backend.core.settings import settings
 
 

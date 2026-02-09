@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { AgentAccuracy } from '@/types/performance';
+import type { AgentAccuracy } from '@/types/performance';
+import { fetchAPI } from '@/lib/api';
 
 const AgentLeaderboard: React.FC = () => {
   const [leaderboard, setLeaderboard] = useState<AgentAccuracy[]>([]);
@@ -9,11 +10,7 @@ const AgentLeaderboard: React.FC = () => {
   useEffect(() => {
     const fetchLeaderboard = async () => {
       try {
-        const response = await fetch('/api/performance/agents');
-        if (!response.ok) {
-          throw new Error('Failed to fetch agent leaderboard');
-        }
-        const data = await response.json();
+        const data = await fetchAPI('/api/performance/agents');
         setLeaderboard(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An unknown error occurred');

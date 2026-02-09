@@ -23,7 +23,7 @@ from backend.services.performance_tracking.service import (
 )
 from backend.ai.state.enums import AgentType
 
-router = APIRouter(prefix="/api/performance", tags=["performance"])
+router = APIRouter(prefix="/performance", tags=["performance"])
 
 
 @router.get("/summary")

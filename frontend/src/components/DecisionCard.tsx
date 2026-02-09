@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import type { Decision } from "@/types";
+import type { Decision, AgentPerformance } from "@/types";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   AlertTriangle,
@@ -8,7 +8,6 @@ import {
   MinusCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { AgentPerformance } from '@/types/performance';
 
 interface Props {
   decision: Decision | null;

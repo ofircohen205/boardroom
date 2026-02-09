@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { createChart, IChartApi, ISeriesApi } from 'lightweight-charts';
-import { TimelinePoint } from '@/types/performance';
+import { createChart } from 'lightweight-charts';
+import type { IChartApi, ISeriesApi } from 'lightweight-charts';
+import type { TimelinePoint } from '@/types/performance';
+import { fetchAPI } from '@/lib/api';
 
 const AccuracyChart: React.FC = () => {
   const chartContainerRef = useRef<HTMLDivElement>(null);
@@ -13,11 +15,7 @@ const AccuracyChart: React.FC = () => {
   useEffect(() => {
     const fetchTimeline = async () => {
       try {
-        const response = await fetch('/api/performance/timeline');
-        if (!response.ok) {
-          throw new Error('Failed to fetch performance timeline');
-        }
-        const data = await response.json();
+        const data = await fetchAPI('/api/performance/timeline');
         setTimeline(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An unknown error occurred');

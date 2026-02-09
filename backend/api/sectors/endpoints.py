@@ -7,22 +7,13 @@ from backend.ai.workflow import create_boardroom_graph
 from backend.ai.state.enums import Market
 from backend.ai.tools.sector_data import get_sector_tickers, get_all_sectors
 
-router = APIRouter(prefix="/api/compare", tags=["comparison"])
+from .schemas import CompareRequest, SectorAnalysisRequest
+
+router = APIRouter(prefix="/sectors", tags=["sectors"])
 
 
-class CompareRequest(BaseModel):
-    tickers: list[str] = Field(..., min_length=2, max_length=4, description="2-4 stock tickers to compare")
-    market: Market = Field(default=Market.US, description="Market for all tickers")
-
-
-class SectorAnalysisRequest(BaseModel):
-    sector: str = Field(..., description="Sector name (e.g., 'technology', 'finance')")
-    limit: int = Field(default=5, ge=2, le=8, description="Number of stocks to analyze")
-    market: Market = Field(default=Market.US, description="Market")
-
-
-@router.post("/stocks")
-async def compare_stocks(request: CompareRequest):
+@router.post("/compare")
+async def compare_stocks(request: CompareRequest) -> dict:
     """
     Compare multiple stocks side-by-side.
 
@@ -50,8 +41,8 @@ async def compare_stocks(request: CompareRequest):
     raise HTTPException(status_code=500, detail="Comparison analysis failed")
 
 
-@router.post("/sector")
-async def analyze_sector(request: SectorAnalysisRequest):
+@router.post("/analyze")
+async def analyze_sector(request: SectorAnalysisRequest) -> dict:
     """
     Analyze top stocks in a sector.
 
@@ -75,7 +66,7 @@ async def analyze_sector(request: SectorAnalysisRequest):
     raise HTTPException(status_code=500, detail="Sector analysis failed")
 
 
-@router.get("/sectors")
-async def list_sectors():
+@router.get("/")
+async def list_sectors() -> dict:
     """Get list of available sectors for analysis."""
     return {"sectors": get_all_sectors()}

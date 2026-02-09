@@ -29,9 +29,16 @@ class UserDAO(BaseDAO[User]):
         )
         return result.scalars().first()
 
-    async def create_user(self, email: str, password_hash: str) -> User:
-        """Create a new user with email and hashed password."""
-        return await self.create(email=email, password_hash=password_hash)
+    async def create_user(
+        self, email: str, password_hash: str, first_name: str, last_name: str
+    ) -> User:
+        """Create a new user with email, password, and name."""
+        return await self.create(
+            email=email,
+            password_hash=password_hash,
+            first_name=first_name,
+            last_name=last_name,
+        )
 
     async def get_with_relations(self, user_id: UUID) -> Optional[User]:
         """

@@ -1,38 +1,44 @@
 # Development Docker Compose
 services:
-  boardroom-backend:
+  backend:
     build:
-      context: .
-      dockerfile: backend/Dockerfile
+      context: ..
+      dockerfile: backend/docker/Dockerfile.dev
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql+asyncpg://boardroom:boardroom@boardroom-postgres-db:5432/boardroom
+      - DATABASE_URL=postgresql+asyncpg://boardroom:boardroom@postgres-db:5432/boardroom
+      - REDIS_URL=redis://redis:6379/0
       - LLM_PROVIDER=openai
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
       - ALPHA_VANTAGE_API_KEY=${ALPHA_VANTAGE_API_KEY}
     depends_on:
-      boardroom-postgres-db:
+      postgres-db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     volumes:
-      - ./backend:/app/backend
+      - ../backend:/app/backend
+      - ../alembic:/app/alembic
+      - ../alembic.ini:/app/alembic.ini
     command: uv run uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
 
-  boardroom-frontend:
+  frontend:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile.dev
+      context: ../frontend
+      dockerfile: docker/Dockerfile.dev
     ports:
       - "5173:5173"
     volumes:
-      - ./frontend:/app
+      - ../frontend:/app
       - /app/node_modules
     environment:
+      - VITE_API_URL=http://localhost:8000
       - VITE_WS_URL=ws://localhost:8000/ws
 
-  boardroom-postgres-db:
+  postgres-db:
     image: postgres:16-alpine
     environment:
       - POSTGRES_USER=boardroom
@@ -48,5 +54,19 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    command: redis-server --appendonly yes
+
 volumes:
   postgres_data:
+  redis_data:

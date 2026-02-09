@@ -39,8 +39,8 @@ make frontend                                  # Start frontend dev server
 make db-migrate                                # Run Alembic migrations
 make db-revision MESSAGE="description"         # Create new migration
 
-# Full System
-make up                                        # Start all services via Docker Compose
+# Full System (Docker)
+make dev                                       # Start all services via Docker Compose
 make down                                      # Stop all services
 ```
 
@@ -305,9 +305,14 @@ from backend.ai.tools.market_data import get_market_data_client
 - Charts use lightweight-charts library (TradingView)
 
 ### Docker Development
+- **Docker files structure:**
+  - Compose files: `docker/docker-compose.{dev,prod}.yml`
+  - Backend Dockerfiles: `backend/docker/Dockerfile.{dev,prod}`
+  - Frontend Dockerfiles: `frontend/docker/Dockerfile.{dev,prod}`
 - Frontend uses anonymous volume for node_modules
-- After adding npm deps, rebuild: `make frontend-rebuild`
+- After adding npm deps: `docker compose -f docker/docker-compose.dev.yml up -d --build boardroom-frontend`
 - Backend runs with hot reload via uvicorn --reload
+- Redis cache available at `boardroom-redis:6379` in Docker network
 
 ## Common Tasks
 
@@ -411,7 +416,7 @@ uv run pytest tests/test_agents.py::test_fundamental_agent -v
 
 ### Frontend build errors
 - Delete `node_modules` and reinstall: `rm -rf frontend/node_modules && cd frontend && npm install`
-- If using Docker, rebuild with `--renew-anon-volumes`: `make frontend-rebuild`
+- If using Docker, rebuild: `docker compose -f docker/docker-compose.dev.yml up -d --build --force-recreate boardroom-frontend`
 
 ### Tests failing
 - Ensure test database is separate from dev: use `TEST_DATABASE_URL`

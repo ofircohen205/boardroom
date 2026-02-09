@@ -23,6 +23,9 @@ api_router.include_router(portfolios_router)
 api_router.include_router(sectors_router)
 api_router.include_router(utils_router)
 api_router.include_router(watchlists_router)
-api_router.include_router(websocket_router)
 
-__all__ = ["api_router"]
+# WebSocket router (separate from /api prefix)
+websocket_router_root = APIRouter(prefix="/ws")
+websocket_router_root.include_router(websocket_router)
+
+__all__ = ["api_router", "websocket_router_root"]

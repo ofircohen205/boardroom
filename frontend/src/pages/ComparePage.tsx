@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import type { ComparisonResult, Sector } from "@/types/comparison";
 import { RelativePerformanceChart } from "@/components/RelativePerformanceChart";
 import { ComparisonTable } from "@/components/ComparisonTable";
+import { fetchAPI } from "@/lib/api";
 
 export function ComparePage() {
   const navigate = useNavigate();
@@ -54,8 +55,7 @@ export function ComparePage() {
 
   // Fetch available sectors
   useEffect(() => {
-    fetch("/api/compare/sectors")
-      .then((res) => res.json())
+    fetchAPI("/api/compare/sectors")
       .then((data) => setSectors(data.sectors || []))
       .catch(console.error);
   }, []);

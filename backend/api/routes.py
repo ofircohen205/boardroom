@@ -2,7 +2,7 @@
 """Utility endpoints (markets, cache, stock search)."""
 from fastapi import APIRouter
 
-from backend.cache import get_cache
+from backend.core.cache import get_cache
 from backend.ai.state.enums import Market
 from backend.ai.tools.stock_search import search_stocks
 

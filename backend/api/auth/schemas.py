@@ -8,6 +8,8 @@ class UserCreate(BaseModel):
     """User registration request."""
     email: EmailStr
     password: str
+    first_name: str
+    last_name: str
 
 
 class Token(BaseModel):
@@ -20,4 +22,6 @@ class UserResponse(BaseModel):
     """User information response."""
     id: str
     email: str
+    first_name: str
+    last_name: str
     created_at: datetime

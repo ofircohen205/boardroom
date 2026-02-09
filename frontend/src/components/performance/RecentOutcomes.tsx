@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { RecentOutcome } from '@/types/performance';
+import type { RecentOutcome } from '@/types/performance';
+import { fetchAPI } from '@/lib/api';
 
 const RecentOutcomes: React.FC = () => {
   const [outcomes, setOutcomes] = useState<RecentOutcome[]>([]);
@@ -9,11 +10,7 @@ const RecentOutcomes: React.FC = () => {
   useEffect(() => {
     const fetchOutcomes = async () => {
       try {
-        const response = await fetch('/api/performance/recent');
-        if (!response.ok) {
-          throw new Error('Failed to fetch recent outcomes');
-        }
-        const data = await response.json();
+        const data = await fetchAPI('/api/performance/recent');
         setOutcomes(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An unknown error occurred');

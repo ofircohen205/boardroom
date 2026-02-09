@@ -1,3 +1,5 @@
+# backend/api/websocket/endpoints.py
+"""WebSocket endpoint for real-time analysis streaming."""
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -17,6 +19,9 @@ from backend.ai.tools.market_data import get_market_data_client
 
 logger = get_logger(__name__)
 
+router = APIRouter(tags=["websocket"])
+
+
 async def get_current_user_ws(token: str, db: AsyncSession) -> User | None:
     if not token:
         return None
@@ -27,7 +32,7 @@ async def get_current_user_ws(token: str, db: AsyncSession) -> User | None:
             return None
     except JWTError:
         return None
-    
+
     result = await db.execute(select(User).filter(User.email == email))
     return result.scalars().first()
 
@@ -71,11 +76,11 @@ async def _calculate_portfolio_sector_weight(db: AsyncSession, user: User, ticke
                 logger.error(f"Failed to get market data for portfolio position {position.ticker}: {e}")
                 # If we can't get price, we can't value the portfolio accurately. Skip this position.
                 continue
-        
+
         # 4. Calculate weight
         if total_portfolio_value == 0:
             return 0.0
-        
+
         weight = (sector_portfolio_value / total_portfolio_value)
         logger.info(f"Calculated portfolio sector weight for user {user.id} and sector '{target_sector}': {weight:.2f}")
         return weight
@@ -85,13 +90,15 @@ async def _calculate_portfolio_sector_weight(db: AsyncSession, user: User, ticke
         return 0.0
 
 
+@router.websocket("/analyze")
 async def websocket_endpoint(
     websocket: WebSocket,
     token: str = Query(None),
     db: AsyncSession = Depends(get_db)
 ):
+    """WebSocket endpoint for real-time stock analysis streaming."""
     await websocket.accept()
-    
+
     user = await get_current_user_ws(token, db)
     # Allow anonymous access for now, but with limited functionality
     # if not user:
@@ -155,14 +162,14 @@ async def websocket_endpoint(
                     "data": _serialize(event["data"]),
                     "timestamp": datetime.now().isoformat(),
                 })
-                
+
                 # Persistence logic (only for logged-in users)
                 if not user:
                     continue
 
                 evt_type = event["type"]
                 evt_data = event["data"]
-                
+
                 if evt_type == WSMessageType.ANALYSIS_STARTED:
                     current_session_id = uuid.UUID(evt_data["audit_id"])
                     new_session = AnalysisSession(
@@ -174,7 +181,7 @@ async def websocket_endpoint(
                     )
                     db.add(new_session)
                     await db.commit()
-                    
+
                 elif evt_type == WSMessageType.AGENT_COMPLETED and current_session_id:
                     agent_type = event["agent"]
                     report = AgentReport(
@@ -184,7 +191,7 @@ async def websocket_endpoint(
                     )
                     db.add(report)
                     await db.commit()
-                    
+
                 elif evt_type == WSMessageType.DECISION and current_session_id:
                     action = Action(evt_data.get("action"))
                     decision = FinalDecision(
@@ -202,7 +209,7 @@ async def websocket_endpoint(
 
                     await db.commit()
                     await create_analysis_outcome(db, current_session_id)
-                
+
                 elif evt_type == WSMessageType.VETO and current_session_id:
                      decision = FinalDecision(
                         session_id=current_session_id,

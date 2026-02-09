@@ -69,15 +69,6 @@ function App() {
           </div>
         </div>
       </Router>
-                <Route path="/performance" element={
-                    <ProtectedRoute>
-                        <PerformancePage />
-                    </ProtectedRoute>
-                } />
-            </Routes>
-          </div>
-        </div>
-      </Router>
     </AuthProvider>
   );
 }
