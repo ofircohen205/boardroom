@@ -12,7 +12,7 @@ from backend.ai.state.enums import Market, AgentType, WSMessageType, AnalysisMod
 from backend.core.settings import settings
 from backend.db.models import User, AnalysisSession, AgentReport, FinalDecision, Portfolio, Position
 from backend.db.database import get_db
-from backend.services.outcome_service import create_analysis_outcome
+from backend.services.performance_tracking.service import create_analysis_outcome
 from backend.ai.tools.market_data import get_market_data_client
 
 logger = logging.getLogger(__name__)

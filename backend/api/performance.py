@@ -17,7 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.db.database import get_db
 from backend.db.models import AgentAccuracy, AnalysisOutcome
 from backend.jobs.scheduler import get_scheduler
-from backend.services.outcome_service import (
+from backend.services.performance_tracking.service import (
     get_performance_summary,
     get_recent_outcomes,
 )

@@ -1,0 +1,15 @@
+# backend/services/auth/exceptions.py
+"""Authentication service exceptions."""
+from backend.core.exceptions import BoardroomException
+
+
+class UserAlreadyExistsError(BoardroomException):
+    """Raised when trying to register with an existing email."""
+    def __init__(self, message: str):
+        super().__init__(message, status_code=400)
+
+
+class InvalidCredentialsError(BoardroomException):
+    """Raised when login credentials are invalid."""
+    def __init__(self, message: str):
+        super().__init__(message, status_code=401)
