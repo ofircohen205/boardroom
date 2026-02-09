@@ -1,7 +1,7 @@
 import pytest
 from datetime import datetime
 from uuid import uuid4
-from backend.dao.models import AnalysisSession, AgentReport, FinalDecision
+from backend.db.models import AnalysisSession, AgentReport, FinalDecision
 from backend.state.enums import Market, AgentType, Action
 
 

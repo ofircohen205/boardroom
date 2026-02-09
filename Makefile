@@ -36,7 +36,7 @@ help:
 
 # Development
 dev:
-	docker compose up -d --build --force-recreate
+	docker compose up -d --build --force-recreate -V
 	@echo "Development environment started"
 	@echo "  Frontend: http://localhost:5173"
 	@echo "  Backend:  http://localhost:8000"

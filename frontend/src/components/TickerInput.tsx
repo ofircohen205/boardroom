@@ -9,10 +9,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Loader2, Search, ArrowRight } from "lucide-react";
+import { PresetSelector, type AnalysisMode } from "@/components/PresetSelector";
 
 interface Props {
   onAnalyze: (ticker: string, market: Market) => void;
   isLoading: boolean;
+  analysisMode: AnalysisMode;
+  onModeChange: (mode: AnalysisMode) => void;
 }
 
 interface StockSuggestion {
@@ -21,7 +24,7 @@ interface StockSuggestion {
   exchange: string;
 }
 
-export function TickerInput({ onAnalyze, isLoading }: Props) {
+export function TickerInput({ onAnalyze, isLoading, analysisMode, onModeChange }: Props) {
   const [ticker, setTicker] = useState("");
   const [market, setMarket] = useState<Market>("US");
   const [isFocused, setIsFocused] = useState(false);
@@ -128,14 +131,15 @@ export function TickerInput({ onAnalyze, isLoading }: Props) {
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className={`relative flex items-center gap-4 p-2 pl-4 rounded-2xl transition-all duration-300 border ${
-        isFocused
-          ? "bg-white/10 border-primary/50 shadow-[0_0_30px_rgba(var(--primary),0.2)]"
-          : "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20"
-      }`}
-    >
+    <div className="space-y-4">
+      <form
+        onSubmit={handleSubmit}
+        className={`relative flex items-center gap-4 p-2 pl-4 rounded-2xl transition-all duration-300 border ${
+          isFocused
+            ? "bg-white/10 border-primary/50 shadow-[0_0_30px_rgba(var(--primary),0.2)]"
+            : "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20"
+        }`}
+      >
       <Search
         className={`w-5 h-5 transition-colors ${isFocused ? "text-primary" : "text-muted-foreground"}`}
       />
@@ -240,6 +244,16 @@ export function TickerInput({ onAnalyze, isLoading }: Props) {
         </Button>
       </div>
     </form>
+
+    {/* Analysis Mode Selector */}
+    <div className="flex justify-center">
+      <PresetSelector
+        value={analysisMode}
+        onChange={onModeChange}
+        disabled={isLoading}
+      />
+    </div>
+  </div>
   );
 }
 

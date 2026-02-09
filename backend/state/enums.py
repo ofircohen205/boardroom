@@ -34,10 +34,18 @@ class AgentType(str, Enum):
     CHAIRPERSON = "chairperson"
 
 
+class AnalysisMode(str, Enum):
+    QUICK = "quick"
+    STANDARD = "standard"
+    DEEP = "deep"
+
+
 class WSMessageType(str, Enum):
     ANALYSIS_STARTED = "analysis_started"
     AGENT_STARTED = "agent_started"
     AGENT_COMPLETED = "agent_completed"
+    AGENT_ERROR = "agent_error"
     VETO = "veto"
     DECISION = "decision"
+    COMPARISON_RESULT = "comparison_result"
     ERROR = "error"

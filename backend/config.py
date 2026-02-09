@@ -28,6 +28,12 @@ class Settings(BaseSettings):
     # Search
     exa_api_key: str = ""
 
+    # Auth
+    jwt_secret: str = "secret"
+    algorithm: str = "HS256"
+    access_token_expire_minutes: int = 30
+    api_key_encryption_key: str = "a_very_secret_key_that_should_be_32_bytes"
+
     # Database
     database_url: str = "postgresql+asyncpg://localhost/boardroom"
 

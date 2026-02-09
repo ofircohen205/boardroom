@@ -7,7 +7,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql+asyncpg://boardroom:boardroom@db:5432/boardroom
+      - DATABASE_URL=postgresql+asyncpg://boardroom:boardroom@boardroom-postgres-db:5432/boardroom
       - LLM_PROVIDER=openai
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - OPENAI_API_KEY=${OPENAI_API_KEY}

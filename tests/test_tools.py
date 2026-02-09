@@ -4,7 +4,7 @@ from backend.tools.market_data import (
     get_market_data_client,
 )
 from backend.state.enums import Market
-from backend.config import MarketDataProvider
+from backend.core.enums import MarketDataProvider
 
 
 def test_get_market_data_client_yahoo():

@@ -5,7 +5,8 @@ import anthropic
 import openai
 from google import genai
 
-from backend.config import LLMProvider, settings
+from backend.core.enums import LLMProvider
+from backend.core.settings import settings
 
 
 class BaseLLMClient(ABC):

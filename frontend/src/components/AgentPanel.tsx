@@ -1,7 +1,8 @@
-import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Loader2, CheckCircle2, AlertCircle, RotateCcw } from "lucide-react";
 import type { AgentType } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -10,9 +11,12 @@ interface Props {
   icon: React.ElementType;
   isActive: boolean;
   isCompleted: boolean;
+  isFailed: boolean;
+  errorMessage?: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: any;
   index: number;
+  onRetry?: () => void;
 }
 
 export function AgentPanel({
@@ -21,8 +25,11 @@ export function AgentPanel({
   icon: Icon,
   isActive,
   isCompleted,
+  isFailed,
+  errorMessage,
   data,
   index,
+  onRetry,
 }: Props) {
   return (
     <Card
@@ -30,7 +37,8 @@ export function AgentPanel({
         "glass transition-all duration-500 overflow-hidden relative group border-white/10",
         isActive && "border-primary/50 shadow-[0_0_40px_-10px] shadow-primary/30 bg-primary/5",
         isCompleted && "border-primary/30 bg-primary/5",
-        !isActive && !isCompleted && !data && "opacity-40 grayscale hover:grayscale-0 hover:opacity-80 hover:bg-white/5",
+        isFailed && "border-destructive/50 bg-destructive/5",
+        !isActive && !isCompleted && !isFailed && !data && "opacity-40 grayscale hover:grayscale-0 hover:opacity-80 hover:bg-white/5",
       )}
       style={{ animationDelay: `${index * 100}ms` }}
     >
@@ -46,12 +54,13 @@ export function AgentPanel({
               "flex h-9 w-9 items-center justify-center rounded-lg transition-colors border shadow-inner",
               isActive && "bg-primary/20 text-primary border-primary/30 animate-pulse-glow",
               isCompleted && "bg-primary/10 text-primary border-primary/20",
-              !isActive && !isCompleted && "bg-white/5 text-muted-foreground border-white/10",
+              isFailed && "bg-destructive/20 text-destructive border-destructive/30",
+              !isActive && !isCompleted && !isFailed && "bg-white/5 text-muted-foreground border-white/10",
             )}
           >
             <Icon className="h-4 w-4" />
           </div>
-          <span className={cn("transition-colors font-semibold", isActive ? "text-foreground" : "text-muted-foreground")}>
+          <span className={cn("transition-colors font-semibold", isActive ? "text-foreground" : isFailed ? "text-destructive" : "text-muted-foreground")}>
             {title}
           </span>
         </CardTitle>
@@ -66,6 +75,12 @@ export function AgentPanel({
             <div className="rounded-full bg-success/20 p-1 ring-1 ring-success/30">
               <CheckCircle2 className="h-3.5 w-3.5 text-success" />
             </div>
+          )}
+          {isFailed && (
+            <Badge variant="outline" className="gap-1.5 border-destructive/30 text-destructive bg-destructive/10 text-[10px] px-2 py-0.5 font-medium">
+              <AlertCircle className="h-3 w-3" />
+              FAILED
+            </Badge>
           )}
         </div>
       </CardHeader>
@@ -187,8 +202,34 @@ export function AgentPanel({
           </div>
         )}
 
+        {/* Error state */}
+        {isFailed && errorMessage && (
+          <div className="animate-fade-up">
+            <div className="bg-destructive/10 rounded-lg p-4 border border-destructive/20 space-y-3">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-destructive mb-1">Analysis Failed</p>
+                  <p className="text-xs text-destructive/80 font-mono leading-relaxed">{errorMessage}</p>
+                </div>
+              </div>
+              {onRetry && (
+                <Button
+                  onClick={onRetry}
+                  variant="outline"
+                  size="sm"
+                  className="w-full border-destructive/30 text-destructive hover:bg-destructive/20 hover:text-destructive gap-2"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  Retry Analysis
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Idle state */}
-        {!isActive && !data && (
+        {!isActive && !isFailed && !data && (
           <div className="flex flex-col items-center justify-center py-8 text-muted-foreground/30">
             <div className="w-10 h-10 rounded-full border border-dashed border-current flex items-center justify-center mb-2">
               <span className="text-xs font-mono">{index + 1}</span>

@@ -19,6 +19,12 @@ dependencies = [
     "pydantic-settings>=2.6.0",
     "httpx>=0.28.0",
     "numpy>=2.0.0",
+    "python-jose[cryptography]>=3.3.0",
+    "passlib[bcrypt]>=1.7.0",
+    "loguru>=0.7.0",
+    "python-dotenv>=1.0.0",
+    "python-multipart>=0.0.9",
+    "pytest>=9.0.2",
 ]
 
 [project.optional-dependencies]

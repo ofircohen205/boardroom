@@ -6,7 +6,7 @@ from backend.agents.base import (
     GeminiClient,
     get_llm_client,
 )
-from backend.config import LLMProvider
+from backend.core.enums import LLMProvider
 
 
 def test_get_llm_client_anthropic():

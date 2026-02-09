@@ -6,7 +6,8 @@ import httpx
 import yfinance as yf
 
 from backend.cache import cached
-from backend.config import MarketDataProvider, settings
+from backend.core.enums import MarketDataProvider
+from backend.core.settings import settings
 from backend.state.enums import Market
 
 logger = logging.getLogger(__name__)

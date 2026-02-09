@@ -1,3 +1,4 @@
+import React, { useEffect, useState } from 'react';
 import type { Decision } from "@/types";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -7,6 +8,7 @@ import {
   MinusCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AgentPerformance } from '@/types/performance';
 
 interface Props {
   decision: Decision | null;
@@ -45,6 +47,25 @@ const actionConfig = {
 } as const;
 
 export function DecisionCard({ decision, vetoed, vetoReason }: Props) {
+  const [performance, setPerformance] = useState<AgentPerformance | null>(null);
+
+  useEffect(() => {
+    if (decision) {
+      const fetchPerformance = async () => {
+        try {
+          const response = await fetch(`/api/performance/agent/chairperson`);
+          if (response.ok) {
+            const data = await response.json();
+            setPerformance(data);
+          }
+        } catch (error) {
+          console.error("Failed to fetch agent performance", error);
+        }
+      };
+      fetchPerformance();
+    }
+  }, [decision]);
+
   if (vetoed) {
     return (
       <Card className="glass animate-fade-up border-destructive/40 bg-gradient-to-br from-destructive/10 to-transparent overflow-hidden relative">
@@ -76,6 +97,7 @@ export function DecisionCard({ decision, vetoed, vetoReason }: Props) {
   const config = actionConfig[decision.action];
   const Icon = config.icon;
   const confidence = Math.round(decision.confidence * 100);
+  const trackRecord = performance?.action_accuracy?.[decision.action];
 
   return (
     <Card
@@ -149,6 +171,12 @@ export function DecisionCard({ decision, vetoed, vetoReason }: Props) {
             <p className="text-base text-foreground/90 leading-relaxed font-light">
               {decision.rationale}
             </p>
+          </div>
+        )}
+
+        {trackRecord !== undefined && (
+          <div className="mt-4 text-xs text-center text-muted-foreground">
+            Chairperson's {decision.action} calls have been correct {(trackRecord * 100).toFixed(0)}% of the time.
           </div>
         )}
       </div>

@@ -3,7 +3,7 @@ from typing import TypedDict
 from openai import AsyncOpenAI
 
 from backend.cache import cached
-from backend.config import settings
+from backend.core.settings import settings
 
 
 class SearchResult(TypedDict):

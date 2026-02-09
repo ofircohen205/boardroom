@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { TickerInput } from "@/components/TickerInput";
 import { AgentPanel } from "@/components/AgentPanel";
 import { DecisionCard } from "@/components/DecisionCard";
@@ -5,7 +6,13 @@ import { NewsFeed } from "@/components/NewsFeed";
 import { StockChart } from "@/components/StockChart";
 import { AgentPipeline } from "@/components/AgentPipeline";
 import { useWebSocket } from "@/hooks/useWebSocket";
+import { WatchlistSidebar } from "@/components/WatchlistSidebar";
+import { AnalysisHistory } from "@/components/AnalysisHistory";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
+import type { AnalysisMode } from "@/components/PresetSelector";
 import {
   AlertCircle,
   BarChart3,
@@ -13,161 +20,257 @@ import {
   TrendingUp,
   Shield,
   Zap,
+  Briefcase,
+  History,
+  LogOut,
+  Menu,
+  GitCompare
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function Dashboard() {
-  const { state, analyze } = useWebSocket();
+  const { state, analyze, retry } = useWebSocket();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [showHistory, setShowHistory] = useState(false);
+  const [analysisMode, setAnalysisMode] = useState<AnalysisMode>("standard");
 
   const isLoading = state.activeAgents.size > 0;
   const hasStarted = state.ticker !== null;
 
+  const handleLogout = () => {
+      logout();
+      navigate('/auth');
+  };
+
+  const handleTickerSelect = (ticker: string) => {
+      analyze(ticker, "US", analysisMode);
+      setShowHistory(false);
+  };
+
+  const handleAnalyze = (ticker: string, market: "US" | "TASE") => {
+      analyze(ticker, market, analysisMode);
+      setShowHistory(false);
+  };
+
   return (
-    <div className={cn(
-      "min-h-screen transition-all duration-700 ease-in-out flex flex-col",
-      hasStarted ? "justify-start pt-8" : "justify-center"
-    )}>
-      
-      <div className="mx-auto w-full max-w-7xl px-6 relative z-10 text-center sm:text-left">
-        {/* Header / Hero Section */}
-        <header className={cn(
-          "transition-all duration-700 ease-in-out flex flex-col gap-6",
-          hasStarted 
-            ? "flex-row items-center justify-between mb-8 opacity-100 translate-y-0" 
-            : "items-center mb-12 scale-100"
-        )}>
-          <div className={cn("transition-all duration-700", hasStarted ? "" : "flex flex-col items-center")}>
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.3em] text-primary mb-3">
-              <Zap className="w-3 h-3 fill-primary" />
-              <span>AI Command Center</span>
-            </div>
-            <h1 className={cn(
-              "font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-white via-white/90 to-white/50",
-              hasStarted ? "text-3xl" : "text-5xl sm:text-7xl mb-4"
-            )}>
-              The Boardroom
-            </h1>
-            {!hasStarted && (
-               <p className="text-lg text-muted-foreground max-w-lg mx-auto leading-relaxed text-center">
-                Orchestrate a team of autonomous AI agents to analyze market data, sentiment, and risk in real-time.
-              </p>
-            )}
-          </div>
+    <div className="flex h-screen overflow-hidden bg-background">
+      {/* Sidebar - Collapsible */}
+      <div className={cn(
+          "transition-all duration-300 border-r border-white/10 bg-card/10 backdrop-blur-xl",
+          sidebarOpen ? "w-80" : "w-0 overflow-hidden"
+      )}>
+          <WatchlistSidebar onSelectTicker={handleTickerSelect} />
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col h-full overflow-hidden relative">
           
-          <div className={cn(
-             "transition-all duration-700 delay-100",
-             !hasStarted && "w-full max-w-3xl scale-110 mt-8"
-          )}>
-            <TickerInput onAnalyze={analyze} isLoading={isLoading} />
-          </div>
+        {/* Header */}
+        <header className="h-14 border-b border-white/10 bg-card/30 backdrop-blur-md px-4 flex items-center justify-between z-20 shrink-0">
+            <div className="flex items-center gap-4">
+                <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(!sidebarOpen)}>
+                    <Menu className="w-4 h-4" />
+                </Button>
+                <div className="flex items-center gap-2">
+                    <Zap className="w-5 h-5 text-primary fill-primary" />
+                    <span className="font-bold tracking-tight hidden sm:inline-block">Boardroom</span>
+                </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+                <Button variant="ghost" size="sm" onClick={() => navigate('/compare')} className="gap-2">
+                    <GitCompare className="w-4 h-4"/> <span className="hidden sm:inline">Compare</span>
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => navigate('/portfolio')} className="gap-2">
+                    <Briefcase className="w-4 h-4"/> <span className="hidden sm:inline">Portfolio</span>
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setShowHistory(!showHistory)} className={cn("gap-2", showHistory && "bg-accent")}>
+                    <History className="w-4 h-4"/> <span className="hidden sm:inline">History</span>
+                </Button>
+                <div className="h-4 w-[1px] bg-white/10 mx-2"></div>
+                <div className="text-xs text-muted-foreground mr-2 font-mono hidden sm:block">{user?.email}</div>
+                <Button variant="ghost" size="icon" onClick={handleLogout} title="Logout">
+                    <LogOut className="w-4 h-4 text-destructive"/>
+                </Button>
+            </div>
         </header>
 
-        {/* Active Dashboard Content */}
-        <div className={cn(
-          "transition-all duration-1000 ease-out",
-          hasStarted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-20 hidden"
-        )}>
-           <div className="space-y-8 pb-20">
-            {/* Agent Progress Pipeline */}
-            <div className="mb-8">
-               <AgentPipeline
-                activeAgents={state.activeAgents}
-                completedAgents={state.completedAgents}
-                hasDecision={state.decision !== null || state.vetoed}
-              />
-            </div>
+        {/* Scrollable Main Area */}
+        <main className="flex-1 overflow-auto p-6 relative">
+            
+            {showHistory ? (
+                 <div className="max-w-5xl mx-auto h-[calc(100vh-140px)]">
+                    <AnalysisHistory ticker={state.ticker || undefined} />
+                 </div>
+            ) : (
+                <div className={cn(
+                    "min-h-full transition-all duration-700 ease-in-out flex flex-col",
+                    hasStarted ? "justify-start" : "justify-center"
+                )}>
+                    {/* Hero / Search */}
+                    <div className={cn(
+                        "mx-auto w-full max-w-4xl transition-all duration-700 ease-in-out",
+                        hasStarted ? "mb-8" : "mb-0 text-center"
+                    )}>
+                        {!hasStarted && (
+                             <div className="mb-10 space-y-4">
+                                <h1 className="text-5xl sm:text-7xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-white via-white/90 to-white/50 animate-fade-up">
+                                    The Boardroom
+                                </h1>
+                                <p className="text-muted-foreground text-lg max-w-2xl mx-auto leading-relaxed animate-fade-up delay-100">
+                                    Orchestrate a team of autonomous AI agents to analyze market data, sentiment, and risk in real-time.
+                                </p>
+                             </div>
+                        )}
+                        
+                        <div className={cn("transition-all duration-500 delay-200", hasStarted ? "" : "scale-110")}>
+                            <TickerInput
+                                onAnalyze={handleAnalyze}
+                                isLoading={isLoading}
+                                analysisMode={analysisMode}
+                                onModeChange={setAnalysisMode}
+                            />
+                        </div>
+                    </div>
 
-            {/* Verdict & Figure Section - Only visible when finished */}
-            {(state.decision !== null || state.vetoed) && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 animate-fade-up">
-                  <div className="h-full">
-                    <DecisionCard
-                      decision={state.decision}
-                      vetoed={state.vetoed}
-                      vetoReason={state.risk?.veto_reason}
-                    />
-                  </div>
-                  <div className="h-full glass rounded-3xl overflow-hidden p-1 min-h-[300px] border-white/5">
-                    {state.technical?.price_history ? (
-                        <StockChart
-                          priceHistory={state.technical.price_history}
-                          ticker={state.ticker!}
+                    {/* Active Analysis View */}
+                    <div className={cn(
+                        "transition-all duration-1000 ease-out max-w-7xl mx-auto w-full space-y-8 pb-20",
+                        hasStarted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-20 hidden"
+                    )}>
+                        {/* Pipeline Progress */}
+                        <AgentPipeline
+                            activeAgents={state.activeAgents}
+                            completedAgents={state.completedAgents}
+                            hasDecision={state.decision !== null || state.vetoed}
                         />
-                    ) : (
-                      <div className="h-full flex items-center justify-center text-muted-foreground/20 text-sm font-mono uppercase tracking-widest">
-                        Market Data Unavailable
-                      </div>
-                    )}
-                  </div>
-              </div>
+
+                        {/* Results Area */}
+                        {(state.decision !== null || state.vetoed) && (
+                           <div className="space-y-4 animate-fade-up">
+                               {/* Quick Actions */}
+                               <div className="flex justify-end">
+                                   <Button
+                                       variant="outline"
+                                       size="sm"
+                                       onClick={() => navigate(`/compare?ticker=${state.ticker}`)}
+                                       className="gap-2"
+                                   >
+                                       <GitCompare className="w-4 h-4"/>
+                                       Compare with others
+                                   </Button>
+                               </div>
+
+                               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                   <div className="h-full">
+                                       <DecisionCard
+                                           decision={state.decision}
+                                           vetoed={state.vetoed}
+                                           vetoReason={state.risk?.veto_reason}
+                                       />
+                                   </div>
+                               <div className="h-full glass rounded-3xl overflow-hidden p-1 min-h-[300px] border-white/5">
+                                   {state.technical?.price_history ? (
+                                       <StockChart
+                                           priceHistory={state.technical.price_history}
+                                           ticker={state.ticker!}
+                                           ma50={state.technical.ma_50}
+                                           ma200={state.technical.ma_200}
+                                           rsi={state.technical.rsi}
+                                       />
+                                   ) : (
+                                       <div className="h-full flex items-center justify-center text-muted-foreground/20 text-sm font-mono uppercase tracking-widest">
+                                           Market Data Unavailable
+                                       </div>
+                                   )}
+                               </div>
+                           </div>
+                           </div>
+                        )}
+
+                        {/* Agents Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <AgentPanel
+                                agent="fundamental"
+                                title="Fundamental"
+                                icon={BarChart3}
+                                isActive={state.activeAgents.has("fundamental")}
+                                isCompleted={state.completedAgents.has("fundamental")}
+                                isFailed={state.failedAgents.has("fundamental")}
+                                errorMessage={state.failedAgents.get("fundamental")}
+                                data={state.fundamental}
+                                index={0}
+                                onRetry={retry}
+                            />
+                            <AgentPanel
+                                agent="sentiment"
+                                title="Sentiment"
+                                icon={MessageSquare}
+                                isActive={state.activeAgents.has("sentiment")}
+                                isCompleted={state.completedAgents.has("sentiment")}
+                                isFailed={state.failedAgents.has("sentiment")}
+                                errorMessage={state.failedAgents.get("sentiment")}
+                                data={state.sentiment}
+                                index={1}
+                                onRetry={retry}
+                            />
+                            <AgentPanel
+                                agent="technical"
+                                title="Technical"
+                                icon={TrendingUp}
+                                isActive={state.activeAgents.has("technical")}
+                                isCompleted={state.completedAgents.has("technical")}
+                                isFailed={state.failedAgents.has("technical")}
+                                errorMessage={state.failedAgents.get("technical")}
+                                data={state.technical}
+                                index={2}
+                                onRetry={retry}
+                            />
+                            <AgentPanel
+                                agent="risk"
+                                title="Risk"
+                                icon={Shield}
+                                isActive={state.activeAgents.has("risk")}
+                                isCompleted={state.completedAgents.has("risk")}
+                                isFailed={state.failedAgents.has("risk")}
+                                errorMessage={state.failedAgents.get("risk")}
+                                data={state.risk}
+                                index={3}
+                                onRetry={retry}
+                            />
+                        </div>
+
+                         {/* News Feed */}
+                         {state.sentiment && (
+                            <div className="glass rounded-xl p-6 mb-8">
+                                <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-4 flex items-center gap-2">
+                                    <MessageSquare className="w-4 h-4" />
+                                    Market Intelligence
+                                </h3>
+                                <NewsFeed
+                                    newsItems={state.sentiment.news_items}
+                                    socialMentions={state.sentiment.social_mentions}
+                                />
+                            </div>
+                        )}
+                    </div>
+                </div>
             )}
+        </main>
 
-            {/* Agents Grid Section */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                <AgentPanel
-                  agent="fundamental"
-                  title="Fundamental"
-                  icon={BarChart3}
-                  isActive={state.activeAgents.has("fundamental")}
-                  isCompleted={state.completedAgents.has("fundamental")}
-                  data={state.fundamental}
-                  index={0}
-                />
-                <AgentPanel
-                  agent="sentiment"
-                  title="Sentiment"
-                  icon={MessageSquare}
-                  isActive={state.activeAgents.has("sentiment")}
-                  isCompleted={state.completedAgents.has("sentiment")}
-                  data={state.sentiment}
-                  index={1}
-                />
-                <AgentPanel
-                  agent="technical"
-                  title="Technical"
-                  icon={TrendingUp}
-                  isActive={state.activeAgents.has("technical")}
-                  isCompleted={state.completedAgents.has("technical")}
-                  data={state.technical}
-                  index={2}
-                />
-                <AgentPanel
-                  agent="risk"
-                  title="Risk"
-                  icon={Shield}
-                  isActive={state.activeAgents.has("risk")}
-                  isCompleted={state.completedAgents.has("risk")}
-                  data={state.risk}
-                  index={3}
-                />
-            </div>
-
-            {/* Bottom Row: News Feed (Full Width) */}
-            {state.sentiment && (
-              <div className="glass rounded-xl p-6">
-                <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-4 flex items-center gap-2">
-                  <MessageSquare className="w-4 h-4" />
-                  Market Intelligence
-                </h3>
-                <NewsFeed
-                  newsItems={state.sentiment.news_items}
-                  socialMentions={state.sentiment.social_mentions}
-                />
-              </div>
-            )}
-           </div>
-        </div>
-
-        {/* Error State */}
+        {/* Error Alert */}
         {state.error && (
-          <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 animate-fade-up">
-            <Alert variant="destructive" className="bg-destructive/10 border-destructive/50 text-destructive shadow-2xl backdrop-blur-xl">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription className="font-semibold">{state.error}</AlertDescription>
-            </Alert>
-          </div>
+            <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 animate-fade-up">
+                <Alert variant="destructive" className="bg-destructive/10 border-destructive/50 text-destructive shadow-2xl backdrop-blur-xl">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription className="font-semibold">{state.error}</AlertDescription>
+                </Alert>
+            </div>
         )}
       </div>
     </div>
   );
 }
+
