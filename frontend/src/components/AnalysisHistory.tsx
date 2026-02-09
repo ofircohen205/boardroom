@@ -43,7 +43,6 @@ export function AnalysisHistory({ ticker }: { ticker?: string }) {
     if (token) fetchHistory();
   }, [token, fetchHistory]);
 
-
   const getDecisionIcon = (decision: string | null) => {
       switch (decision) {
           case 'buy': return <ArrowUpCircle className="w-4 h-4 text-green-500" />;
