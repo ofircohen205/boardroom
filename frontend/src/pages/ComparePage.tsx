@@ -48,9 +48,12 @@ export function ComparePage() {
       }
     } else if (singleTicker) {
       const upperTicker = singleTicker.toUpperCase();
-      if (!tickers.includes(upperTicker)) {
-        setTickers([upperTicker]);
-      }
+      setTickers((prev) => {
+        if (!prev.includes(upperTicker)) {
+          return [upperTicker];
+        }
+        return prev;
+      });
     }
   }, [searchParams]);
 

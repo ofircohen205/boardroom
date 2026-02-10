@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 // import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -36,11 +36,7 @@ export default function AlertsPage() {
   const [condition, setCondition] = useState('above');
   const [targetValue, setTargetValue] = useState('');
 
-  useEffect(() => {
-    fetchAlerts();
-  }, []);
-
-  const fetchAlerts = async () => {
+  const fetchAlerts = useCallback(async () => {
     if (!token) return;
 
     setIsLoading(true);
@@ -63,7 +59,11 @@ export default function AlertsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [token]);
+
+  useEffect(() => {
+    fetchAlerts();
+  }, [fetchAlerts]);
 
   const createAlert = async (e: React.FormEvent) => {
     e.preventDefault();

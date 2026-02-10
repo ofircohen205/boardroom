@@ -77,7 +77,7 @@ export function RelativePerformanceChart({
 
       const basePrice = history[0].close;
       normalizedData[ticker] = history.map((point) => ({
-        time: new Date(point.time).getTime() / 1000 as any,
+        time: Math.floor(new Date(point.time).getTime() / 1000) as unknown as number,
         value: (point.close / basePrice) * 100,
       }));
     }
@@ -113,10 +113,11 @@ export function RelativePerformanceChart({
     window.addEventListener("resize", handleResize);
     handleResize();
 
+    const currentSeriesRef = seriesRef.current;
     return () => {
       window.removeEventListener("resize", handleResize);
       chart.remove();
-      seriesRef.current.clear();
+      currentSeriesRef.clear();
     };
   }, [data]);
 

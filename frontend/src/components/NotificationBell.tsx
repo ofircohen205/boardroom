@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,7 +13,7 @@ interface Notification {
   type: string;
   title: string;
   body: string;
-  data: any;
+  data: Record<string, unknown>;
   read: boolean;
   created_at: string;
 }
@@ -26,33 +26,7 @@ export function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Fetch notifications when popover opens
-  useEffect(() => {
-    if (isOpen && isAuthenticated) {
-      fetchNotifications();
-    }
-  }, [isOpen, isAuthenticated]);
-
-  // Fetch unread count on mount and when authenticated
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchUnreadCount();
-    }
-  }, [isAuthenticated]);
-
-  // Update when new notification arrives via WebSocket
-  useEffect(() => {
-    if (latestNotification) {
-      // Add to notifications list if popover is open
-      if (isOpen) {
-        setNotifications(prev => [latestNotification, ...prev]);
-      }
-      // Increment unread count
-      setUnreadCount(prev => prev + 1);
-    }
-  }, [latestNotification]);
-
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     if (!token) return;
 
     setIsLoading(true);
@@ -72,9 +46,9 @@ export function NotificationBell() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [token]);
 
-  const fetchUnreadCount = async () => {
+  const fetchUnreadCount = useCallback(async () => {
     if (!token) return;
 
     try {
@@ -91,7 +65,33 @@ export function NotificationBell() {
     } catch (error) {
       console.error('Failed to fetch unread count:', error);
     }
-  };
+  }, [token]);
+
+  // Fetch notifications when popover opens
+  useEffect(() => {
+    if (isOpen && isAuthenticated) {
+      fetchNotifications();
+    }
+  }, [isOpen, isAuthenticated, fetchNotifications]);
+
+  // Fetch unread count on mount and when authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchUnreadCount();
+    }
+  }, [isAuthenticated, fetchUnreadCount]);
+
+  // Update when new notification arrives via WebSocket
+  useEffect(() => {
+    if (latestNotification) {
+      // Add to notifications list if popover is open
+      if (isOpen) {
+        setNotifications(prev => [latestNotification, ...prev]);
+      }
+      // Increment unread count
+      setUnreadCount(prev => prev + 1);
+    }
+  }, [latestNotification, isOpen]);
 
   const markAsRead = async (notificationId: string) => {
     if (!token) return;

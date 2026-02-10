@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 // import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -34,11 +34,7 @@ export default function SchedulesPage() {
   const [market, setMarket] = useState('US');
   const [frequency, setFrequency] = useState('daily');
 
-  useEffect(() => {
-    fetchSchedules();
-  }, []);
-
-  const fetchSchedules = async () => {
+  const fetchSchedules = useCallback(async () => {
     if (!token) return;
 
     setIsLoading(true);
@@ -61,7 +57,11 @@ export default function SchedulesPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [token]);
+
+  useEffect(() => {
+    fetchSchedules();
+  }, [fetchSchedules]);
 
   const createSchedule = async (e: React.FormEvent) => {
     e.preventDefault();

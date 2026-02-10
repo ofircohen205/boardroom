@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '@/lib/api';
@@ -30,11 +30,7 @@ export function WatchlistSidebar({ onSelectTicker }: WatchlistSidebarProps) {
   const [adding, setAdding] = useState(false);
   const [newTicker, setNewTicker] = useState('');
 
-  useEffect(() => {
-    if (token) fetchWatchlists();
-  }, [token]);
-
-  const fetchWatchlists = async () => {
+  const fetchWatchlists = useCallback(async () => {
     try {
       const res = await fetch(`${API_BASE_URL}/api/watchlists`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -49,7 +45,11 @@ export function WatchlistSidebar({ onSelectTicker }: WatchlistSidebarProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token, logout]);
+
+  useEffect(() => {
+    if (token) fetchWatchlists();
+  }, [token, fetchWatchlists]);
 
   const handleAddItem = async (watchlistId: string) => {
     if (!newTicker) return;

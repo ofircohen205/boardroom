@@ -50,9 +50,10 @@ export default function AuthPage() {
       const data = await response.json();
       login(data.access_token);
       navigate('/');
-    } catch (err: any) {
-        console.error("Auth error:", err);
-        setError(err.message || 'Something went wrong');
+    } catch (err) {
+        const message = err instanceof Error ? err.message : 'Something went wrong';
+        console.error("Auth error:", message);
+        setError(message);
     } finally {
       setIsLoading(false);
     }
