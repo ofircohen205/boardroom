@@ -30,8 +30,8 @@ export default function AuthPage() {
       // OAuth2PasswordRequestForm expects form data, register uses JSON (UserCreate)
       ? new URLSearchParams({ username: email, password })
       : JSON.stringify({ email, password, first_name: firstName, last_name: lastName });
-      
-    const headers = isLogin 
+
+    const headers = isLogin
       ? { 'Content-Type': 'application/x-www-form-urlencoded' }
       : { 'Content-Type': 'application/json' };
 
@@ -50,9 +50,10 @@ export default function AuthPage() {
       const data = await response.json();
       login(data.access_token);
       navigate('/');
-    } catch (err: any) {
-        console.error("Auth error:", err);
-        setError(err.message || 'Something went wrong');
+    } catch (err) {
+        const message = err instanceof Error ? err.message : 'Something went wrong';
+        console.error("Auth error:", message);
+        setError(message);
     } finally {
       setIsLoading(false);
     }
@@ -69,8 +70,8 @@ export default function AuthPage() {
             {isLogin ? 'Welcome Back' : 'Create Account'}
           </CardTitle>
           <p className="text-sm text-muted-foreground">
-            {isLogin 
-              ? 'Enter your credentials to access your dashboard' 
+            {isLogin
+              ? 'Enter your credentials to access your dashboard'
               : 'Join to track your portfolio and get AI insights'}
           </p>
         </CardHeader>
@@ -141,9 +142,9 @@ export default function AuthPage() {
               </div>
             )}
 
-            <Button 
-                type="submit" 
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/25 transition-all duration-300" 
+            <Button
+                type="submit"
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/25 transition-all duration-300"
                 disabled={isLoading}
             >
               {isLoading ? (

@@ -1,15 +1,16 @@
 # backend/dao/portfolio.py
 """Portfolio and watchlist data access objects."""
 from functools import lru_cache
-from typing import Optional, List
+from typing import List, Optional
 from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from backend.db.models import Watchlist, WatchlistItem, Portfolio, Position
 from backend.ai.state.enums import Market
+from backend.db.models import Portfolio, Position, Watchlist, WatchlistItem
+
 from .base import BaseDAO
 
 
@@ -36,14 +37,14 @@ class WatchlistDAO(BaseDAO[Watchlist]):
         result = await self.session.execute(
             select(Watchlist)
             .where(Watchlist.user_id == user_id)
-            .where(Watchlist.name == 'Default')
+            .where(Watchlist.name == "Default")
             .options(selectinload(Watchlist.items))
         )
         watchlist = result.scalars().first()
 
         if not watchlist:
             # Create default watchlist
-            watchlist = await self.create(user_id=user_id, name='Default')
+            watchlist = await self.create(user_id=user_id, name="Default")
 
         return watchlist
 

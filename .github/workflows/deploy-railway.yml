@@ -1,0 +1,75 @@
+name: Deploy to Railway
+
+on:
+  push:
+    branches: [main]
+  workflow_run:
+    workflows: ["Build and Push Docker Images"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy to Railway
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event.workflow_run.conclusion == 'success'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to Railway
+        run: |
+          # Install Railway CLI
+          curl -L https://railway.app/install.sh | bash
+
+          # Authenticate with Railway
+          railway login --token ${{ secrets.RAILWAY_TOKEN }}
+
+          # Deploy project
+          railway up
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+      - name: Health check
+        run: |
+          # Wait for deployment
+          sleep 30
+
+          # Check backend health
+          backend_health=$(curl -s -o /dev/null -w "%{http_code}" https://${{ secrets.RAILWAY_BACKEND_URL }}/health || echo "000")
+          if [ "$backend_health" != "200" ]; then
+            echo "❌ Backend health check failed: $backend_health"
+            exit 1
+          fi
+          echo "✅ Backend health check passed"
+
+      - name: Notify deployment success
+        if: success()
+        run: |
+          echo "✅ Deployment to Railway successful"
+          echo "Backend: https://${{ secrets.RAILWAY_BACKEND_URL }}"
+          echo "Frontend: https://${{ secrets.RAILWAY_FRONTEND_URL }}"
+
+      - name: Notify deployment failure
+        if: failure()
+        run: |
+          echo "❌ Deployment to Railway failed"
+          exit 1
+
+  rollback:
+    name: Rollback on Failure
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: failure()
+
+    steps:
+      - name: Rollback to previous version
+        run: |
+          curl -L https://railway.app/install.sh | bash
+          railway login --token ${{ secrets.RAILWAY_TOKEN }}
+
+          # Railway auto-rollback via deployment history
+          echo "ℹ️ Manually rollback via Railway dashboard if needed"
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}

@@ -14,6 +14,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.ai.state.enums import AgentType
 from backend.db.database import get_db
 from backend.db.models import AgentAccuracy, AnalysisOutcome
 from backend.jobs.scheduler import get_scheduler
@@ -21,7 +22,6 @@ from backend.services.performance_tracking.service import (
     get_performance_summary,
     get_recent_outcomes,
 )
-from backend.ai.state.enums import AgentType
 
 router = APIRouter(prefix="/performance", tags=["performance"])
 
@@ -117,7 +117,9 @@ async def get_agent_details(
         try:
             agent_enum = AgentType(agent_type)
         except ValueError:
-            raise HTTPException(status_code=400, detail=f"Invalid agent type: {agent_type}")
+            raise HTTPException(
+                status_code=400, detail=f"Invalid agent type: {agent_type}"
+            )
 
         query = select(AgentAccuracy).where(AgentAccuracy.agent_type == agent_enum)
         result = await db.execute(query)
@@ -183,9 +185,11 @@ async def get_ticker_performance(
     """
     try:
         ticker = ticker.upper()
-        query = select(AnalysisOutcome).where(
-            AnalysisOutcome.ticker == ticker
-        ).order_by(AnalysisOutcome.created_at.desc())
+        query = (
+            select(AnalysisOutcome)
+            .where(AnalysisOutcome.ticker == ticker)
+            .order_by(AnalysisOutcome.created_at.desc())
+        )
 
         result = await db.execute(query)
         outcomes = result.scalars().all()
@@ -200,8 +204,10 @@ async def get_ticker_performance(
         # Calculate statistics
         completed_outcomes = [o for o in outcomes if o.outcome_correct is not None]
         accuracy = (
-            sum(1 for o in completed_outcomes if o.outcome_correct) / len(completed_outcomes)
-            if completed_outcomes else 0.0
+            sum(1 for o in completed_outcomes if o.outcome_correct)
+            / len(completed_outcomes)
+            if completed_outcomes
+            else 0.0
         )
 
         # Format history
@@ -210,32 +216,30 @@ async def get_ticker_performance(
             returns = {}
             if outcome.price_after_1d:
                 returns["1d"] = (
-                    (outcome.price_after_1d - outcome.price_at_recommendation)
-                    / outcome.price_at_recommendation
-                )
+                    outcome.price_after_1d - outcome.price_at_recommendation
+                ) / outcome.price_at_recommendation
             if outcome.price_after_7d:
                 returns["7d"] = (
-                    (outcome.price_after_7d - outcome.price_at_recommendation)
-                    / outcome.price_at_recommendation
-                )
+                    outcome.price_after_7d - outcome.price_at_recommendation
+                ) / outcome.price_at_recommendation
             if outcome.price_after_30d:
                 returns["30d"] = (
-                    (outcome.price_after_30d - outcome.price_at_recommendation)
-                    / outcome.price_at_recommendation
-                )
+                    outcome.price_after_30d - outcome.price_at_recommendation
+                ) / outcome.price_at_recommendation
             if outcome.price_after_90d:
                 returns["90d"] = (
-                    (outcome.price_after_90d - outcome.price_at_recommendation)
-                    / outcome.price_at_recommendation
-                )
+                    outcome.price_after_90d - outcome.price_at_recommendation
+                ) / outcome.price_at_recommendation
 
-            history.append({
-                "action": outcome.action_recommended.value,
-                "price_at_recommendation": outcome.price_at_recommendation,
-                "outcome_correct": outcome.outcome_correct,
-                "returns": returns,
-                "created_at": outcome.created_at.isoformat(),
-            })
+            history.append(
+                {
+                    "action": outcome.action_recommended.value,
+                    "price_at_recommendation": outcome.price_at_recommendation,
+                    "outcome_correct": outcome.outcome_correct,
+                    "returns": returns,
+                    "created_at": outcome.created_at.isoformat(),
+                }
+            )
 
         return {
             "ticker": ticker,

@@ -2,7 +2,9 @@
 """WebSocket connection manager for real-time notifications."""
 from typing import Dict, Set
 from uuid import UUID
+
 from fastapi import WebSocket
+
 from backend.core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -33,7 +35,9 @@ class ConnectionManager:
             self.active_connections[user_id] = set()
 
         self.active_connections[user_id].add(websocket)
-        logger.info(f"WebSocket connected for user {user_id}. Total connections: {len(self.active_connections[user_id])}")
+        logger.info(
+            f"WebSocket connected for user {user_id}. Total connections: {len(self.active_connections[user_id])}"
+        )
 
     def disconnect(self, user_id: UUID, websocket: WebSocket):
         """
@@ -51,7 +55,9 @@ class ConnectionManager:
                 del self.active_connections[user_id]
                 logger.info(f"All WebSocket connections closed for user {user_id}")
             else:
-                logger.info(f"WebSocket disconnected for user {user_id}. Remaining connections: {len(self.active_connections[user_id])}")
+                logger.info(
+                    f"WebSocket disconnected for user {user_id}. Remaining connections: {len(self.active_connections[user_id])}"
+                )
 
     async def send_notification(self, user_id: UUID, notification: dict):
         """
@@ -62,18 +68,21 @@ class ConnectionManager:
             notification: Notification data to send (dict with id, type, title, body, data, created_at)
         """
         if user_id not in self.active_connections:
-            logger.debug(f"No active connections for user {user_id}, skipping notification")
+            logger.debug(
+                f"No active connections for user {user_id}, skipping notification"
+            )
             return
 
-        connections = self.active_connections[user_id].copy()  # Copy to avoid modification during iteration
+        connections = self.active_connections[
+            user_id
+        ].copy()  # Copy to avoid modification during iteration
         disconnected = []
 
         for websocket in connections:
             try:
-                await websocket.send_json({
-                    "type": "notification",
-                    "data": notification
-                })
+                await websocket.send_json(
+                    {"type": "notification", "data": notification}
+                )
                 logger.debug(f"Notification sent to user {user_id}")
             except Exception as e:
                 logger.warning(f"Failed to send notification to user {user_id}: {e}")

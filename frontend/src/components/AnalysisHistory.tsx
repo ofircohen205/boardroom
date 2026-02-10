@@ -25,7 +25,7 @@ export function AnalysisHistory({ ticker }: { ticker?: string }) {
     try {
       let url = `${API_BASE_URL}/api/analyses?limit=10`;
       if (ticker) url += `&ticker=${ticker}`;
-      
+
       const res = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -49,7 +49,7 @@ export function AnalysisHistory({ ticker }: { ticker?: string }) {
           case 'buy': return <ArrowUpCircle className="w-4 h-4 text-green-500" />;
           case 'sell': return <ArrowDownCircle className="w-4 h-4 text-red-500" />;
           case 'hold': return <MinusCircle className="w-4 h-4 text-yellow-500" />;
-          default: return <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />; 
+          default: return <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />;
       }
   };
 

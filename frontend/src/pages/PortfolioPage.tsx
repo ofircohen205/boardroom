@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { API_BASE_URL } from '@/lib/api';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -31,11 +31,7 @@ export default function PortfolioPage() {
   const [newPrice, setNewPrice] = useState('');
   const [adding, setAdding] = useState(false);
 
-  useEffect(() => {
-    fetchPortfolios();
-  }, [token]);
-
-  const fetchPortfolios = async () => {
+  const fetchPortfolios = useCallback(async () => {
     try {
       const res = await fetch(`${API_BASE_URL}/api/portfolios`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -50,7 +46,11 @@ export default function PortfolioPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token, logout]);
+
+  useEffect(() => {
+    fetchPortfolios();
+  }, [fetchPortfolios]);
 
   const handleAddPosition = async (portfolioId: string) => {
     if (!newTicker || !newQty || !newPrice) return;

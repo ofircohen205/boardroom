@@ -5,10 +5,11 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.auth.dependencies import get_current_user
 from backend.db.database import get_db
 from backend.db.models import User
-from backend.auth.dependencies import get_current_user
 from backend.services.analysis_history import get_user_analysis_history
+
 from .schemas import AnalysisHistoryItemSchema, DecisionSchema
 
 router = APIRouter(prefix="/analysis", tags=["analysis"])
@@ -18,7 +19,7 @@ router = APIRouter(prefix="/analysis", tags=["analysis"])
 async def get_analysis_history(
     current_user: Annotated[User, Depends(get_current_user)],
     limit: int = 50,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ) -> list[AnalysisHistoryItemSchema]:
     """Get analysis history for current user."""
     sessions = await get_user_analysis_history(current_user.id, limit, db)
@@ -31,8 +32,10 @@ async def get_analysis_history(
             decision=DecisionSchema(
                 action=s.final_decision.action.value,
                 confidence=s.final_decision.confidence,
-                rationale=s.final_decision.rationale
-            ) if s.final_decision else None
+                rationale=s.final_decision.rationale,
+            )
+            if s.final_decision
+            else None,
         )
         for s in sessions
     ]

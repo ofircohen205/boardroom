@@ -1,14 +1,15 @@
 # backend/dao/performance.py
 """Performance tracking data access objects."""
 from functools import lru_cache
-from typing import Optional, List
+from typing import List, Optional
 from uuid import UUID
 
-from sqlalchemy import select, desc
+from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.db.models import AnalysisOutcome, AgentAccuracy
-from backend.ai.state.enums import AgentType, Action
+from backend.ai.state.enums import Action, AgentType
+from backend.db.models import AgentAccuracy, AnalysisOutcome
+
 from .base import BaseDAO
 
 

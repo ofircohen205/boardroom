@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '@/lib/api';
@@ -30,11 +30,7 @@ export function WatchlistSidebar({ onSelectTicker }: WatchlistSidebarProps) {
   const [adding, setAdding] = useState(false);
   const [newTicker, setNewTicker] = useState('');
 
-  useEffect(() => {
-    if (token) fetchWatchlists();
-  }, [token]);
-
-  const fetchWatchlists = async () => {
+  const fetchWatchlists = useCallback(async () => {
     try {
       const res = await fetch(`${API_BASE_URL}/api/watchlists`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -49,7 +45,11 @@ export function WatchlistSidebar({ onSelectTicker }: WatchlistSidebarProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token, logout]);
+
+  useEffect(() => {
+    if (token) fetchWatchlists();
+  }, [token, fetchWatchlists]);
 
   const handleAddItem = async (watchlistId: string) => {
     if (!newTicker) return;
@@ -117,12 +117,12 @@ export function WatchlistSidebar({ onSelectTicker }: WatchlistSidebarProps) {
                 )}
             </div>
         </div>
-        
+
         <div className="p-4 space-y-4 flex-1 overflow-auto">
             <div className="flex gap-2">
-                <Input 
-                    placeholder="Add Ticker..." 
-                    value={newTicker} 
+                <Input
+                    placeholder="Add Ticker..."
+                    value={newTicker}
                     onChange={e => setNewTicker(e.target.value.toUpperCase())}
                     className="h-8"
                 />
@@ -135,9 +135,9 @@ export function WatchlistSidebar({ onSelectTicker }: WatchlistSidebarProps) {
                 {defaultWatchlist.items.map(item => (
                     <div key={item.id} className="group flex items-center justify-between p-2 rounded-md hover:bg-background/50 cursor-pointer border border-transparent hover:border-white/5 transition-all" onClick={() => onSelectTicker(item.ticker)}>
                         <div className="font-medium bg-primary/10 text-primary px-2 py-0.5 rounded text-sm">{item.ticker}</div>
-                        <Button 
-                            variant="ghost" 
-                            size="icon" 
+                        <Button
+                            variant="ghost"
+                            size="icon"
                             className="h-6 w-6 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity"
                             onClick={(e) => {
                                 e.stopPropagation();

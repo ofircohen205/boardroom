@@ -1,21 +1,29 @@
 # backend/api/websocket/endpoints.py
 """WebSocket endpoint for real-time analysis streaming."""
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends, Query, status
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from sqlalchemy.orm import selectinload
-from jose import jwt, JWTError
-from datetime import datetime
 import uuid
-from backend.core.logging import get_logger
+from datetime import datetime
 
-from backend.ai.workflow import BoardroomGraph
-from backend.ai.state.enums import Market, AgentType, WSMessageType, AnalysisMode, Action
-from backend.core.settings import settings
-from backend.db.models import User, AnalysisSession, AgentReport, FinalDecision, Portfolio, Position
-from backend.db.database import get_db
-from backend.services.performance_tracking.service import create_analysis_outcome
+from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect, status
+from jose import JWTError, jwt
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+
+from backend.ai.state.enums import Action, AnalysisMode, Market, WSMessageType
 from backend.ai.tools.market_data import get_market_data_client
+from backend.ai.workflow import BoardroomGraph
+from backend.core.logging import get_logger
+from backend.core.settings import settings
+from backend.db.database import get_db
+from backend.db.models import (
+    AgentReport,
+    AnalysisSession,
+    FinalDecision,
+    Portfolio,
+    User,
+)
+from backend.services.performance_tracking.service import create_analysis_outcome
+
 from .connection_manager import connection_manager
 
 logger = get_logger(__name__)
@@ -27,7 +35,9 @@ async def get_current_user_ws(token: str, db: AsyncSession) -> User | None:
     if not token:
         return None
     try:
-        payload = jwt.decode(token, settings.jwt_secret, algorithms=[settings.algorithm])
+        payload = jwt.decode(
+            token, settings.jwt_secret, algorithms=[settings.algorithm]
+        )
         email: str = payload.get("sub")
         if email is None:
             return None
@@ -38,7 +48,9 @@ async def get_current_user_ws(token: str, db: AsyncSession) -> User | None:
     return result.scalars().first()
 
 
-async def _calculate_portfolio_sector_weight(db: AsyncSession, user: User, ticker: str, market: Market) -> float:
+async def _calculate_portfolio_sector_weight(
+    db: AsyncSession, user: User, ticker: str, market: Market
+) -> float:
     """Calculates the portfolio weight of the sector the given ticker belongs to."""
     try:
         # 1. Get the sector for the ticker being analyzed
@@ -47,7 +59,9 @@ async def _calculate_portfolio_sector_weight(db: AsyncSession, user: User, ticke
         target_sector = analyzed_stock_data.get("sector")
 
         if not target_sector:
-            logger.warning(f"Could not determine sector for ticker {ticker}. Defaulting to 0 weight.")
+            logger.warning(
+                f"Could not determine sector for ticker {ticker}. Defaulting to 0 weight."
+            )
             return 0.0
 
         # 2. Get user's portfolio with all positions
@@ -67,14 +81,18 @@ async def _calculate_portfolio_sector_weight(db: AsyncSession, user: User, ticke
 
         for position in portfolio.positions:
             try:
-                position_data = await market_data_client.get_stock_data(position.ticker, position.market)
+                position_data = await market_data_client.get_stock_data(
+                    position.ticker, position.market
+                )
                 position_value = position.quantity * position_data["current_price"]
                 total_portfolio_value += position_value
 
                 if position_data.get("sector") == target_sector:
                     sector_portfolio_value += position_value
             except Exception as e:
-                logger.error(f"Failed to get market data for portfolio position {position.ticker}: {e}")
+                logger.error(
+                    f"Failed to get market data for portfolio position {position.ticker}: {e}"
+                )
                 # If we can't get price, we can't value the portfolio accurately. Skip this position.
                 continue
 
@@ -82,20 +100,22 @@ async def _calculate_portfolio_sector_weight(db: AsyncSession, user: User, ticke
         if total_portfolio_value == 0:
             return 0.0
 
-        weight = (sector_portfolio_value / total_portfolio_value)
-        logger.info(f"Calculated portfolio sector weight for user {user.id} and sector '{target_sector}': {weight:.2f}")
+        weight = sector_portfolio_value / total_portfolio_value
+        logger.info(
+            f"Calculated portfolio sector weight for user {user.id} and sector '{target_sector}': {weight:.2f}"
+        )
         return weight
 
     except Exception as e:
-        logger.error(f"Failed to calculate portfolio sector weight for user {user.id} and ticker {ticker}: {e}")
+        logger.error(
+            f"Failed to calculate portfolio sector weight for user {user.id} and ticker {ticker}: {e}"
+        )
         return 0.0
 
 
 @router.websocket("/analyze")
 async def websocket_endpoint(
-    websocket: WebSocket,
-    token: str = Query(None),
-    db: AsyncSession = Depends(get_db)
+    websocket: WebSocket, token: str = Query(None), db: AsyncSession = Depends(get_db)
 ):
     """WebSocket endpoint for real-time stock analysis streaming."""
     await websocket.accept()
@@ -122,22 +142,28 @@ async def websocket_endpoint(
                 market = Market(market_str)
 
                 if not tickers or len(tickers) < 2:
-                    await websocket.send_json({
-                        "type": "error",
-                        "agent": None,
-                        "data": {"message": "At least 2 tickers required for comparison"},
-                        "timestamp": datetime.now().isoformat(),
-                    })
+                    await websocket.send_json(
+                        {
+                            "type": "error",
+                            "agent": None,
+                            "data": {
+                                "message": "At least 2 tickers required for comparison"
+                            },
+                            "timestamp": datetime.now().isoformat(),
+                        }
+                    )
                     continue
 
                 graph = BoardroomGraph()
                 async for event in graph.run_comparison_streaming(tickers, market):
-                    await websocket.send_json({
-                        "type": event["type"].value,
-                        "agent": event["agent"].value if event["agent"] else None,
-                        "data": _serialize(event["data"]),
-                        "timestamp": datetime.now().isoformat(),
-                    })
+                    await websocket.send_json(
+                        {
+                            "type": event["type"].value,
+                            "agent": event["agent"].value if event["agent"] else None,
+                            "data": _serialize(event["data"]),
+                            "timestamp": datetime.now().isoformat(),
+                        }
+                    )
                 continue
 
             # Handle single stock analysis
@@ -149,7 +175,9 @@ async def websocket_endpoint(
 
             portfolio_sector_weight = 0.0
             if user:
-                portfolio_sector_weight = await _calculate_portfolio_sector_weight(db, user, ticker, market)
+                portfolio_sector_weight = await _calculate_portfolio_sector_weight(
+                    db, user, ticker, market
+                )
             else:
                 # For anonymous users, we can't calculate weight
                 logger.info("Anonymous user analysis, portfolio weight is 0.")
@@ -159,14 +187,18 @@ async def websocket_endpoint(
             # Variables to hold session execution data for persistence
             current_session_id = None
 
-            async for event in graph.run_streaming(ticker, market, portfolio_sector_weight, analysis_mode):
+            async for event in graph.run_streaming(
+                ticker, market, portfolio_sector_weight, analysis_mode
+            ):
                 # Send to client
-                await websocket.send_json({
-                    "type": event["type"].value,
-                    "agent": event["agent"].value if event["agent"] else None,
-                    "data": _serialize(event["data"]),
-                    "timestamp": datetime.now().isoformat(),
-                })
+                await websocket.send_json(
+                    {
+                        "type": event["type"].value,
+                        "agent": event["agent"].value if event["agent"] else None,
+                        "data": _serialize(event["data"]),
+                        "timestamp": datetime.now().isoformat(),
+                    }
+                )
 
                 # Persistence logic (only for logged-in users)
                 if not user:
@@ -182,7 +214,7 @@ async def websocket_endpoint(
                         user_id=user.id,
                         ticker=ticker,
                         market=market,
-                        created_at=datetime.now()
+                        created_at=datetime.now(),
                     )
                     db.add(new_session)
                     await db.commit()
@@ -192,7 +224,7 @@ async def websocket_endpoint(
                     report = AgentReport(
                         session_id=current_session_id,
                         agent_type=agent_type,
-                        report_data=_serialize(evt_data)
+                        report_data=_serialize(evt_data),
                     )
                     db.add(report)
                     await db.commit()
@@ -204,7 +236,7 @@ async def websocket_endpoint(
                         action=action,
                         confidence=evt_data.get("confidence", 0.0),
                         rationale=evt_data.get("reasoning", ""),
-                        vetoed=False
+                        vetoed=False,
                     )
                     db.add(decision)
 
@@ -216,22 +248,22 @@ async def websocket_endpoint(
                     await create_analysis_outcome(db, current_session_id)
 
                 elif evt_type == WSMessageType.VETO and current_session_id:
-                     decision = FinalDecision(
+                    decision = FinalDecision(
                         session_id=current_session_id,
                         action=Action.HOLD,
                         confidence=0.0,
                         rationale=evt_data.get("reason", "Risk Management Veto"),
                         vetoed=True,
-                        veto_reason=evt_data.get("reason")
-                     )
-                     db.add(decision)
+                        veto_reason=evt_data.get("reason"),
+                    )
+                    db.add(decision)
 
-                     session = await db.get(AnalysisSession, current_session_id)
-                     if session:
+                    session = await db.get(AnalysisSession, current_session_id)
+                    if session:
                         session.completed_at = datetime.now()
 
-                     await db.commit()
-                     await create_analysis_outcome(db, current_session_id)
+                    await db.commit()
+                    await create_analysis_outcome(db, current_session_id)
 
     except WebSocketDisconnect:
         logger.info("WebSocket disconnected.")

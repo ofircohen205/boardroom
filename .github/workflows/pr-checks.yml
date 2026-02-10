@@ -1,0 +1,137 @@
+name: PR Checks
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - 'tests/**'
+      - 'pyproject.toml'
+      - 'frontend/package.json'
+      - '.github/workflows/pr-checks.yml'
+
+jobs:
+  backend-lint:
+    name: Backend Linting
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v2
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Run ruff lint
+        run: uv run ruff check backend tests
+
+      - name: Run ruff format check
+        run: uv run ruff format --check backend tests
+
+      - name: Run mypy type check
+        run: uv run mypy backend
+
+  backend-test:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: boardroom_test
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: boardroom_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5433:5432
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v2
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Run backend tests with coverage
+        env:
+          TEST_DATABASE_URL: postgresql+asyncpg://boardroom_test:test_password@localhost:5433/boardroom_test
+          JWT_SECRET: test-secret-key-for-ci-only-32-characters-minimum
+          API_KEY_ENCRYPTION_KEY: dGVzdC1lbmNyeXB0aW9uLWtleS1mb3ItY2ktb25seQ==
+          LLM_PROVIDER: anthropic
+          ANTHROPIC_API_KEY: sk-ant-test-key
+          MARKET_DATA_PROVIDER: yahoo
+          EXA_API_KEY: test-exa-key
+        run: uv run pytest tests/ -v --cov=backend --cov-report=xml --cov-report=term-missing
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage.xml
+          flags: backend
+          fail_ci_if_error: false
+
+      - name: Check coverage threshold (80%)
+        run: |
+          coverage_percent=$(grep -oP 'TOTAL.*?(\d+)%' <<< "$(uv run coverage report)" | grep -oP '\d+' | tail -1)
+          if [ "$coverage_percent" -lt 80 ]; then
+            echo "Backend coverage is $coverage_percent%, minimum is 80%"
+            exit 1
+          fi
+          echo "Backend coverage is $coverage_percent%"
+
+  frontend-lint:
+    name: Frontend Linting
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
+
+      - name: Install dependencies
+        run: cd frontend && npm ci
+
+      - name: Run ESLint
+        run: cd frontend && npm run lint
+
+      - name: Run TypeScript type check
+        run: cd frontend && npm run type-check
+
+  secrets-check:
+    name: Detect Secrets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install detect-secrets
+        run: pip install detect-secrets
+
+      - name: Detect secrets
+        run: detect-secrets scan --baseline .secrets.baseline

@@ -1,4 +1,4 @@
-.PHONY: help dev prod down logs test lint migrate db-up db-down clean build
+.PHONY: help dev prod down logs test lint migrate db-up db-down clean build pre-commit-install pre-commit-run pre-commit-update
 
 # Default target
 help:
@@ -138,3 +138,16 @@ shell-backend:
 
 shell-db:
 	docker compose -p boardroom -f docker/docker-compose.dev.yml exec boardroom-postgres-db psql -U boardroom -d boardroom
+
+# Pre-commit hooks
+pre-commit-install:
+	@echo "Installing pre-commit hooks..."
+	pre-commit install
+	pre-commit install --hook-type commit-msg
+	@echo "Pre-commit hooks installed. Run 'pre-commit run --all-files' to test."
+
+pre-commit-run:
+	pre-commit run --all-files
+
+pre-commit-update:
+	pre-commit autoupdate

@@ -6,8 +6,9 @@ import hashlib
 import json
 from typing import Any, Optional
 
-from redis.asyncio import Redis, ConnectionPool
+from redis.asyncio import ConnectionPool, Redis
 from redis.exceptions import RedisError
+
 from backend.core.logging import get_logger
 from backend.core.settings import settings
 
@@ -16,12 +17,12 @@ logger = get_logger(__name__)
 
 def _serialize(value: Any) -> bytes:
     """Serialize value to JSON bytes."""
-    return json.dumps(value, default=str).encode('utf-8')
+    return json.dumps(value, default=str).encode("utf-8")
 
 
 def _deserialize(data: bytes) -> Any:
     """Deserialize JSON bytes to value."""
-    return json.loads(data.decode('utf-8'))
+    return json.loads(data.decode("utf-8"))
 
 
 class RedisCache:
@@ -75,6 +76,7 @@ class RedisCache:
                 return False, None
             value, expires_at = self._fallback_store[key]
             import time
+
             if time.time() > expires_at:
                 del self._fallback_store[key]
                 return False, None
@@ -96,6 +98,7 @@ class RedisCache:
 
         # In-memory fallback
         import time
+
         async with self._lock:
             self._fallback_store[key] = (value, time.time() + ttl)
 
@@ -139,6 +142,7 @@ class RedisCache:
 
         # In-memory fallback
         import time
+
         async with self._lock:
             now = time.time()
             active = sum(1 for _, exp in self._fallback_store.values() if now <= exp)
@@ -176,6 +180,7 @@ def cached(ttl: int = 300, skip_self: bool = False):
         ttl: Cache time-to-live in seconds.
         skip_self: If True, skip the first positional arg (self) for key generation.
     """
+
     def decorator(func):
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
@@ -198,4 +203,5 @@ def cached(ttl: int = 300, skip_self: bool = False):
             return result
 
         return wrapper
+
     return decorator

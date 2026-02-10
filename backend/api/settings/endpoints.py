@@ -5,34 +5,36 @@ from typing import Annotated, List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.auth.dependencies import get_current_user
+from backend.core.enums import LLMProvider
 from backend.db.database import get_db
 from backend.db.models import User
-from backend.auth.dependencies import get_current_user
-from backend.services.settings.service import (
-    update_profile,
-    change_password,
-    get_api_keys_masked,
-    upsert_api_key,
-    delete_api_key,
-)
 from backend.services.settings.exceptions import (
     EmailAlreadyTakenError,
     InvalidPasswordError,
     SettingsError,
 )
-from backend.core.enums import LLMProvider
+from backend.services.settings.service import (
+    change_password,
+    delete_api_key,
+    get_api_keys_masked,
+    update_profile,
+    upsert_api_key,
+)
+
 from .schemas import (
-    ProfileUpdate,
-    ProfileResponse,
-    PasswordChange,
     APIKeyCreate,
     APIKeyResponse,
+    PasswordChange,
+    ProfileResponse,
+    ProfileUpdate,
 )
 
 router = APIRouter(prefix="/settings", tags=["settings"])
 
 
 # --- Profile ---
+
 
 @router.get("/profile", response_model=ProfileResponse)
 async def get_profile(
@@ -72,6 +74,7 @@ async def update_profile_endpoint(
 
 # --- Password ---
 
+
 @router.post("/password", status_code=200)
 async def change_password_endpoint(
     data: PasswordChange,
@@ -94,6 +97,7 @@ async def change_password_endpoint(
 
 
 # --- API Keys ---
+
 
 @router.get("/api-keys", response_model=List[APIKeyResponse])
 async def list_api_keys(
@@ -134,5 +138,7 @@ async def delete_api_key_endpoint(
         db=db,
     )
     if not deleted:
-        raise HTTPException(status_code=404, detail=f"No API key found for {provider.value}")
+        raise HTTPException(
+            status_code=404, detail=f"No API key found for {provider.value}"
+        )
     return {"message": f"API key for {provider.value} deleted"}

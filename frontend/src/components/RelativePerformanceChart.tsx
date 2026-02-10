@@ -4,6 +4,7 @@ import {
   type IChartApi,
   type ISeriesApi,
   type LineData,
+  type Time,
 } from "lightweight-charts";
 
 interface PriceHistory {
@@ -31,7 +32,7 @@ export function RelativePerformanceChart({
 }: RelativePerformanceChartProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
-  const seriesRef = useRef<Map<string, ISeriesApi<"Line">>>(new Map());
+  const seriesRef = useRef<Map<string, ISeriesApi<"Line", Time>>>(new Map());
 
   useEffect(() => {
     if (!chartContainerRef.current || Object.keys(data).length === 0) return;
@@ -68,7 +69,7 @@ export function RelativePerformanceChart({
     chartRef.current = chart;
 
     // Normalize all series to start at 100
-    const normalizedData: Record<string, LineData[]> = {};
+    const normalizedData: Record<string, LineData<Time>[]> = {};
     const tickers = Object.keys(data);
 
     for (const ticker of tickers) {
@@ -77,7 +78,7 @@ export function RelativePerformanceChart({
 
       const basePrice = history[0].close;
       normalizedData[ticker] = history.map((point) => ({
-        time: new Date(point.time).getTime() / 1000 as any,
+        time: Math.floor(new Date(point.time).getTime() / 1000) as unknown as Time,
         value: (point.close / basePrice) * 100,
       }));
     }
@@ -85,13 +86,14 @@ export function RelativePerformanceChart({
     // Create line series for each ticker
     tickers.forEach((ticker, index) => {
       const color = CHART_COLORS[index % CHART_COLORS.length];
-      const lineSeries = chart.addSeries("Line", {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const lineSeries = chart.addSeries('Line' as any, {
         color,
         lineWidth: 2,
         title: ticker,
         priceLineVisible: false,
         lastValueVisible: true,
-      });
+      }) as ISeriesApi<'Line', Time>;
 
       lineSeries.setData(normalizedData[ticker]);
       seriesRef.current.set(ticker, lineSeries);
@@ -113,10 +115,11 @@ export function RelativePerformanceChart({
     window.addEventListener("resize", handleResize);
     handleResize();
 
+    const currentSeriesRef = seriesRef.current;
     return () => {
       window.removeEventListener("resize", handleResize);
       chart.remove();
-      seriesRef.current.clear();
+      currentSeriesRef.clear();
     };
   }, [data]);
 

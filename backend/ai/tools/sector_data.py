@@ -13,43 +13,43 @@ SECTORS: dict[str, SectorData] = {
     "technology": {
         "name": "Technology",
         "tickers": ["AAPL", "MSFT", "GOOGL", "NVDA", "META", "TSLA", "AMD", "INTC"],
-        "description": "Technology and software companies"
+        "description": "Technology and software companies",
     },
     "finance": {
         "name": "Financial Services",
         "tickers": ["JPM", "BAC", "WFC", "GS", "MS", "C", "BLK", "AXP"],
-        "description": "Banks, investment firms, and financial services"
+        "description": "Banks, investment firms, and financial services",
     },
     "healthcare": {
         "name": "Healthcare",
         "tickers": ["UNH", "JNJ", "PFE", "ABBV", "TMO", "MRK", "ABT", "LLY"],
-        "description": "Pharmaceuticals, biotech, and healthcare services"
+        "description": "Pharmaceuticals, biotech, and healthcare services",
     },
     "energy": {
         "name": "Energy",
         "tickers": ["XOM", "CVX", "COP", "SLB", "EOG", "PXD", "MPC", "VLO"],
-        "description": "Oil, gas, and renewable energy companies"
+        "description": "Oil, gas, and renewable energy companies",
     },
     "consumer": {
         "name": "Consumer Goods",
         "tickers": ["AMZN", "WMT", "HD", "MCD", "NKE", "SBUX", "TGT", "COST"],
-        "description": "Retail and consumer products"
+        "description": "Retail and consumer products",
     },
     "industrial": {
         "name": "Industrial",
         "tickers": ["BA", "CAT", "GE", "HON", "UPS", "LMT", "MMM", "DE"],
-        "description": "Manufacturing, aerospace, and industrial equipment"
+        "description": "Manufacturing, aerospace, and industrial equipment",
     },
     "telecommunications": {
         "name": "Telecommunications",
         "tickers": ["VZ", "T", "TMUS", "CMCSA", "DIS", "NFLX", "CHTR"],
-        "description": "Telecom and media companies"
+        "description": "Telecom and media companies",
     },
     "realestate": {
         "name": "Real Estate",
         "tickers": ["AMT", "PLD", "CCI", "EQIX", "PSA", "SPG", "O", "WELL"],
-        "description": "REITs and real estate companies"
-    }
+        "description": "REITs and real estate companies",
+    },
 }
 
 
@@ -71,7 +71,7 @@ def get_all_sectors() -> list[dict]:
             "key": key,
             "name": data["name"],
             "description": data["description"],
-            "ticker_count": len(data["tickers"])
+            "ticker_count": len(data["tickers"]),
         }
         for key, data in SECTORS.items()
     ]

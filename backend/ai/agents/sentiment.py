@@ -15,8 +15,12 @@ class SentimentAgent:
     async def analyze(self, ticker: str, market: Market) -> SentimentReport:
         # Search with market context
         market_str = "TASE" if market == Market.TASE else "US"
-        news_results = await self.search.search_news(ticker, market=market_str, hours=48, num_results=15)
-        social_results = await self.search.search_social(ticker, market=market_str, hours=48, num_results=15)
+        news_results = await self.search.search_news(
+            ticker, market=market_str, hours=48, num_results=15
+        )
+        social_results = await self.search.search_social(
+            ticker, market=market_str, hours=48, num_results=15
+        )
 
         news_items: list[NewsItem] = []
         for r in news_results:
@@ -25,7 +29,11 @@ class SentimentAgent:
                     source=SentimentSource.NEWS,
                     title=r["title"],
                     url=r["url"],
-                    published_at=datetime.fromisoformat(r["published_at"].replace("Z", "+00:00")) if r["published_at"] else datetime.now(),
+                    published_at=datetime.fromisoformat(
+                        r["published_at"].replace("Z", "+00:00")
+                    )
+                    if r["published_at"]
+                    else datetime.now(),
                     sentiment=0.0,
                     snippet=r["snippet"],
                 )
@@ -33,7 +41,11 @@ class SentimentAgent:
 
         social_mentions: list[SocialMention] = []
         for r in social_results:
-            source = SentimentSource.REDDIT if "reddit" in r.get("source", "") else SentimentSource.TWITTER
+            source = (
+                SentimentSource.REDDIT
+                if "reddit" in r.get("source", "")
+                else SentimentSource.TWITTER
+            )
             social_mentions.append(
                 SocialMention(
                     source=source,
@@ -46,9 +58,16 @@ class SentimentAgent:
             )
 
         # Build richer context for LLM
-        news_text = "\n".join([f"- [NEWS] {n['title']} ({n['published_at']}): {n['snippet']}" for n in news_items])
-        social_text = "\n".join([f"- [SOCIAL] {s['content'][:300]}" for s in social_mentions])
-        
+        news_text = "\n".join(
+            [
+                f"- [NEWS] {n['title']} ({n['published_at']}): {n['snippet']}"
+                for n in news_items
+            ]
+        )
+        social_text = "\n".join(
+            [f"- [SOCIAL] {s['content'][:300]}" for s in social_mentions]
+        )
+
         content_summary = f"""RECENT NEWS:
 {news_text if news_text else "No specific news found."}
 

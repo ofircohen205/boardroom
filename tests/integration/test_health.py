@@ -1,7 +1,10 @@
-import pytest
-from httpx import AsyncClient, ASGITransport
-from backend.main import app
 from unittest.mock import MagicMock, patch
+
+import pytest
+from httpx import ASGITransport, AsyncClient
+
+from backend.main import app
+
 
 @pytest.mark.asyncio
 async def test_db_health_check_success():
@@ -13,6 +16,7 @@ async def test_db_health_check_success():
         data = response.json()
         assert data["status"] == "healthy"
         assert data["service"] == "postgres"
+
 
 @pytest.mark.asyncio
 async def test_cache_health_check_success():
@@ -27,22 +31,24 @@ async def test_cache_health_check_success():
         assert data["service"] == "redis"
         assert "stats" in data
 
+
 @pytest.mark.asyncio
 async def test_db_health_check_failure():
     """Test /health/db returns unhealthy when DB is down."""
     with patch("backend.main.get_db") as mock_get_db:
         # Mock get_db to raise an exception
         mock_get_db.side_effect = Exception("DB Connection Failed")
-        
+
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
             response = await client.get("/health/db")
             # The endpoint catches exception and returns 200 with unhealthy status
-            assert response.status_code == 200 
+            assert response.status_code == 200
             data = response.json()
             assert data["status"] == "unhealthy"
             assert data["service"] == "postgres"
             assert "DB Connection Failed" in data["error"]
+
 
 @pytest.mark.asyncio
 async def test_cache_health_check_failure():

@@ -1,10 +1,10 @@
 # backend/dao/base.py
 """Base DAO with common CRUD operations."""
 from functools import lru_cache
-from typing import Generic, TypeVar, Type, Optional, List
+from typing import ClassVar, Generic, List, Optional, Type, TypeVar
 from uuid import UUID
 
-from sqlalchemy import select, delete
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.db.models import Base
@@ -19,7 +19,7 @@ class BaseDAO(Generic[T]):
     Generic type T must be a SQLAlchemy model (subclass of Base).
     """
 
-    _instances = {}
+    _instances: ClassVar[dict] = {}
 
     def __init__(self, session: AsyncSession, model: Type[T]):
         self.session = session
@@ -76,6 +76,7 @@ class BaseDAO(Generic[T]):
     async def count(self) -> int:
         """Count total records."""
         from sqlalchemy import func
+
         result = await self.session.execute(
             select(func.count()).select_from(self.model)
         )

@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional, TypedDict, NotRequired
+from typing import NotRequired, Optional, TypedDict
 
 from .enums import Action, Market, SentimentSource, Trend
 

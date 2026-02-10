@@ -26,28 +26,36 @@ class ChairpersonAgent:
         available_reports = []
 
         if fundamental:
-            available_reports.append(f"""FUNDAMENTAL ANALYSIS:
+            available_reports.append(
+                f"""FUNDAMENTAL ANALYSIS:
 {fundamental['summary']}
-- P/E: {fundamental['pe_ratio']}, Revenue Growth: {fundamental['revenue_growth']*100:.1f}%, D/E: {fundamental['debt_to_equity']}""")
+- P/E: {fundamental['pe_ratio']}, Revenue Growth: {fundamental['revenue_growth']*100:.1f}%, D/E: {fundamental['debt_to_equity']}"""
+            )
         else:
             available_reports.append("FUNDAMENTAL ANALYSIS: [Data unavailable]")
 
         if sentiment:
-            available_reports.append(f"""SENTIMENT ANALYSIS:
+            available_reports.append(
+                f"""SENTIMENT ANALYSIS:
 {sentiment['summary']}
-- Overall sentiment: {sentiment['overall_sentiment']:.2f} (-1 to 1 scale)""")
+- Overall sentiment: {sentiment['overall_sentiment']:.2f} (-1 to 1 scale)"""
+            )
         else:
             available_reports.append("SENTIMENT ANALYSIS: [Data unavailable]")
 
         if technical:
-            available_reports.append(f"""TECHNICAL ANALYSIS:
+            available_reports.append(
+                f"""TECHNICAL ANALYSIS:
 {technical['summary']}
-- Trend: {technical['trend'].value}, RSI: {technical['rsi']:.1f}""")
+- Trend: {technical['trend'].value}, RSI: {technical['rsi']:.1f}"""
+            )
         else:
             available_reports.append("TECHNICAL ANALYSIS: [Data unavailable]")
 
         # Count available reports for confidence adjustment
-        available_count = sum(1 for r in [fundamental, sentiment, technical] if r is not None)
+        available_count = sum(
+            1 for r in [fundamental, sentiment, technical] if r is not None
+        )
 
         prompt = f"""As the Chairperson of the investment committee, make a final decision for {ticker}:
 

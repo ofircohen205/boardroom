@@ -1,8 +1,8 @@
-import pytest
 from datetime import datetime
 from uuid import uuid4
-from backend.db.models import AnalysisSession, AgentReport, FinalDecision
-from backend.ai.state.enums import Market, AgentType, Action
+
+from backend.ai.state.enums import Action, AgentType, Market
+from backend.db.models import AgentReport, AnalysisSession, FinalDecision
 
 
 def test_analysis_session_creation():
@@ -46,7 +46,7 @@ def test_final_decision_creation():
 # DAO Tests (Unit tests with mocks - no database required)
 # ============================================================================
 
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 
 
 def test_user_dao_initialization():
@@ -100,12 +100,12 @@ def test_performance_dao_initialization():
 def test_dao_imports():
     """Test all DAOs can be imported from backend.dao."""
     from backend.dao import (
+        AnalysisDAO,
         BaseDAO,
+        PerformanceDAO,
+        PortfolioDAO,
         UserDAO,
         WatchlistDAO,
-        PortfolioDAO,
-        AnalysisDAO,
-        PerformanceDAO,
     )
 
     # All imports should succeed

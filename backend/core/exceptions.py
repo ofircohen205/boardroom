@@ -3,7 +3,7 @@
 from typing import Any, Dict, Optional
 
 
-class BoardroomException(Exception):
+class BoardroomError(Exception):
     """Base exception for all Boardroom application errors."""
 
     def __init__(
@@ -18,28 +18,28 @@ class BoardroomException(Exception):
         super().__init__(self.message)
 
 
-class NotFoundException(BoardroomException):
+class NotFoundError(BoardroomError):
     """Exception raised when a requested resource is not found."""
 
     def __init__(self, message: str, details: Optional[Dict[str, Any]] = None):
         super().__init__(message, status_code=404, details=details)
 
 
-class AuthorizationError(BoardroomException):
+class AuthorizationError(BoardroomError):
     """Exception raised when a user is not authorized to perform an action."""
 
     def __init__(self, message: str, details: Optional[Dict[str, Any]] = None):
         super().__init__(message, status_code=403, details=details)
 
 
-class AuthenticationError(BoardroomException):
+class AuthenticationError(BoardroomError):
     """Exception raised when authentication fails."""
 
     def __init__(self, message: str, details: Optional[Dict[str, Any]] = None):
         super().__init__(message, status_code=401, details=details)
 
 
-class ValidationError(BoardroomException):
+class ValidationError(BoardroomError):
     """Exception raised when validation fails."""
 
     def __init__(self, message: str, details: Optional[Dict[str, Any]] = None):

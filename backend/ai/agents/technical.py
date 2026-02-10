@@ -2,7 +2,11 @@ from backend.ai.agents.base import get_llm_client
 from backend.ai.state.agent_state import TechnicalReport
 from backend.ai.state.enums import Market
 from backend.ai.tools.market_data import get_market_data_client
-from backend.ai.tools.technical_indicators import calculate_ma, calculate_rsi, calculate_trend
+from backend.ai.tools.technical_indicators import (
+    calculate_ma,
+    calculate_rsi,
+    calculate_trend,
+)
 
 
 class TechnicalAgent:
@@ -16,8 +20,16 @@ class TechnicalAgent:
         prices = [p["close"] for p in stock_data["price_history"]]
         current_price = stock_data["current_price"]
 
-        ma_50 = calculate_ma(prices, 50) if len(prices) >= 50 else calculate_ma(prices, len(prices))
-        ma_200 = calculate_ma(prices, 200) if len(prices) >= 200 else calculate_ma(prices, len(prices))
+        ma_50 = (
+            calculate_ma(prices, 50)
+            if len(prices) >= 50
+            else calculate_ma(prices, len(prices))
+        )
+        ma_200 = (
+            calculate_ma(prices, 200)
+            if len(prices) >= 200
+            else calculate_ma(prices, len(prices))
+        )
         rsi = calculate_rsi(prices)
         trend = calculate_trend(current_price, ma_50, ma_200)
 

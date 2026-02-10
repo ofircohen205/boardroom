@@ -1,14 +1,14 @@
-from backend.core.logging import get_logger
 from abc import ABC, abstractmethod
 from typing import Optional, TypedDict
 
 import httpx
 import yfinance as yf
 
+from backend.ai.state.enums import Market
 from backend.core.cache import cached
 from backend.core.enums import MarketDataProvider
+from backend.core.logging import get_logger
 from backend.core.settings import settings
-from backend.ai.state.enums import Market
 
 logger = get_logger(__name__)
 
@@ -181,7 +181,9 @@ class FallbackMarketDataClient(BaseMarketDataClient):
         try:
             return await self.primary.get_price_history(ticker, market, days)
         except Exception:
-            logger.warning("Primary price history failed for %s, using fallback", ticker)
+            logger.warning(
+                "Primary price history failed for %s, using fallback", ticker
+            )
             return await self.fallback.get_price_history(ticker, market, days)
 
 
@@ -193,7 +195,9 @@ def get_market_data_client(
         case MarketDataProvider.YAHOO:
             yahoo = YahooFinanceClient()
             if settings.alpha_vantage_api_key:
-                return FallbackMarketDataClient(yahoo, AlphaVantageClient(settings.alpha_vantage_api_key))
+                return FallbackMarketDataClient(
+                    yahoo, AlphaVantageClient(settings.alpha_vantage_api_key)
+                )
             return yahoo
         case MarketDataProvider.ALPHA_VANTAGE:
             return AlphaVantageClient(settings.alpha_vantage_api_key)

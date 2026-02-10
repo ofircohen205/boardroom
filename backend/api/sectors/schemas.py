@@ -1,8 +1,12 @@
 from pydantic import BaseModel, Field
+
 from backend.ai.state.enums import Market
 
+
 class CompareRequest(BaseModel):
-    tickers: list[str] = Field(..., min_length=2, max_length=4, description="2-4 stock tickers to compare")
+    tickers: list[str] = Field(
+        ..., min_length=2, max_length=4, description="2-4 stock tickers to compare"
+    )
     market: Market = Field(default=Market.US, description="Market for all tickers")
 
 

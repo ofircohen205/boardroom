@@ -57,7 +57,7 @@ export function Dashboard() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col h-full overflow-hidden relative">
-          
+
         {/* Minimal Header - just sidebar toggle and history */}
         <header className="h-14 border-b border-white/10 bg-card/30 backdrop-blur-md px-4 flex items-center justify-between z-20 shrink-0">
             <div className="flex items-center gap-4">
@@ -93,7 +93,7 @@ export function Dashboard() {
 
         {/* Scrollable Main Area */}
         <main className="flex-1 overflow-auto p-6 relative">
-            
+
             {showHistory ? (
                  <div className="max-w-5xl mx-auto h-[calc(100vh-140px)]">
                     <AnalysisHistory ticker={state.ticker || undefined} />
@@ -118,7 +118,7 @@ export function Dashboard() {
                                 </p>
                              </div>
                         )}
-                        
+
                         <div className={cn("transition-all duration-500 delay-200", hasStarted ? "" : "scale-110")}>
                             <TickerInput
                                 onAnalyze={handleAnalyze}
@@ -267,4 +267,3 @@ export function Dashboard() {
     </div>
   );
 }
-

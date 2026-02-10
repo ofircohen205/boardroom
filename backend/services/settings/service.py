@@ -2,21 +2,22 @@
 """User settings service layer."""
 import base64
 import binascii
-import hashlib
 from typing import List
 
 from cryptography.fernet import Fernet
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.core.enums import LLMProvider
 from backend.core.security import get_password_hash, verify_password
 from backend.dao.user import UserDAO
-from backend.core.enums import LLMProvider
-from .exceptions import SettingsError, EmailAlreadyTakenError, InvalidPasswordError
+
+from .exceptions import EmailAlreadyTakenError, InvalidPasswordError, SettingsError
 
 
 def _get_fernet() -> Fernet:
     """Get Fernet instance for API key encryption."""
     from backend.core.settings import settings
+
     # The key must be a URL-safe base64-encoded 32-byte key.
     # You can generate one using `cryptography.fernet.Fernet.generate_key()`
     if not settings.api_key_encryption_key:
@@ -119,11 +120,13 @@ async def get_api_keys_masked(user_id, db: AsyncSession) -> List[dict]:
         except Exception:
             masked = "***invalid***"
 
-        result.append({
-            "provider": key.provider.value,
-            "masked_key": masked,
-            "created_at": key.created_at,
-        })
+        result.append(
+            {
+                "provider": key.provider.value,
+                "masked_key": masked,
+                "created_at": key.created_at,
+            }
+        )
 
     return result
 
@@ -146,9 +149,7 @@ async def upsert_api_key(
     }
 
 
-async def delete_api_key(
-    user_id, provider: LLMProvider, db: AsyncSession
-) -> bool:
+async def delete_api_key(user_id, provider: LLMProvider, db: AsyncSession) -> bool:
     """Delete an API key for a user."""
     dao = UserDAO.get_instance(db)
     deleted = await dao.delete_api_key(user_id, provider)

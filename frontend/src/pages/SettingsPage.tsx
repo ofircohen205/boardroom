@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -8,8 +7,6 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { API_BASE_URL } from '@/lib/api';
 import {
-  ArrowLeft,
-  Settings,
   User,
   Lock,
   Key,
@@ -28,14 +25,6 @@ interface APIKeyInfo {
   created_at: string;
 }
 
-interface ProfileData {
-  id: string;
-  email: string;
-  first_name: string;
-  last_name: string;
-  created_at: string;
-}
-
 const PROVIDERS = [
   { value: 'anthropic', label: 'Anthropic (Claude)', icon: '🟣' },
   { value: 'openai', label: 'OpenAI (GPT-4)', icon: '🟢' },
@@ -43,11 +32,9 @@ const PROVIDERS = [
 ];
 
 export default function SettingsPage() {
-  const { token, user } = useAuth();
-  const navigate = useNavigate();
+  const { token } = useAuth();
 
   // Profile state
-  const [profile, setProfile] = useState<ProfileData | null>(null);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -73,14 +60,9 @@ export default function SettingsPage() {
   const [keySaving, setKeySaving] = useState(false);
   const [keyMessage, setKeyMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  useEffect(() => {
-    fetchProfile();
-    fetchApiKeys();
-  }, []);
-
   // --- Profile ---
 
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     if (!token) return;
     setProfileLoading(true);
     try {
@@ -89,7 +71,6 @@ export default function SettingsPage() {
       });
       if (res.ok) {
         const data = await res.json();
-        setProfile(data);
         setFirstName(data.first_name);
         setLastName(data.last_name);
         setEmail(data.email);
@@ -99,7 +80,7 @@ export default function SettingsPage() {
     } finally {
       setProfileLoading(false);
     }
-  };
+  }, [token]);
 
   const saveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,14 +103,12 @@ export default function SettingsPage() {
       });
 
       if (res.ok) {
-        const data = await res.json();
-        setProfile(data);
         setProfileMessage({ type: 'success', text: 'Profile updated successfully' });
       } else {
-        const err = await res.json();
-        setProfileMessage({ type: 'error', text: err.detail || 'Failed to update profile' });
+        const errorData = await res.json();
+        setProfileMessage({ type: 'error', text: errorData.detail || 'Failed to update profile' });
       }
-    } catch (err) {
+    } catch {
       setProfileMessage({ type: 'error', text: 'Failed to update profile' });
     } finally {
       setProfileSaving(false);
@@ -173,10 +152,10 @@ export default function SettingsPage() {
         setConfirmPassword('');
         setPasswordMessage({ type: 'success', text: 'Password changed successfully' });
       } else {
-        const err = await res.json();
-        setPasswordMessage({ type: 'error', text: err.detail || 'Failed to change password' });
+        const errorData = await res.json();
+        setPasswordMessage({ type: 'error', text: errorData.detail || 'Failed to change password' });
       }
-    } catch (err) {
+    } catch {
       setPasswordMessage({ type: 'error', text: 'Failed to change password' });
     } finally {
       setPasswordSaving(false);
@@ -185,7 +164,7 @@ export default function SettingsPage() {
 
   // --- API Keys ---
 
-  const fetchApiKeys = async () => {
+  const fetchApiKeys = useCallback(async () => {
     if (!token) return;
     setKeysLoading(true);
     try {
@@ -201,7 +180,12 @@ export default function SettingsPage() {
     } finally {
       setKeysLoading(false);
     }
-  };
+  }, [token]);
+
+  useEffect(() => {
+    fetchProfile();
+    fetchApiKeys();
+  }, [fetchProfile, fetchApiKeys]);
 
   const saveApiKey = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -230,10 +214,10 @@ export default function SettingsPage() {
         setKeyMessage({ type: 'success', text: 'API key saved successfully' });
         fetchApiKeys();
       } else {
-        const err = await res.json();
-        setKeyMessage({ type: 'error', text: err.detail || 'Failed to save API key' });
+        const errorData = await res.json();
+        setKeyMessage({ type: 'error', text: errorData.detail || 'Failed to save API key' });
       }
-    } catch (err) {
+    } catch {
       setKeyMessage({ type: 'error', text: 'Failed to save API key' });
     } finally {
       setKeySaving(false);

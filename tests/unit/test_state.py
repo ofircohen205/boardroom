@@ -1,10 +1,7 @@
 from backend.ai.state.enums import (
-    Market,
-    Trend,
     Action,
-    SentimentSource,
     AgentType,
-    WSMessageType,
+    Market,
 )
 
 

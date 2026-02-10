@@ -2,7 +2,7 @@ export type Market = "US" | "TASE";
 export type Action = "BUY" | "SELL" | "HOLD";
 export type Trend = "bullish" | "bearish" | "neutral";
 export type AgentType = "fundamental" | "sentiment" | "technical" | "risk" | "chairperson";
-export type WSMessageType = "analysis_started" | "agent_started" | "agent_completed" | "agent_error" | "veto" | "decision" | "error";
+export type WSMessageType = "analysis_started" | "agent_started" | "agent_completed" | "agent_error" | "veto" | "decision" | "error" | "notification" | "comparison_result";
 
 export interface WSMessage {
   type: WSMessageType;

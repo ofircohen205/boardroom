@@ -48,9 +48,12 @@ export function ComparePage() {
       }
     } else if (singleTicker) {
       const upperTicker = singleTicker.toUpperCase();
-      if (!tickers.includes(upperTicker)) {
-        setTickers([upperTicker]);
-      }
+      setTickers((prev) => {
+        if (!prev.includes(upperTicker)) {
+          return [upperTicker];
+        }
+        return prev;
+      });
     }
   }, [searchParams]);
 
@@ -348,7 +351,8 @@ export function ComparePage() {
                   <CardTitle>Side-by-Side Comparison</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ComparisonTable data={comparison.stock_data} />
+                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                  <ComparisonTable data={comparison.stock_data as any} />
                 </CardContent>
               </Card>
             )}

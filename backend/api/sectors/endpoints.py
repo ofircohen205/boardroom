@@ -1,11 +1,9 @@
 """API endpoints for comparative analysis."""
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
 
+from backend.ai.tools.sector_data import get_all_sectors, get_sector_tickers
 from backend.ai.workflow import create_boardroom_graph
-from backend.ai.state.enums import Market
-from backend.ai.tools.sector_data import get_sector_tickers, get_all_sectors
 
 from .schemas import CompareRequest, SectorAnalysisRequest
 
@@ -52,7 +50,9 @@ async def analyze_sector(request: SectorAnalysisRequest) -> dict:
     tickers = get_sector_tickers(request.sector, request.limit)
 
     if not tickers:
-        raise HTTPException(status_code=404, detail=f"Sector '{request.sector}' not found")
+        raise HTTPException(
+            status_code=404, detail=f"Sector '{request.sector}' not found"
+        )
 
     graph = create_boardroom_graph()
 

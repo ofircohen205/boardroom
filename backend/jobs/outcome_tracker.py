@@ -7,23 +7,22 @@ Runs periodically to:
 3. Update agent accuracy statistics
 """
 
-import asyncio
 from datetime import datetime, timedelta
 from typing import Optional
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.db.models import (
-    AnalysisOutcome,
-    AnalysisSession,
-    AgentAccuracy,
-    AgentReport,
-    FinalDecision,
-)
 from backend.ai.state.enums import Action, AgentType
 from backend.ai.tools.market_data import get_market_data_client
 from backend.core.logging import get_logger
+from backend.db.models import (
+    AgentAccuracy,
+    AgentReport,
+    AnalysisOutcome,
+    AnalysisSession,
+    FinalDecision,
+)
 
 logger = get_logger(__name__)
 
@@ -40,7 +39,9 @@ async def update_outcome_prices(db: AsyncSession) -> int:
 
     # Find outcomes that need price updates
     query = select(AnalysisOutcome).where(
-        (AnalysisOutcome.price_after_90d.is_(None))  # Not fully tracked yet
+        (
+            AnalysisOutcome.price_after_90d.is_(None)  # Not fully tracked yet
+        )
     )
 
     result = await db.execute(query)
@@ -66,7 +67,9 @@ async def update_outcome_prices(db: AsyncSession) -> int:
         try:
             # Get current price
             market_data_client = get_market_data_client()
-            quote = await market_data_client.get_stock_data(outcome.ticker, session.market)
+            quote = await market_data_client.get_stock_data(
+                outcome.ticker, session.market
+            )
             current_price = quote["current_price"]
 
             # Update prices based on time elapsed
@@ -239,9 +242,7 @@ async def _calculate_agent_accuracy(
                 correct_signals += 1
 
     # Update or create accuracy record
-    accuracy_value = (
-        (correct_signals / total_signals) if total_signals > 0 else 0.0
-    )
+    accuracy_value = (correct_signals / total_signals) if total_signals > 0 else 0.0
 
     query = select(AgentAccuracy).where(
         AgentAccuracy.agent_type == agent_type,

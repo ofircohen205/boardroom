@@ -1,11 +1,18 @@
 # backend/db/models/__init__.py
 """Database models for the Boardroom application."""
+from .alerts import (
+    AlertCondition,
+    AlertFrequency,
+    Notification,
+    NotificationType,
+    PriceAlert,
+    ScheduledAnalysis,
+)
+from .analysis import AgentReport, AnalysisSession, FinalDecision
 from .base import Base
+from .performance import AgentAccuracy, AnalysisOutcome
+from .portfolio import Portfolio, Position, Watchlist, WatchlistItem
 from .user import User, UserAPIKey
-from .portfolio import Watchlist, WatchlistItem, Portfolio, Position
-from .analysis import AnalysisSession, AgentReport, FinalDecision
-from .performance import AnalysisOutcome, AgentAccuracy
-from .alerts import PriceAlert, Notification, ScheduledAnalysis, AlertCondition, NotificationType, AlertFrequency
 
 __all__ = [
     "Base",

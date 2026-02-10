@@ -1,7 +1,13 @@
-import pytest
 from unittest.mock import AsyncMock, patch
+
+import pytest
+
 from backend.ai.agents.risk_manager import RiskManagerAgent, calculate_var_95
-from backend.ai.state.agent_state import FundamentalReport, SentimentReport, TechnicalReport
+from backend.ai.state.agent_state import (
+    FundamentalReport,
+    SentimentReport,
+    TechnicalReport,
+)
 from backend.ai.state.enums import Trend
 
 
@@ -37,7 +43,9 @@ def sample_reports():
 @pytest.mark.asyncio
 async def test_risk_manager_no_veto(sample_reports):
     with patch("backend.ai.agents.risk_manager.get_llm_client") as mock_llm:
-        mock_llm.return_value.complete = AsyncMock(return_value="VETO: NO\nRisk acceptable.")
+        mock_llm.return_value.complete = AsyncMock(
+            return_value="VETO: NO\nRisk acceptable."
+        )
 
         agent = RiskManagerAgent()
         assessment = await agent.assess(
@@ -55,7 +63,9 @@ async def test_risk_manager_no_veto(sample_reports):
 @pytest.mark.asyncio
 async def test_risk_manager_veto_overweight():
     with patch("backend.ai.agents.risk_manager.get_llm_client") as mock_llm:
-        mock_llm.return_value.complete = AsyncMock(return_value="VETO: YES\nREASON: Portfolio already 45% Tech.")
+        mock_llm.return_value.complete = AsyncMock(
+            return_value="VETO: YES\nREASON: Portfolio already 45% Tech."
+        )
 
         agent = RiskManagerAgent()
         assessment = await agent.assess(
@@ -72,6 +82,7 @@ async def test_risk_manager_veto_overweight():
 
 
 # --- VaR calculation tests ---
+
 
 def test_var_95_empty_history():
     assert calculate_var_95([]) == 0.0
@@ -92,6 +103,7 @@ def test_var_95_rising_prices():
 def test_var_95_volatile_prices():
     """Highly volatile prices should produce higher VaR."""
     import math
+
     history = [{"close": 100 * (1 + 0.05 * math.sin(i))} for i in range(60)]
     var = calculate_var_95(history)
     assert var >= 0.0
@@ -119,7 +131,9 @@ async def test_risk_manager_uses_var(sample_reports):
     )
 
     with patch("backend.ai.agents.risk_manager.get_llm_client") as mock_llm:
-        mock_llm.return_value.complete = AsyncMock(return_value="VETO: NO\nRisk acceptable.")
+        mock_llm.return_value.complete = AsyncMock(
+            return_value="VETO: NO\nRisk acceptable."
+        )
 
         agent = RiskManagerAgent()
         assessment = await agent.assess(

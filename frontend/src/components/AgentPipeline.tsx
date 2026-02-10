@@ -26,7 +26,7 @@ const steps = [
 export function AgentPipeline({ activeAgents, completedAgents, hasDecision }: Props) {
   return (
     <div className="glass flex items-center justify-between rounded-2xl px-10 py-8 border-white/10 bg-black/40 backdrop-blur-xl">
-      {steps.map((step, i) => {
+      {steps.map((step) => {
         const isActive = activeAgents.has(step.key);
         const isComplete = completedAgents.has(step.key);
 

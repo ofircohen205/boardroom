@@ -4,11 +4,18 @@ from datetime import datetime, timedelta
 from typing import Optional
 from uuid import UUID
 
-from sqlalchemy import select, func, and_, or_, update
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.db.models import PriceAlert, Notification, ScheduledAnalysis, AlertFrequency, NotificationType
 from backend.ai.state.enums import Market
+from backend.db.models import (
+    AlertFrequency,
+    Notification,
+    NotificationType,
+    PriceAlert,
+    ScheduledAnalysis,
+)
+
 from .base import BaseDAO
 
 
@@ -19,9 +26,7 @@ class PriceAlertDAO(BaseDAO[PriceAlert]):
         super().__init__(session, PriceAlert)
 
     async def get_user_alerts(
-        self,
-        user_id: UUID,
-        active_only: bool = True
+        self, user_id: UUID, active_only: bool = True
     ) -> list[PriceAlert]:
         """
         Get all alerts for a user.
@@ -44,9 +49,7 @@ class PriceAlertDAO(BaseDAO[PriceAlert]):
         return list(result.scalars().all())
 
     async def get_active_alerts_for_ticker(
-        self,
-        ticker: str,
-        market: Market
+        self, ticker: str, market: Market
     ) -> list[PriceAlert]:
         """
         Get all active, non-triggered alerts for a specific ticker.
@@ -68,9 +71,8 @@ class PriceAlertDAO(BaseDAO[PriceAlert]):
                 PriceAlert.active == True,
                 PriceAlert.triggered == False,
                 or_(
-                    PriceAlert.cooldown_until == None,
-                    PriceAlert.cooldown_until <= now
-                )
+                    PriceAlert.cooldown_until == None, PriceAlert.cooldown_until <= now
+                ),
             )
         )
 
@@ -87,19 +89,20 @@ class PriceAlertDAO(BaseDAO[PriceAlert]):
         """
         now = datetime.now()
 
-        query = select(
-            PriceAlert.ticker,
-            PriceAlert.market
-        ).where(
-            and_(
-                PriceAlert.active == True,
-                PriceAlert.triggered == False,
-                or_(
-                    PriceAlert.cooldown_until == None,
-                    PriceAlert.cooldown_until <= now
+        query = (
+            select(PriceAlert.ticker, PriceAlert.market)
+            .where(
+                and_(
+                    PriceAlert.active == True,
+                    PriceAlert.triggered == False,
+                    or_(
+                        PriceAlert.cooldown_until == None,
+                        PriceAlert.cooldown_until <= now,
+                    ),
                 )
             )
-        ).distinct()
+            .distinct()
+        )
 
         result = await self.session.execute(query)
         return list(result.all())
@@ -135,9 +138,9 @@ class PriceAlertDAO(BaseDAO[PriceAlert]):
             Count of alerts
         """
         result = await self.session.execute(
-            select(func.count()).select_from(PriceAlert).where(
-                PriceAlert.user_id == user_id
-            )
+            select(func.count())
+            .select_from(PriceAlert)
+            .where(PriceAlert.user_id == user_id)
         )
         return result.scalar() or 0
 
@@ -149,10 +152,7 @@ class NotificationDAO(BaseDAO[Notification]):
         super().__init__(session, Notification)
 
     async def get_user_notifications(
-        self,
-        user_id: UUID,
-        unread_only: bool = False,
-        limit: int = 50
+        self, user_id: UUID, unread_only: bool = False, limit: int = 50
     ) -> list[Notification]:
         """
         Get notifications for a user.
@@ -186,12 +186,9 @@ class NotificationDAO(BaseDAO[Notification]):
             Count of unread notifications
         """
         result = await self.session.execute(
-            select(func.count()).select_from(Notification).where(
-                and_(
-                    Notification.user_id == user_id,
-                    Notification.read == False
-                )
-            )
+            select(func.count())
+            .select_from(Notification)
+            .where(and_(Notification.user_id == user_id, Notification.read == False))
         )
         return result.scalar() or 0
 
@@ -222,16 +219,10 @@ class NotificationDAO(BaseDAO[Notification]):
         Returns:
             Number of notifications marked as read
         """
-        from sqlalchemy import update
 
         result = await self.session.execute(
             update(Notification)
-            .where(
-                and_(
-                    Notification.user_id == user_id,
-                    Notification.read == False
-                )
-            )
+            .where(and_(Notification.user_id == user_id, Notification.read == False))
             .values(read=True)
         )
         await self.session.flush()
@@ -242,7 +233,7 @@ class NotificationDAO(BaseDAO[Notification]):
         user_id: UUID,
         notification_type: "NotificationType",
         ticker: str,
-        minutes: int = 15
+        minutes: int = 15,
     ) -> Optional[Notification]:
         """
         Find a recent notification for the same ticker within a time window.
@@ -257,18 +248,23 @@ class NotificationDAO(BaseDAO[Notification]):
         Returns:
             Most recent matching Notification or None
         """
-        from sqlalchemy import cast, String
+        from sqlalchemy import String, cast
 
         cutoff_time = datetime.now() - timedelta(minutes=minutes)
 
-        query = select(Notification).where(
-            and_(
-                Notification.user_id == user_id,
-                Notification.type == notification_type,
-                cast(Notification.data["ticker"], String) == ticker,
-                Notification.created_at >= cutoff_time
+        query = (
+            select(Notification)
+            .where(
+                and_(
+                    Notification.user_id == user_id,
+                    Notification.type == notification_type,
+                    cast(Notification.data["ticker"], String) == ticker,
+                    Notification.created_at >= cutoff_time,
+                )
             )
-        ).order_by(Notification.created_at.desc()).limit(1)
+            .order_by(Notification.created_at.desc())
+            .limit(1)
+        )
 
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
@@ -290,9 +286,11 @@ class ScheduledAnalysisDAO(BaseDAO[ScheduledAnalysis]):
         Returns:
             List of ScheduledAnalysis objects
         """
-        query = select(ScheduledAnalysis).where(
-            ScheduledAnalysis.user_id == user_id
-        ).order_by(ScheduledAnalysis.created_at.desc())
+        query = (
+            select(ScheduledAnalysis)
+            .where(ScheduledAnalysis.user_id == user_id)
+            .order_by(ScheduledAnalysis.created_at.desc())
+        )
 
         result = await self.session.execute(query)
         return list(result.scalars().all())
@@ -311,7 +309,7 @@ class ScheduledAnalysisDAO(BaseDAO[ScheduledAnalysis]):
             and_(
                 ScheduledAnalysis.active == True,
                 ScheduledAnalysis.next_run != None,
-                ScheduledAnalysis.next_run <= now
+                ScheduledAnalysis.next_run <= now,
             )
         )
 
@@ -319,10 +317,7 @@ class ScheduledAnalysisDAO(BaseDAO[ScheduledAnalysis]):
         return list(result.scalars().all())
 
     async def update_run_times(
-        self,
-        schedule_id: UUID,
-        last_run: datetime,
-        next_run: datetime
+        self, schedule_id: UUID, last_run: datetime, next_run: datetime
     ) -> Optional[ScheduledAnalysis]:
         """
         Update the last_run and next_run times for a schedule.
@@ -355,18 +350,14 @@ class ScheduledAnalysisDAO(BaseDAO[ScheduledAnalysis]):
             Count of schedules
         """
         result = await self.session.execute(
-            select(func.count()).select_from(ScheduledAnalysis).where(
-                ScheduledAnalysis.user_id == user_id
-            )
+            select(func.count())
+            .select_from(ScheduledAnalysis)
+            .where(ScheduledAnalysis.user_id == user_id)
         )
         return result.scalar() or 0
 
     async def get_by_ticker_market_frequency(
-        self,
-        user_id: UUID,
-        ticker: str,
-        market: Market,
-        frequency: AlertFrequency
+        self, user_id: UUID, ticker: str, market: Market, frequency: AlertFrequency
     ) -> Optional[ScheduledAnalysis]:
         """
         Get a schedule by ticker, market, and frequency for a user.
@@ -386,7 +377,7 @@ class ScheduledAnalysisDAO(BaseDAO[ScheduledAnalysis]):
                 ScheduledAnalysis.user_id == user_id,
                 ScheduledAnalysis.ticker == ticker.upper(),
                 ScheduledAnalysis.market == market,
-                ScheduledAnalysis.frequency == frequency
+                ScheduledAnalysis.frequency == frequency,
             )
         )
 

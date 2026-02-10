@@ -21,12 +21,12 @@ export interface ComparisonResult {
   comparison_summary: string;
   relative_strength?: RelativeStrength;
   price_histories?: Record<string, Array<{ time: string; close: number }>>;
-  stock_data?: Record<string, any>;  // Full analysis data for each stock
+  stock_data?: Record<string, Record<string, unknown>>;  // Full analysis data for each stock
 }
 
 export interface ComparisonState {
   tickers: string[];
-  results: Record<string, any>;  // Per-ticker analysis results
+  results: Record<string, Record<string, unknown>>;  // Per-ticker analysis results
   comparison: ComparisonResult | null;
   isLoading: boolean;
   error: string | null;

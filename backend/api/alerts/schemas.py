@@ -2,14 +2,20 @@
 """Pydantic schemas for alerts API."""
 from datetime import datetime
 from uuid import UUID
+
 from pydantic import BaseModel, Field, field_validator
 
 
 class PriceAlertCreate(BaseModel):
     """Schema for creating a price alert."""
-    ticker: str = Field(..., min_length=1, max_length=20, description="Stock ticker symbol")
+
+    ticker: str = Field(
+        ..., min_length=1, max_length=20, description="Stock ticker symbol"
+    )
     market: str = Field(..., pattern="^(US|TASE)$", description="Market (US or TASE)")
-    condition: str = Field(..., pattern="^(above|below|change_pct)$", description="Alert condition")
+    condition: str = Field(
+        ..., pattern="^(above|below|change_pct)$", description="Alert condition"
+    )
     target_value: float = Field(..., gt=0, description="Target price or percentage")
 
     @field_validator("ticker")
@@ -21,6 +27,7 @@ class PriceAlertCreate(BaseModel):
 
 class PriceAlertSchema(BaseModel):
     """Schema for price alert response."""
+
     id: UUID
     ticker: str
     market: str
@@ -37,4 +44,5 @@ class PriceAlertSchema(BaseModel):
 
 class PriceAlertToggle(BaseModel):
     """Schema for toggling alert active status."""
+
     active: bool

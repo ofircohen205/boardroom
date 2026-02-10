@@ -1,19 +1,22 @@
 # backend/jobs/scheduled_analyzer.py
 """Background job to run scheduled analyses."""
 from datetime import datetime, timedelta
-from zoneinfo import ZoneInfo
-from sqlalchemy.ext.asyncio import AsyncSession
 
+from sqlalchemy.ext.asyncio import AsyncSession
+from zoneinfo import ZoneInfo
+
+from backend.ai.workflow import BoardroomGraph
+from backend.core.logging import get_logger
 from backend.dao.alerts import ScheduledAnalysisDAO
 from backend.db.models import AlertFrequency
-from backend.ai.workflow import BoardroomGraph
 from backend.services.alerts import create_analysis_notification
-from backend.core.logging import get_logger
 
 logger = get_logger(__name__)
 
 
-def calculate_next_run(frequency: AlertFrequency, last_run: datetime | None = None) -> datetime:
+def calculate_next_run(
+    frequency: AlertFrequency, last_run: datetime | None = None
+) -> datetime:
     """
     Calculate the next scheduled run time based on frequency.
 
@@ -65,8 +68,10 @@ def calculate_next_run(frequency: AlertFrequency, last_run: datetime | None = No
             # Skip weekends
             if next_run.weekday() >= 5:
                 # Move to Monday 10 AM
-                days_to_monday = (7 - next_run.weekday())
-                next_run = (next_run + timedelta(days=days_to_monday)).replace(hour=10, minute=0)
+                days_to_monday = 7 - next_run.weekday()
+                next_run = (next_run + timedelta(days=days_to_monday)).replace(
+                    hour=10, minute=0
+                )
                 continue
 
             # Check if within market hours (10 AM - 4 PM)
@@ -116,7 +121,7 @@ async def run_scheduled_analyses(db: AsyncSession) -> dict:
             return {
                 "success": True,
                 "schedules_run": 0,
-                "duration_seconds": (datetime.now() - start_time).total_seconds()
+                "duration_seconds": (datetime.now() - start_time).total_seconds(),
             }
 
         logger.info(f"Found {len(schedules)} scheduled analyses to run")
@@ -125,14 +130,16 @@ async def run_scheduled_analyses(db: AsyncSession) -> dict:
 
         for schedule in schedules:
             try:
-                logger.info(f"Running scheduled analysis {schedule.id} for {schedule.ticker} ({schedule.market.value})")
+                logger.info(
+                    f"Running scheduled analysis {schedule.id} for {schedule.ticker} ({schedule.market.value})"
+                )
 
                 # Run the analysis
                 graph = BoardroomGraph()
                 result = await graph.run_sync(
                     ticker=schedule.ticker,
                     market=schedule.market,
-                    portfolio_sector_weight=0.0  # Scheduled analyses don't have portfolio context
+                    portfolio_sector_weight=0.0,  # Scheduled analyses don't have portfolio context
                 )
 
                 # Extract final decision
@@ -147,7 +154,9 @@ async def run_scheduled_analyses(db: AsyncSession) -> dict:
                     risk_assessment = result.get("risk_assessment")
                     if risk_assessment and risk_assessment.get("veto", False):
                         vetoed = True
-                        veto_reason = risk_assessment.get("reason", "Risk assessment veto")
+                        veto_reason = risk_assessment.get(
+                            "reason", "Risk assessment veto"
+                        )
 
                     # Create notification
                     await create_analysis_notification(
@@ -157,7 +166,7 @@ async def run_scheduled_analyses(db: AsyncSession) -> dict:
                         action=action,
                         confidence=confidence,
                         vetoed=vetoed,
-                        veto_reason=veto_reason
+                        veto_reason=veto_reason,
                     )
 
                 # Update schedule times
@@ -165,28 +174,33 @@ async def run_scheduled_analyses(db: AsyncSession) -> dict:
                 next_run = calculate_next_run(schedule.frequency, now)
 
                 await schedule_dao.update_run_times(
-                    schedule_id=schedule.id,
-                    last_run=now,
-                    next_run=next_run
+                    schedule_id=schedule.id, last_run=now, next_run=next_run
                 )
 
                 schedules_run += 1
-                logger.info(f"Completed scheduled analysis {schedule.id}. Next run: {next_run}")
+                logger.info(
+                    f"Completed scheduled analysis {schedule.id}. Next run: {next_run}"
+                )
 
             except Exception as e:
-                logger.error(f"Failed to run scheduled analysis {schedule.id}: {e}", exc_info=True)
+                logger.error(
+                    f"Failed to run scheduled analysis {schedule.id}: {e}",
+                    exc_info=True,
+                )
                 # Continue with other schedules
 
         # Commit all changes
         await db.commit()
 
         duration = (datetime.now() - start_time).total_seconds()
-        logger.info(f"Scheduled analyzer completed: {schedules_run} analyses run in {duration:.2f}s")
+        logger.info(
+            f"Scheduled analyzer completed: {schedules_run} analyses run in {duration:.2f}s"
+        )
 
         return {
             "success": True,
             "schedules_run": schedules_run,
-            "duration_seconds": duration
+            "duration_seconds": duration,
         }
 
     except Exception as e:
@@ -196,5 +210,5 @@ async def run_scheduled_analyses(db: AsyncSession) -> dict:
             "success": False,
             "error": str(e),
             "schedules_run": 0,
-            "duration_seconds": (datetime.now() - start_time).total_seconds()
+            "duration_seconds": (datetime.now() - start_time).total_seconds(),
         }

@@ -1,11 +1,11 @@
 import asyncio
 import time
-
-import pytest
 from unittest.mock import AsyncMock, patch
 
-from backend.ai.workflow import create_boardroom_graph, BoardroomGraph
-from backend.ai.state.enums import Market, Action, AgentType, WSMessageType
+import pytest
+
+from backend.ai.state.enums import Action, AgentType, Market, WSMessageType
+from backend.ai.workflow import BoardroomGraph, create_boardroom_graph
 
 
 @pytest.mark.asyncio
@@ -17,21 +17,34 @@ async def test_graph_creation():
 def _make_mocks():
     """Return patched agent mocks for all 5 agents."""
     fund_report = {
-        "revenue_growth": 0.15, "pe_ratio": 20, "debt_to_equity": 0.5,
-        "market_cap": 1000000000, "sector": "Technology", "summary": "Good",
+        "revenue_growth": 0.15,
+        "pe_ratio": 20,
+        "debt_to_equity": 0.5,
+        "market_cap": 1000000000,
+        "sector": "Technology",
+        "summary": "Good",
     }
     sent_report = {
-        "overall_sentiment": 0.7, "news_items": [], "social_mentions": [], "summary": "Positive",
+        "overall_sentiment": 0.7,
+        "news_items": [],
+        "social_mentions": [],
+        "summary": "Positive",
     }
     tech_report = {
-        "current_price": 100, "ma_50": 95, "ma_200": 90, "rsi": 55,
-        "trend": "bullish", "price_history": [
-            {"close": 90 + i} for i in range(30)
-        ], "summary": "Bullish",
+        "current_price": 100,
+        "ma_50": 95,
+        "ma_200": 90,
+        "rsi": 55,
+        "trend": "bullish",
+        "price_history": [{"close": 90 + i} for i in range(30)],
+        "summary": "Bullish",
     }
     risk_report = {
-        "sector": "Technology", "portfolio_sector_weight": 0.1, "var_95": 0.02,
-        "veto": False, "veto_reason": None,
+        "sector": "Technology",
+        "portfolio_sector_weight": 0.1,
+        "var_95": 0.02,
+        "veto": False,
+        "veto_reason": None,
     }
     decision = {"action": Action.BUY, "confidence": 0.8, "rationale": "Strong buy"}
 
@@ -67,8 +80,11 @@ async def test_graph_run_no_veto():
 async def test_graph_run_veto():
     fund_report, sent_report, tech_report, _, _ = _make_mocks()
     veto_report = {
-        "sector": "Technology", "portfolio_sector_weight": 0.4, "var_95": 0.05,
-        "veto": True, "veto_reason": "Portfolio already 40% in Technology",
+        "sector": "Technology",
+        "portfolio_sector_weight": 0.4,
+        "var_95": 0.05,
+        "veto": True,
+        "veto_reason": "Portfolio already 40% in Technology",
     }
 
     with (
@@ -99,17 +115,35 @@ async def test_parallel_execution_timing():
 
     async def slow_analyze(ticker, market):
         await asyncio.sleep(delay)
-        return {"revenue_growth": 0.1, "pe_ratio": 15, "debt_to_equity": 0.3,
-                "market_cap": 500000000, "sector": "Tech", "summary": "OK"}
+        return {
+            "revenue_growth": 0.1,
+            "pe_ratio": 15,
+            "debt_to_equity": 0.3,
+            "market_cap": 500000000,
+            "sector": "Tech",
+            "summary": "OK",
+        }
 
     async def slow_sentiment(ticker, market):
         await asyncio.sleep(delay)
-        return {"overall_sentiment": 0.5, "news_items": [], "social_mentions": [], "summary": "Neutral"}
+        return {
+            "overall_sentiment": 0.5,
+            "news_items": [],
+            "social_mentions": [],
+            "summary": "Neutral",
+        }
 
     async def slow_technical(ticker, market):
         await asyncio.sleep(delay)
-        return {"current_price": 100, "ma_50": 95, "ma_200": 90, "rsi": 50,
-                "trend": "neutral", "price_history": [{"close": 100}], "summary": "Flat"}
+        return {
+            "current_price": 100,
+            "ma_50": 95,
+            "ma_200": 90,
+            "rsi": 50,
+            "trend": "neutral",
+            "price_history": [{"close": 100}],
+            "summary": "Flat",
+        }
 
     with (
         patch("backend.ai.workflow.FundamentalAgent") as mock_fund,
@@ -121,13 +155,22 @@ async def test_parallel_execution_timing():
         mock_fund.return_value.analyze = slow_analyze
         mock_sent.return_value.analyze = slow_sentiment
         mock_tech.return_value.analyze = slow_technical
-        mock_risk.return_value.assess = AsyncMock(return_value={
-            "sector": "Tech", "portfolio_sector_weight": 0.1, "var_95": 0.01,
-            "veto": False, "veto_reason": None,
-        })
-        mock_chair.return_value.decide = AsyncMock(return_value={
-            "action": Action.HOLD, "confidence": 0.5, "rationale": "Neutral",
-        })
+        mock_risk.return_value.assess = AsyncMock(
+            return_value={
+                "sector": "Tech",
+                "portfolio_sector_weight": 0.1,
+                "var_95": 0.01,
+                "veto": False,
+                "veto_reason": None,
+            }
+        )
+        mock_chair.return_value.decide = AsyncMock(
+            return_value={
+                "action": Action.HOLD,
+                "confidence": 0.5,
+                "rationale": "Neutral",
+            }
+        )
 
         boardroom = BoardroomGraph()
         start = time.monotonic()
@@ -135,7 +178,9 @@ async def test_parallel_execution_timing():
         elapsed = time.monotonic() - start
 
         # If sequential, would take ~0.3s. Parallel should be ~0.1s.
-        assert elapsed < 0.25, f"Expected parallel execution (<0.25s), took {elapsed:.2f}s"
+        assert (
+            elapsed < 0.25
+        ), f"Expected parallel execution (<0.25s), took {elapsed:.2f}s"
 
 
 @pytest.mark.asyncio
@@ -170,7 +215,11 @@ async def test_streaming_event_order():
         started = event_types[1:4]
         assert all(t == WSMessageType.AGENT_STARTED for t in started)
         started_agents = {events[i]["agent"] for i in range(1, 4)}
-        assert started_agents == {AgentType.FUNDAMENTAL, AgentType.SENTIMENT, AgentType.TECHNICAL}
+        assert started_agents == {
+            AgentType.FUNDAMENTAL,
+            AgentType.SENTIMENT,
+            AgentType.TECHNICAL,
+        }
 
         # Next 3: all analyst agents completed
         completed = event_types[4:7]
@@ -193,8 +242,11 @@ async def test_streaming_veto_stops_early():
     """Verify streaming stops after veto (no chairperson)."""
     fund_report, sent_report, tech_report, _, _ = _make_mocks()
     veto_report = {
-        "sector": "Technology", "portfolio_sector_weight": 0.4, "var_95": 0.05,
-        "veto": True, "veto_reason": "Over sector limit",
+        "sector": "Technology",
+        "portfolio_sector_weight": 0.4,
+        "var_95": 0.05,
+        "veto": True,
+        "veto_reason": "Over sector limit",
     }
 
     with (

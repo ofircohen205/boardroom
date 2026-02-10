@@ -2,14 +2,20 @@
 """Pydantic schemas for scheduled analysis API."""
 from datetime import datetime
 from uuid import UUID
+
 from pydantic import BaseModel, Field, field_validator
 
 
 class ScheduledAnalysisCreate(BaseModel):
     """Schema for creating a scheduled analysis."""
-    ticker: str = Field(..., min_length=1, max_length=20, description="Stock ticker symbol")
+
+    ticker: str = Field(
+        ..., min_length=1, max_length=20, description="Stock ticker symbol"
+    )
     market: str = Field(..., pattern="^(US|TASE)$", description="Market (US or TASE)")
-    frequency: str = Field(..., pattern="^(daily|weekly|on_change)$", description="Schedule frequency")
+    frequency: str = Field(
+        ..., pattern="^(daily|weekly|on_change)$", description="Schedule frequency"
+    )
 
     @field_validator("ticker")
     @classmethod
@@ -20,6 +26,7 @@ class ScheduledAnalysisCreate(BaseModel):
 
 class ScheduledAnalysisSchema(BaseModel):
     """Schema for scheduled analysis response."""
+
     id: UUID
     ticker: str
     market: str
@@ -34,4 +41,5 @@ class ScheduledAnalysisSchema(BaseModel):
 
 class ScheduledAnalysisToggle(BaseModel):
     """Schema for toggling schedule active status."""
+
     active: bool

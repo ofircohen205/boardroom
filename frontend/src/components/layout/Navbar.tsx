@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { NotificationBell } from '@/components/NotificationBell';
 import {
-  LayoutDashboard,
   GitCompare,
   Briefcase,
   Bell,

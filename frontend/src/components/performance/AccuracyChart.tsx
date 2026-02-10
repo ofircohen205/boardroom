@@ -1,13 +1,13 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { createChart } from 'lightweight-charts';
-import type { IChartApi, ISeriesApi } from 'lightweight-charts';
+import type { IChartApi, ISeriesApi, Time, LineData } from 'lightweight-charts';
 import type { TimelinePoint } from '@/types/performance';
 import { fetchAPI } from '@/lib/api';
 
 const AccuracyChart: React.FC = () => {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
-  const seriesRef = useRef<ISeriesApi<'Line'> | null>(null);
+  const seriesRef = useRef<ISeriesApi<'Line', Time> | null>(null);
   const [timeline, setTimeline] = useState<TimelinePoint[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +35,7 @@ const AccuracyChart: React.FC = () => {
         width: chartContainerRef.current.clientWidth,
         height: 300,
         layout: {
-          backgroundColor: '#1f2937',
+          background: { color: '#1f2937' },
           textColor: '#d1d5db',
         },
         grid: {
@@ -47,13 +47,14 @@ const AccuracyChart: React.FC = () => {
           },
         },
       });
-      seriesRef.current = chartRef.current.addLineSeries({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      seriesRef.current = chartRef.current.addSeries('Line' as any, {
         color: '#3b82f6',
       });
     }
 
-    const chartData = timeline.map(point => ({
-      time: new Date(point.date).getTime() / 1000,
+    const chartData: LineData<Time>[] = timeline.map(point => ({
+      time: Math.floor(new Date(point.date).getTime() / 1000) as unknown as Time,
       value: point.accuracy,
     }));
 

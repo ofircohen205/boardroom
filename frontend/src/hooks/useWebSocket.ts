@@ -32,14 +32,14 @@ export function useWebSocket() {
   });
   const [comparisonResult, setComparisonResult] = useState<ComparisonResult | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("disconnected");
-  const [latestNotification, setLatestNotification] = useState<any | null>(null);
+  const [latestNotification, setLatestNotification] = useState<Record<string, unknown> | null>(null);
 
   const wsRef = useRef<WebSocket | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const retryCountRef = useRef(0);
   const retryDelayRef = useRef(INITIAL_RETRY_DELAY);
   const shouldReconnectRef = useRef(false);
-  const lastRequestRef = useRef<{ type: string; data: any } | null>(null);
+  const lastRequestRef = useRef<{ type: string; data: Record<string, unknown> } | null>(null);
 
   // Backward compatibility - isConnected derived from connectionStatus
   const isConnected = connectionStatus === "connected";
@@ -67,40 +67,13 @@ export function useWebSocket() {
     return delay;
   }, []);
 
-  // Attempt to reconnect
+  // Attempt to reconnect - stored in ref to avoid circular dependency
+  const attemptReconnectRef = useRef<(() => void) | null>(null);
+
   const attemptReconnect = useCallback(() => {
-    if (!shouldReconnectRef.current || !lastRequestRef.current) {
-      return;
+    if (attemptReconnectRef.current) {
+      attemptReconnectRef.current();
     }
-
-    if (retryCountRef.current >= MAX_RETRY_ATTEMPTS) {
-      console.warn(`Max reconnection attempts (${MAX_RETRY_ATTEMPTS}) reached`);
-      setState((prev) => ({
-        ...prev,
-        error: "Connection failed after multiple attempts. Please refresh the page.",
-      }));
-      setConnectionStatus("disconnected");
-      shouldReconnectRef.current = false;
-      return;
-    }
-
-    retryCountRef.current++;
-    const delay = getNextRetryDelay();
-
-    console.log(
-      `Reconnecting... Attempt ${retryCountRef.current}/${MAX_RETRY_ATTEMPTS} (delay: ${delay}ms)`
-    );
-
-    setConnectionStatus("reconnecting");
-
-    reconnectTimeoutRef.current = setTimeout(() => {
-      const request = lastRequestRef.current;
-      if (request?.type === "compare") {
-        compareStocks(request.data.tickers, request.data.market);
-      } else if (request?.data) {
-        analyze(request.data.ticker, request.data.market, request.data.mode);
-      }
-    }, delay);
   }, []);
 
   // Setup WebSocket handlers
@@ -337,7 +310,7 @@ export function useWebSocket() {
 
       setupWebSocket(ws, (msg: WSMessage) => {
         if (msg.type === "comparison_result") {
-          setComparisonResult(msg.data as ComparisonResult);
+          setComparisonResult(msg.data as unknown as ComparisonResult);
         } else if (msg.type === "error") {
           setState((prev) => ({ ...prev, error: msg.data.message as string }));
         }
@@ -346,6 +319,44 @@ export function useWebSocket() {
     },
     [token, connectionStatus, setupWebSocket, clearReconnectTimeout]
   );
+
+  // Setup the actual reconnect implementation after analyze and compareStocks are defined
+  useEffect(() => {
+    attemptReconnectRef.current = () => {
+      if (!shouldReconnectRef.current || !lastRequestRef.current) {
+        return;
+      }
+
+      if (retryCountRef.current >= MAX_RETRY_ATTEMPTS) {
+        console.warn(`Max reconnection attempts (${MAX_RETRY_ATTEMPTS}) reached`);
+        setState((prev) => ({
+          ...prev,
+          error: "Connection failed after multiple attempts. Please refresh the page.",
+        }));
+        setConnectionStatus("disconnected");
+        shouldReconnectRef.current = false;
+        return;
+      }
+
+      retryCountRef.current++;
+      const delay = getNextRetryDelay();
+
+      console.log(
+        `Reconnecting... Attempt ${retryCountRef.current}/${MAX_RETRY_ATTEMPTS} (delay: ${delay}ms)`
+      );
+
+      setConnectionStatus("reconnecting");
+
+      reconnectTimeoutRef.current = setTimeout(() => {
+        const request = lastRequestRef.current;
+        if (request?.type === "compare") {
+          compareStocks(request.data.tickers as string[], request.data.market as Market);
+        } else if (request?.data) {
+          analyze(request.data.ticker as string, request.data.market as Market, request.data.mode as string);
+        }
+      }, delay);
+    };
+  }, [analyze, compareStocks, getNextRetryDelay]);
 
   return {
     state,

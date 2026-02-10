@@ -75,7 +75,7 @@ class OpenAISearchClient:
         context = ""
         if market == "TASE":
             context = " from Israeli financial news sources (Globes, Calcalist, TheMarker, Bizportal) and international coverage"
-        
+
         query = f"Latest financial news and analysis for {ticker} stock{context} in the last {hours} hours"
         return await self._search(query, num_results)
 

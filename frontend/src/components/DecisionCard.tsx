@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Decision, AgentPerformance } from "@/types";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -109,7 +109,7 @@ export function DecisionCard({ decision, vetoed, vetoReason }: Props) {
     >
       <div className={cn("bg-gradient-to-br", config.bg, "p-8")}>
         <div className="flex flex-col gap-8 sm:flex-row sm:items-center justify-between">
-          
+
           {/* Main Verdict */}
           <div className="flex items-center gap-6">
             <div
