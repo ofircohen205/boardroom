@@ -1,9 +1,9 @@
-import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
+from unittest.mock import patch
+
 from backend.ai.agents.base import (
     AnthropicClient,
-    OpenAIClient,
     GeminiClient,
+    OpenAIClient,
     get_llm_client,
 )
 from backend.core.enums import LLMProvider

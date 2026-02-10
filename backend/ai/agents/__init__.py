@@ -1,15 +1,15 @@
 from .base import (
-    BaseLLMClient,
     AnthropicClient,
-    OpenAIClient,
+    BaseLLMClient,
     GeminiClient,
+    OpenAIClient,
     get_llm_client,
 )
-from .fundamental import FundamentalAgent
-from .technical import TechnicalAgent
-from .risk_manager import RiskManagerAgent
 from .chairperson import ChairpersonAgent
+from .fundamental import FundamentalAgent
+from .risk_manager import RiskManagerAgent
 from .sentiment import SentimentAgent
+from .technical import TechnicalAgent
 
 __all__ = [
     "BaseLLMClient",

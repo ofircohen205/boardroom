@@ -1,19 +1,22 @@
 """Tools for calculating relative strength metrics between stocks."""
 
-import numpy as np
 from typing import Optional
 
-from backend.ai.state.agent_state import RelativeStrength, FundamentalReport
+import numpy as np
+
+from backend.ai.state.agent_state import FundamentalReport, RelativeStrength
 
 
-def calculate_correlation_matrix(price_histories: dict[str, list[dict]]) -> dict[str, dict[str, float]]:
+def calculate_correlation_matrix(
+    price_histories: dict[str, list[dict]],
+) -> dict[str, dict[str, float]]:
     """Calculate correlation matrix between stock price movements."""
     if len(price_histories) < 2:
         return {}
 
     # Extract close prices for each ticker
     price_arrays = {}
-    min_length = float('inf')
+    min_length = float("inf")
 
     for ticker, history in price_histories.items():
         prices = [p["close"] for p in history]
@@ -22,7 +25,7 @@ def calculate_correlation_matrix(price_histories: dict[str, list[dict]]) -> dict
 
     # Trim all arrays to same length
     for ticker in price_arrays:
-        price_arrays[ticker] = price_arrays[ticker][-int(min_length):]
+        price_arrays[ticker] = price_arrays[ticker][-int(min_length) :]
 
     # Calculate returns
     returns = {}
@@ -40,12 +43,16 @@ def calculate_correlation_matrix(price_histories: dict[str, list[dict]]) -> dict
                 correlation_matrix[ticker1][ticker2] = 1.0
             else:
                 corr = float(np.corrcoef(returns[ticker1], returns[ticker2])[0, 1])
-                correlation_matrix[ticker1][ticker2] = corr if not np.isnan(corr) else 0.0
+                correlation_matrix[ticker1][ticker2] = (
+                    corr if not np.isnan(corr) else 0.0
+                )
 
     return correlation_matrix
 
 
-def calculate_relative_performance(price_histories: dict[str, list[dict]]) -> dict[str, float]:
+def calculate_relative_performance(
+    price_histories: dict[str, list[dict]],
+) -> dict[str, float]:
     """Calculate relative performance (% return) for each stock over the period."""
     performance = {}
 
@@ -67,7 +74,7 @@ def calculate_relative_performance(price_histories: dict[str, list[dict]]) -> di
 
 
 def calculate_valuation_comparison(
-    fundamentals: dict[str, Optional[FundamentalReport]]
+    fundamentals: dict[str, Optional[FundamentalReport]],
 ) -> dict[str, dict[str, float]]:
     """Compare valuation metrics across stocks."""
     comparison = {}
@@ -76,7 +83,8 @@ def calculate_valuation_comparison(
         if report:
             comparison[ticker] = {
                 "pe_ratio": report["pe_ratio"],
-                "revenue_growth": report["revenue_growth"] * 100,  # Convert to percentage
+                "revenue_growth": report["revenue_growth"]
+                * 100,  # Convert to percentage
                 "debt_to_equity": report["debt_to_equity"],
                 "market_cap": report["market_cap"],
             }
@@ -93,7 +101,7 @@ def calculate_valuation_comparison(
 
 def calculate_relative_strength(
     price_histories: dict[str, list[dict]],
-    fundamentals: dict[str, Optional[FundamentalReport]]
+    fundamentals: dict[str, Optional[FundamentalReport]],
 ) -> RelativeStrength:
     """Calculate comprehensive relative strength metrics."""
     return RelativeStrength(

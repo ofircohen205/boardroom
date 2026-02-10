@@ -1,6 +1,7 @@
 # backend/core/logging.py
 """Logging configuration for the application."""
 import sys
+
 from loguru import logger
 
 # Configure Loguru to output to stdout

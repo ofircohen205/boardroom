@@ -1,8 +1,14 @@
-import pytest
 from unittest.mock import AsyncMock, patch
+
+import pytest
+
 from backend.ai.agents.chairperson import ChairpersonAgent
-from backend.ai.state.agent_state import FundamentalReport, SentimentReport, TechnicalReport
-from backend.ai.state.enums import Trend, Action
+from backend.ai.state.agent_state import (
+    FundamentalReport,
+    SentimentReport,
+    TechnicalReport,
+)
+from backend.ai.state.enums import Action, Trend
 
 
 @pytest.fixture

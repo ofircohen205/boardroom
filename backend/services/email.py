@@ -1,10 +1,9 @@
 # backend/services/email.py
 """Email notification service using SendGrid."""
 from typing import Optional
-from uuid import UUID
 
-from backend.core.settings import settings
 from backend.core.logging import get_logger
+from backend.core.settings import settings
 
 logger = get_logger(__name__)
 
@@ -33,7 +32,7 @@ class EmailService:
         condition: str,
         target_value: float,
         current_price: float,
-        market: str = "US"
+        market: str = "US",
     ) -> bool:
         """
         Send price alert notification email.
@@ -50,7 +49,9 @@ class EmailService:
             True if sent successfully, False otherwise
         """
         if not self.enabled:
-            logger.debug(f"Email notifications disabled, skipping price alert email for {ticker}")
+            logger.debug(
+                f"Email notifications disabled, skipping price alert email for {ticker}"
+            )
             return False
 
         subject = self._get_price_alert_subject(ticker, condition, target_value)
@@ -59,7 +60,7 @@ class EmailService:
             condition=condition,
             target_value=target_value,
             current_price=current_price,
-            market=market
+            market=market,
         )
 
         return await self._send_email(to_email, subject, html_content)
@@ -71,7 +72,7 @@ class EmailService:
         action: str,
         confidence: float,
         vetoed: bool = False,
-        veto_reason: Optional[str] = None
+        veto_reason: Optional[str] = None,
     ) -> bool:
         """
         Send scheduled analysis completion notification email.
@@ -88,7 +89,9 @@ class EmailService:
             True if sent successfully, False otherwise
         """
         if not self.enabled:
-            logger.debug(f"Email notifications disabled, skipping analysis email for {ticker}")
+            logger.debug(
+                f"Email notifications disabled, skipping analysis email for {ticker}"
+            )
             return False
 
         if vetoed:
@@ -145,7 +148,9 @@ class EmailService:
 
         return True  # Stub always returns success
 
-    def _get_price_alert_subject(self, ticker: str, condition: str, target_value: float) -> str:
+    def _get_price_alert_subject(
+        self, ticker: str, condition: str, target_value: float
+    ) -> str:
         """Generate email subject for price alert."""
         if condition == "above":
             return f"🔔 {ticker} Above ${target_value}"
@@ -160,13 +165,13 @@ class EmailService:
         condition: str,
         target_value: float,
         current_price: float,
-        market: str
+        market: str,
     ) -> str:
         """Generate HTML email template for price alert."""
         condition_text = {
             "above": f"risen above ${target_value:.2f}",
             "below": f"fallen below ${target_value:.2f}",
-            "change_pct": f"changed by {target_value}% or more"
+            "change_pct": f"changed by {target_value}% or more",
         }.get(condition, "triggered an alert")
 
         return f"""
@@ -207,13 +212,11 @@ class EmailService:
         </html>
         """
 
-    def _get_analysis_complete_html(self, ticker: str, action: str, confidence: float) -> str:
+    def _get_analysis_complete_html(
+        self, ticker: str, action: str, confidence: float
+    ) -> str:
         """Generate HTML email template for analysis completion."""
-        action_colors = {
-            "BUY": "#10b981",
-            "SELL": "#ef4444",
-            "HOLD": "#f59e0b"
-        }
+        action_colors = {"BUY": "#10b981", "SELL": "#ef4444", "HOLD": "#f59e0b"}
         action_color = action_colors.get(action, "#6b7280")
 
         return f"""

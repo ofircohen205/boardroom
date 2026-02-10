@@ -1,13 +1,14 @@
 # backend/dao/analysis.py
 """Analysis session data access objects."""
-from typing import Optional, List
+from typing import List, Optional
 from uuid import UUID
 
-from sqlalchemy import select, desc
+from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.db.models import AnalysisSession, AgentReport, FinalDecision
-from backend.ai.state.enums import Market, AgentType, Action
+from backend.ai.state.enums import Action, AgentType, Market
+from backend.db.models import AgentReport, AnalysisSession, FinalDecision
+
 from .base import BaseDAO
 
 

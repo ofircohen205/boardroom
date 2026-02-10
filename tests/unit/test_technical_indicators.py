@@ -1,9 +1,14 @@
 import pytest
-from backend.ai.tools.technical_indicators import calculate_rsi, calculate_ma, calculate_trend
-from backend.ai.state.enums import Trend
 
+from backend.ai.state.enums import Trend
+from backend.ai.tools.technical_indicators import (
+    calculate_ma,
+    calculate_rsi,
+    calculate_trend,
+)
 
 # --- Moving Average tests ---
+
 
 def test_calculate_ma():
     prices = [100, 102, 104, 103, 105, 107, 106, 108, 110, 109]
@@ -40,6 +45,7 @@ def test_calculate_ma_period_1():
 
 # --- RSI tests ---
 
+
 def test_calculate_rsi_overbought():
     prices = [100 + i * 2 for i in range(20)]
     rsi = calculate_rsi(prices)
@@ -68,13 +74,30 @@ def test_calculate_rsi_all_gains():
 
 def test_calculate_rsi_mixed():
     """Mixed price movement should produce RSI between 0 and 100."""
-    prices = [100, 105, 102, 108, 103, 110, 107, 112, 108, 115,
-              110, 118, 113, 120, 115, 122]
+    prices = [
+        100,
+        105,
+        102,
+        108,
+        103,
+        110,
+        107,
+        112,
+        108,
+        115,
+        110,
+        118,
+        113,
+        120,
+        115,
+        122,
+    ]
     rsi = calculate_rsi(prices)
     assert 0 < rsi < 100
 
 
 # --- Trend tests ---
+
 
 def test_calculate_trend_bullish():
     trend = calculate_trend(current_price=110, ma_50=100, ma_200=95)

@@ -1,15 +1,16 @@
 # backend/dao/user.py
 """User data access objects."""
 from functools import lru_cache
-from typing import Optional, List
+from typing import List, Optional
 from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from backend.db.models import User, UserAPIKey
 from backend.core.enums import LLMProvider
+from backend.db.models import User, UserAPIKey
+
 from .base import BaseDAO
 
 
@@ -24,9 +25,7 @@ class UserDAO(BaseDAO[User]):
 
     async def find_by_email(self, email: str) -> Optional[User]:
         """Find a user by email address."""
-        result = await self.session.execute(
-            select(User).where(User.email == email)
-        )
+        result = await self.session.execute(select(User).where(User.email == email))
         return result.scalars().first()
 
     async def create_user(

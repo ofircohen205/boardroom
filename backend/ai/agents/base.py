@@ -70,9 +70,7 @@ class OpenAIClient(BaseLLMClient):
     async def complete_with_tools(
         self, messages: list[dict], tools: list[dict]
     ) -> dict[str, Any]:
-        openai_tools = [
-            {"type": "function", "function": t} for t in tools
-        ]
+        openai_tools = [{"type": "function", "function": t} for t in tools]
         response = await self.client.chat.completions.create(
             model=self.model,
             messages=messages,
@@ -82,6 +80,7 @@ class OpenAIClient(BaseLLMClient):
         if msg.tool_calls:
             tc = msg.tool_calls[0]
             import json
+
             return {"tool": tc.function.name, "args": json.loads(tc.function.arguments)}
         return {"text": msg.content or ""}
 

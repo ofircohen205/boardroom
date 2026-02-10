@@ -5,20 +5,18 @@ from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.ai.state.enums import Action, AgentType, Market
 from backend.dao.analysis import AnalysisDAO
-from backend.db.models import AnalysisSession, AgentReport, FinalDecision
-from backend.ai.state.enums import Market, AgentType, Action
+from backend.db.models import AgentReport, AnalysisSession, FinalDecision
+
 
 class AnalysisHistoryService:
-
     def __init__(self):
         pass
 
+
 async def create_analysis_session(
-    ticker: str,
-    market: Market,
-    user_id: Optional[UUID],
-    db: AsyncSession
+    ticker: str, market: Market, user_id: Optional[UUID], db: AsyncSession
 ) -> AnalysisSession:
     """Create a new analysis session."""
     dao = AnalysisDAO.get_instance(db)
@@ -29,10 +27,7 @@ async def create_analysis_session(
 
 
 async def save_agent_report(
-    session_id: UUID,
-    agent_type: AgentType,
-    report_data: dict,
-    db: AsyncSession
+    session_id: UUID, agent_type: AgentType, report_data: dict, db: AsyncSession
 ) -> AgentReport:
     """Save an agent's report to a session."""
     dao = AnalysisDAO.get_instance(db)
@@ -49,7 +44,7 @@ async def save_final_decision(
     rationale: str,
     vetoed: bool,
     veto_reason: Optional[str],
-    db: AsyncSession
+    db: AsyncSession,
 ) -> FinalDecision:
     """Save the final trading decision for a session."""
     dao = AnalysisDAO.get_instance(db)
@@ -67,9 +62,7 @@ async def save_final_decision(
 
 
 async def get_user_analysis_history(
-    user_id: UUID,
-    limit: int,
-    db: AsyncSession
+    user_id: UUID, limit: int, db: AsyncSession
 ) -> List[AnalysisSession]:
     """Get analysis history for a user."""
     dao = AnalysisDAO.get_instance(db)

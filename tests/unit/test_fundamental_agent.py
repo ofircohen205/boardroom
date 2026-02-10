@@ -1,5 +1,7 @@
-import pytest
 from unittest.mock import AsyncMock, patch
+
+import pytest
+
 from backend.ai.agents.fundamental import FundamentalAgent
 from backend.ai.state.enums import Market
 
@@ -28,7 +30,9 @@ def mock_llm_response():
 async def test_fundamental_agent_analyze(mock_stock_data, mock_llm_response):
     with patch("backend.ai.agents.fundamental.get_market_data_client") as mock_market:
         with patch("backend.ai.agents.fundamental.get_llm_client") as mock_llm:
-            mock_market.return_value.get_stock_data = AsyncMock(return_value=mock_stock_data)
+            mock_market.return_value.get_stock_data = AsyncMock(
+                return_value=mock_stock_data
+            )
             mock_llm.return_value.complete = AsyncMock(return_value=mock_llm_response)
 
             agent = FundamentalAgent()

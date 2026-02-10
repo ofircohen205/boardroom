@@ -1,16 +1,18 @@
 # backend/api/alerts/endpoints.py
 """API endpoints for price alerts."""
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.auth.dependencies import get_current_user
-from backend.db.models import User, AlertCondition
-from backend.db.database import get_db
-from backend.dao.alerts import PriceAlertDAO
-from backend.services.alerts import create_price_alert, AlertValidationError
 from backend.ai.state.enums import Market
+from backend.auth.dependencies import get_current_user
 from backend.core.logging import get_logger
+from backend.dao.alerts import PriceAlertDAO
+from backend.db.database import get_db
+from backend.db.models import AlertCondition, User
+from backend.services.alerts import AlertValidationError, create_price_alert
+
 from .schemas import PriceAlertCreate, PriceAlertSchema, PriceAlertToggle
 
 logger = get_logger(__name__)
@@ -22,7 +24,7 @@ router = APIRouter(prefix="/alerts", tags=["alerts"])
 async def create_alert(
     alert_data: PriceAlertCreate,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Create a new price alert.
@@ -39,7 +41,7 @@ async def create_alert(
             ticker=alert_data.ticker,
             market=Market(alert_data.market),
             condition=AlertCondition(alert_data.condition),
-            target_value=alert_data.target_value
+            target_value=alert_data.target_value,
         )
         await db.commit()
 
@@ -52,14 +54,17 @@ async def create_alert(
     except Exception as e:
         logger.error(f"Failed to create alert: {e}", exc_info=True)
         await db.rollback()
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to create alert")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create alert",
+        )
 
 
 @router.get("", response_model=list[PriceAlertSchema])
 async def list_alerts(
     active_only: bool = Query(True, description="Only return active alerts"),
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     List all alerts for the current user.
@@ -76,7 +81,7 @@ async def list_alerts(
 async def delete_alert(
     alert_id: UUID,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Delete a price alert.
@@ -87,10 +92,15 @@ async def delete_alert(
     alert = await alert_dao.get_by_id(alert_id)
 
     if not alert:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Alert not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Alert not found"
+        )
 
     if alert.user_id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to delete this alert")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to delete this alert",
+        )
 
     await alert_dao.delete(alert_id)
     await db.commit()
@@ -102,7 +112,7 @@ async def delete_alert(
 async def reset_alert(
     alert_id: UUID,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Reset a triggered alert to re-enable it.
@@ -113,10 +123,15 @@ async def reset_alert(
     alert = await alert_dao.get_by_id(alert_id)
 
     if not alert:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Alert not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Alert not found"
+        )
 
     if alert.user_id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to modify this alert")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to modify this alert",
+        )
 
     updated_alert = await alert_dao.reset_alert(alert_id)
     await db.commit()
@@ -130,7 +145,7 @@ async def toggle_alert(
     alert_id: UUID,
     toggle_data: PriceAlertToggle,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Toggle alert active status (pause/resume).
@@ -139,14 +154,21 @@ async def toggle_alert(
     alert = await alert_dao.get_by_id(alert_id)
 
     if not alert:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Alert not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Alert not found"
+        )
 
     if alert.user_id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to modify this alert")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to modify this alert",
+        )
 
     alert.active = toggle_data.active
     updated_alert = await alert_dao.update(alert)
     await db.commit()
 
-    logger.info(f"User {current_user.id} toggled alert {alert_id} to active={toggle_data.active}")
+    logger.info(
+        f"User {current_user.id} toggled alert {alert_id} to active={toggle_data.active}"
+    )
     return updated_alert

@@ -6,17 +6,16 @@ and agent accuracy metrics.
 """
 
 import asyncio
-from datetime import datetime
 from typing import Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
-from backend.core.settings import settings
-from backend.jobs.outcome_tracker import run_outcome_tracker_job
-from backend.jobs.alert_checker import check_price_alerts
-from backend.jobs.scheduled_analyzer import run_scheduled_analyses
 from backend.core.logging import get_logger
+from backend.core.settings import settings
+from backend.jobs.alert_checker import check_price_alerts
+from backend.jobs.outcome_tracker import run_outcome_tracker_job
+from backend.jobs.scheduled_analyzer import run_scheduled_analyses
 
 logger = get_logger(__name__)
 

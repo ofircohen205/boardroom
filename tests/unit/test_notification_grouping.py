@@ -1,29 +1,32 @@
 # tests/test_notification_grouping.py
 """Tests for notification grouping feature (Phase 4b)."""
-import pytest
 from datetime import datetime, timedelta
-from uuid import uuid4
+from typing import ClassVar
 from unittest.mock import AsyncMock, patch
+from uuid import uuid4
 
-from backend.db.models import NotificationType, AlertCondition
-from backend.ai.state.enums import Market
-from backend.services.alerts import trigger_alert
+import pytest
+
 import backend.services.alerts.service as alert_service
+from backend.ai.state.enums import Market
+from backend.db.models import AlertCondition, NotificationType
+from backend.services.alerts import trigger_alert
 
 
 @pytest.fixture
 def mock_alert():
     """Create a mock price alert."""
+
     class MockAlert:
-        id = uuid4()
-        user_id = uuid4()
-        ticker = "AAPL"
-        market = Market.US
-        condition = AlertCondition.ABOVE
-        target_value = 200.0
-        triggered = False
-        triggered_at = None
-        cooldown_until = None
+        id: ClassVar = uuid4()
+        user_id: ClassVar = uuid4()
+        ticker: ClassVar = "AAPL"
+        market: ClassVar = Market.US
+        condition: ClassVar = AlertCondition.ABOVE
+        target_value: ClassVar = 200.0
+        triggered: ClassVar = False
+        triggered_at: ClassVar = None
+        cooldown_until: ClassVar = None
 
     return MockAlert()
 
@@ -31,23 +34,24 @@ def mock_alert():
 @pytest.fixture
 def mock_notification():
     """Create a mock notification."""
+
     class MockNotification:
-        id = uuid4()
-        user_id = uuid4()
-        type = NotificationType.PRICE_ALERT
-        title = "AAPL Above $200"
-        body = "AAPL has risen above $200.00. Current price: $205.00"
-        data = {
+        id: ClassVar = uuid4()
+        user_id: ClassVar = uuid4()
+        type: ClassVar = NotificationType.PRICE_ALERT
+        title: ClassVar = "AAPL Above $200"
+        body: ClassVar = "AAPL has risen above $200.00. Current price: $205.00"
+        data: ClassVar = {
             "ticker": "AAPL",
             "market": "US",
             "condition": "above",
             "target_value": 200.0,
             "current_price": 205.0,
             "alert_id": str(uuid4()),
-            "grouped_count": 1
+            "grouped_count": 1,
         }
-        read = False
-        created_at = datetime.now() - timedelta(minutes=5)
+        read: ClassVar = False
+        created_at: ClassVar = datetime.now() - timedelta(minutes=5)
 
     return MockNotification()
 
@@ -65,14 +69,16 @@ class TestNotificationGrouping:
         # No recent notification exists
         mock_notification_dao.find_recent_by_ticker.return_value = None
         mock_notification_dao.create.return_value = AsyncMock(
-            id=uuid4(),
-            title="AAPL Above $200",
-            data={"grouped_count": 1}
+            id=uuid4(), title="AAPL Above $200", data={"grouped_count": 1}
         )
 
-        with patch.object(alert_service, 'PriceAlertDAO', return_value=mock_alert_dao):
-            with patch.object(alert_service, 'NotificationDAO', return_value=mock_notification_dao):
-                with patch('backend.api.websocket.connection_manager.connection_manager'):
+        with patch.object(alert_service, "PriceAlertDAO", return_value=mock_alert_dao):
+            with patch.object(
+                alert_service, "NotificationDAO", return_value=mock_notification_dao
+            ):
+                with patch(
+                    "backend.api.websocket.connection_manager.connection_manager"
+                ):
                     notification = await trigger_alert(mock_db, mock_alert, 205.0)
 
                     # Should create new notification
@@ -91,9 +97,13 @@ class TestNotificationGrouping:
         mock_notification_dao.find_recent_by_ticker.return_value = mock_notification
         mock_notification_dao.update.return_value = mock_notification
 
-        with patch.object(alert_service, 'PriceAlertDAO', return_value=mock_alert_dao):
-            with patch.object(alert_service, 'NotificationDAO', return_value=mock_notification_dao):
-                with patch('backend.api.websocket.connection_manager.connection_manager'):
+        with patch.object(alert_service, "PriceAlertDAO", return_value=mock_alert_dao):
+            with patch.object(
+                alert_service, "NotificationDAO", return_value=mock_notification_dao
+            ):
+                with patch(
+                    "backend.api.websocket.connection_manager.connection_manager"
+                ):
                     notification = await trigger_alert(mock_db, mock_alert, 210.0)
 
                     # Should update existing notification
@@ -106,7 +116,9 @@ class TestNotificationGrouping:
                     assert updated_notification.data["grouped_count"] == 2
 
     @pytest.mark.asyncio
-    async def test_grouped_notification_shows_count(self, mock_alert, mock_notification):
+    async def test_grouped_notification_shows_count(
+        self, mock_alert, mock_notification
+    ):
         """Grouped notification should show count in title."""
         mock_db = AsyncMock()
         mock_alert_dao = AsyncMock()
@@ -115,9 +127,13 @@ class TestNotificationGrouping:
         mock_notification_dao.find_recent_by_ticker.return_value = mock_notification
         mock_notification_dao.update.return_value = mock_notification
 
-        with patch.object(alert_service, 'PriceAlertDAO', return_value=mock_alert_dao):
-            with patch.object(alert_service, 'NotificationDAO', return_value=mock_notification_dao):
-                with patch('backend.api.websocket.connection_manager.connection_manager'):
+        with patch.object(alert_service, "PriceAlertDAO", return_value=mock_alert_dao):
+            with patch.object(
+                alert_service, "NotificationDAO", return_value=mock_notification_dao
+            ):
+                with patch(
+                    "backend.api.websocket.connection_manager.connection_manager"
+                ):
                     await trigger_alert(mock_db, mock_alert, 210.0)
 
                     updated_notification = mock_notification_dao.update.call_args[0][0]
@@ -138,9 +154,13 @@ class TestNotificationGrouping:
         # Change ticker to MSFT
         mock_alert.ticker = "MSFT"
 
-        with patch.object(alert_service, 'PriceAlertDAO', return_value=mock_alert_dao):
-            with patch.object(alert_service, 'NotificationDAO', return_value=mock_notification_dao):
-                with patch('backend.api.websocket.connection_manager.connection_manager'):
+        with patch.object(alert_service, "PriceAlertDAO", return_value=mock_alert_dao):
+            with patch.object(
+                alert_service, "NotificationDAO", return_value=mock_notification_dao
+            ):
+                with patch(
+                    "backend.api.websocket.connection_manager.connection_manager"
+                ):
                     await trigger_alert(mock_db, mock_alert, 350.0)
 
                     # Should create new notification (different ticker)
@@ -160,16 +180,22 @@ class TestNotificationGrouping:
         mock_notification_dao.find_recent_by_ticker.return_value = None
         mock_notification_dao.create.return_value = AsyncMock(id=uuid4())
 
-        with patch.object(alert_service, 'PriceAlertDAO', return_value=mock_alert_dao):
-            with patch.object(alert_service, 'NotificationDAO', return_value=mock_notification_dao):
-                with patch('backend.api.websocket.connection_manager.connection_manager'):
+        with patch.object(alert_service, "PriceAlertDAO", return_value=mock_alert_dao):
+            with patch.object(
+                alert_service, "NotificationDAO", return_value=mock_notification_dao
+            ):
+                with patch(
+                    "backend.api.websocket.connection_manager.connection_manager"
+                ):
                     await trigger_alert(mock_db, mock_alert, 210.0)
 
                     # Should create new notification (old one expired)
                     mock_notification_dao.create.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_grouped_notification_marks_unread(self, mock_alert, mock_notification):
+    async def test_grouped_notification_marks_unread(
+        self, mock_alert, mock_notification
+    ):
         """Grouped notification should be marked as unread."""
         mock_db = AsyncMock()
         mock_alert_dao = AsyncMock()
@@ -181,9 +207,13 @@ class TestNotificationGrouping:
         mock_notification_dao.find_recent_by_ticker.return_value = mock_notification
         mock_notification_dao.update.return_value = mock_notification
 
-        with patch.object(alert_service, 'PriceAlertDAO', return_value=mock_alert_dao):
-            with patch.object(alert_service, 'NotificationDAO', return_value=mock_notification_dao):
-                with patch('backend.api.websocket.connection_manager.connection_manager'):
+        with patch.object(alert_service, "PriceAlertDAO", return_value=mock_alert_dao):
+            with patch.object(
+                alert_service, "NotificationDAO", return_value=mock_notification_dao
+            ):
+                with patch(
+                    "backend.api.websocket.connection_manager.connection_manager"
+                ):
                     await trigger_alert(mock_db, mock_alert, 210.0)
 
                     updated_notification = mock_notification_dao.update.call_args[0][0]
@@ -191,7 +221,9 @@ class TestNotificationGrouping:
                     assert updated_notification.read is False
 
     @pytest.mark.asyncio
-    async def test_grouped_notification_updates_timestamp(self, mock_alert, mock_notification):
+    async def test_grouped_notification_updates_timestamp(
+        self, mock_alert, mock_notification
+    ):
         """Grouped notification should update created_at timestamp."""
         mock_db = AsyncMock()
         mock_alert_dao = AsyncMock()
@@ -203,9 +235,13 @@ class TestNotificationGrouping:
         mock_notification_dao.find_recent_by_ticker.return_value = mock_notification
         mock_notification_dao.update.return_value = mock_notification
 
-        with patch.object(alert_service, 'PriceAlertDAO', return_value=mock_alert_dao):
-            with patch.object(alert_service, 'NotificationDAO', return_value=mock_notification_dao):
-                with patch('backend.api.websocket.connection_manager.connection_manager'):
+        with patch.object(alert_service, "PriceAlertDAO", return_value=mock_alert_dao):
+            with patch.object(
+                alert_service, "NotificationDAO", return_value=mock_notification_dao
+            ):
+                with patch(
+                    "backend.api.websocket.connection_manager.connection_manager"
+                ):
                     await trigger_alert(mock_db, mock_alert, 210.0)
 
                     updated_notification = mock_notification_dao.update.call_args[0][0]

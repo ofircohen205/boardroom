@@ -12,10 +12,10 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.db.models import AnalysisOutcome, AnalysisSession, FinalDecision
-from backend.ai.state.enums import Action, Market
+from backend.ai.state.enums import Action
 from backend.ai.tools.market_data import get_market_data_client
 from backend.core.logging import get_logger
+from backend.db.models import AnalysisOutcome, AnalysisSession, FinalDecision
 
 logger = get_logger(__name__)
 
@@ -67,7 +67,9 @@ async def create_analysis_outcome(
         # Get current price
         try:
             market_data_client = get_market_data_client()
-            quote = await market_data_client.get_stock_data(session.ticker, session.market)
+            quote = await market_data_client.get_stock_data(
+                session.ticker, session.market
+            )
             current_price = quote["current_price"]
         except Exception as e:
             logger.error(f"Failed to get price for {session.ticker}: {e}")
@@ -106,9 +108,7 @@ async def get_performance_summary(db: AsyncSession) -> dict:
     Returns:
         Dictionary with performance metrics
     """
-    query = select(AnalysisOutcome).where(
-        AnalysisOutcome.outcome_correct.is_not(None)
-    )
+    query = select(AnalysisOutcome).where(AnalysisOutcome.outcome_correct.is_not(None))
     result = await db.execute(query)
     outcomes = result.scalars().all()
 
@@ -160,10 +160,10 @@ async def get_recent_outcomes(
     Returns:
         List of outcome dictionaries
     """
-    query = select(AnalysisOutcome, FinalDecision, AnalysisSession).join(
-        FinalDecision, AnalysisOutcome.session_id == FinalDecision.session_id
-    ).join(
-        AnalysisSession, AnalysisOutcome.session_id == AnalysisSession.id
+    query = (
+        select(AnalysisOutcome, FinalDecision, AnalysisSession)
+        .join(FinalDecision, AnalysisOutcome.session_id == FinalDecision.session_id)
+        .join(AnalysisSession, AnalysisOutcome.session_id == AnalysisSession.id)
     )
 
     if ticker:
@@ -180,33 +180,31 @@ async def get_recent_outcomes(
         returns = {}
         if outcome.price_after_1d:
             returns["1d"] = (
-                (outcome.price_after_1d - outcome.price_at_recommendation)
-                / outcome.price_at_recommendation
-            )
+                outcome.price_after_1d - outcome.price_at_recommendation
+            ) / outcome.price_at_recommendation
         if outcome.price_after_7d:
             returns["7d"] = (
-                (outcome.price_after_7d - outcome.price_at_recommendation)
-                / outcome.price_at_recommendation
-            )
+                outcome.price_after_7d - outcome.price_at_recommendation
+            ) / outcome.price_at_recommendation
         if outcome.price_after_30d:
             returns["30d"] = (
-                (outcome.price_after_30d - outcome.price_at_recommendation)
-                / outcome.price_at_recommendation
-            )
+                outcome.price_after_30d - outcome.price_at_recommendation
+            ) / outcome.price_at_recommendation
         if outcome.price_after_90d:
             returns["90d"] = (
-                (outcome.price_after_90d - outcome.price_at_recommendation)
-                / outcome.price_at_recommendation
-            )
+                outcome.price_after_90d - outcome.price_at_recommendation
+            ) / outcome.price_at_recommendation
 
-        outcomes.append({
-            "ticker": outcome.ticker,
-            "action": outcome.action_recommended.value,
-            "price_at_recommendation": outcome.price_at_recommendation,
-            "confidence": decision.confidence,
-            "outcome_correct": outcome.outcome_correct,
-            "returns": returns,
-            "created_at": outcome.created_at.isoformat(),
-        })
+        outcomes.append(
+            {
+                "ticker": outcome.ticker,
+                "action": outcome.action_recommended.value,
+                "price_at_recommendation": outcome.price_at_recommendation,
+                "confidence": decision.confidence,
+                "outcome_correct": outcome.outcome_correct,
+                "returns": returns,
+                "created_at": outcome.created_at.isoformat(),
+            }
+        )
 
     return outcomes

@@ -1,14 +1,13 @@
-from backend.db import get_db
 from contextlib import asynccontextmanager
-
-from sqlalchemy import text
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 
 from backend.api import api_router, websocket_router_root
-from backend.jobs.scheduler import start_scheduler, stop_scheduler
 from backend.core.cache import get_cache
+from backend.db import get_db
+from backend.jobs.scheduler import start_scheduler, stop_scheduler
 
 
 @asynccontextmanager

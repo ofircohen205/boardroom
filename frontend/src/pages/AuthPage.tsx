@@ -30,8 +30,8 @@ export default function AuthPage() {
       // OAuth2PasswordRequestForm expects form data, register uses JSON (UserCreate)
       ? new URLSearchParams({ username: email, password })
       : JSON.stringify({ email, password, first_name: firstName, last_name: lastName });
-      
-    const headers = isLogin 
+
+    const headers = isLogin
       ? { 'Content-Type': 'application/x-www-form-urlencoded' }
       : { 'Content-Type': 'application/json' };
 
@@ -69,8 +69,8 @@ export default function AuthPage() {
             {isLogin ? 'Welcome Back' : 'Create Account'}
           </CardTitle>
           <p className="text-sm text-muted-foreground">
-            {isLogin 
-              ? 'Enter your credentials to access your dashboard' 
+            {isLogin
+              ? 'Enter your credentials to access your dashboard'
               : 'Join to track your portfolio and get AI insights'}
           </p>
         </CardHeader>
@@ -141,9 +141,9 @@ export default function AuthPage() {
               </div>
             )}
 
-            <Button 
-                type="submit" 
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/25 transition-all duration-300" 
+            <Button
+                type="submit"
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/25 transition-all duration-300"
                 disabled={isLoading}
             >
               {isLoading ? (

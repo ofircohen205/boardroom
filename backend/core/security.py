@@ -3,8 +3,9 @@
 from datetime import datetime, timedelta
 from typing import Optional
 
-from jose import jwt
 import bcrypt
+from jose import jwt
+
 # Monkeypatch bcrypt for passlib compatibility
 bcrypt.__about__ = type("about", (object,), {"__version__": bcrypt.__version__})
 from passlib.context import CryptContext
@@ -28,8 +29,8 @@ def get_password_hash(password: str) -> str:
     """
     # Encode to bytes first, then truncate to 72 bytes (bcrypt limit)
     # This handles unicode characters correctly
-    password_bytes = password.encode('utf-8')
-    truncated = password_bytes[:72].decode('utf-8', errors='ignore')
+    password_bytes = password.encode("utf-8")
+    truncated = password_bytes[:72].decode("utf-8", errors="ignore")
     return pwd_context.hash(truncated)
 
 
@@ -50,5 +51,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     else:
         expire = datetime.utcnow() + timedelta(minutes=15)
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, settings.jwt_secret, algorithm=settings.algorithm)
+    encoded_jwt = jwt.encode(
+        to_encode, settings.jwt_secret, algorithm=settings.algorithm
+    )
     return encoded_jwt

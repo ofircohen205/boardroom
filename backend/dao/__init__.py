@@ -8,12 +8,12 @@ all SQL queries and database operations. This makes it easier to:
 - Maintain consistent query patterns
 - Refactor database schema without touching business logic
 """
-from .base import BaseDAO
-from .user import UserDAO
-from .portfolio import WatchlistDAO, PortfolioDAO
+from .alerts import NotificationDAO, PriceAlertDAO, ScheduledAnalysisDAO
 from .analysis import AnalysisDAO
+from .base import BaseDAO
 from .performance import PerformanceDAO
-from .alerts import PriceAlertDAO, NotificationDAO, ScheduledAnalysisDAO
+from .portfolio import PortfolioDAO, WatchlistDAO
+from .user import UserDAO
 
 __all__ = [
     "BaseDAO",

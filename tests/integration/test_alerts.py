@@ -1,11 +1,11 @@
 """Tests for alerts system."""
-import pytest
 from datetime import datetime, timedelta
 
-from backend.db.models import PriceAlert, AlertCondition
+import pytest
+
 from backend.ai.state.enums import Market
+from backend.db.models import AlertCondition, PriceAlert
 from backend.jobs.alert_checker import check_alert_condition, is_market_hours
-from backend.services.alerts import AlertValidationError
 
 
 class TestAlertConditions:
@@ -19,7 +19,7 @@ class TestAlertConditions:
             condition=AlertCondition.ABOVE,
             target_value=150.0,
             triggered=False,
-            active=True
+            active=True,
         )
 
         # Price above target should trigger
@@ -37,7 +37,7 @@ class TestAlertConditions:
             condition=AlertCondition.BELOW,
             target_value=150.0,
             triggered=False,
-            active=True
+            active=True,
         )
 
         # Price below target should trigger
@@ -55,7 +55,7 @@ class TestAlertConditions:
             condition=AlertCondition.CHANGE_PCT,
             target_value=5.0,  # 5% change threshold
             triggered=False,
-            active=True
+            active=True,
         )
 
         # Set baseline price on alert
@@ -112,7 +112,7 @@ class TestAlertCooldown:
             target_value=150.0,
             triggered=True,
             cooldown_until=now + timedelta(hours=1),  # Still in cooldown
-            active=True
+            active=True,
         )
 
         # Alert should not be included in active alerts query due to cooldown
@@ -130,7 +130,7 @@ class TestAlertCooldown:
             target_value=150.0,
             triggered=False,
             cooldown_until=now - timedelta(hours=1),  # Cooldown expired
-            active=True
+            active=True,
         )
 
         # Alert should be included in active alerts query

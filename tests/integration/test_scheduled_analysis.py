@@ -1,9 +1,8 @@
 # tests/test_scheduled_analysis.py
 """Tests for scheduled analysis features (Phase 4b)."""
-import pytest
 from datetime import datetime, timedelta
+
 from zoneinfo import ZoneInfo
-from uuid import uuid4
 
 from backend.db.models import AlertFrequency
 from backend.jobs.scheduled_analyzer import calculate_next_run
@@ -20,7 +19,8 @@ class TestCalculateNextRun:
 
         # Patch datetime.now to return our mock time
         from unittest.mock import patch
-        with patch('backend.jobs.scheduled_analyzer.datetime') as mock_datetime:
+
+        with patch("backend.jobs.scheduled_analyzer.datetime") as mock_datetime:
             mock_datetime.now.return_value = now
 
             next_run = calculate_next_run(AlertFrequency.DAILY)
@@ -36,7 +36,8 @@ class TestCalculateNextRun:
         now = datetime(2026, 2, 9, 10, 0, 0, tzinfo=et_tz)  # Monday 10 AM
 
         from unittest.mock import patch
-        with patch('backend.jobs.scheduled_analyzer.datetime') as mock_datetime:
+
+        with patch("backend.jobs.scheduled_analyzer.datetime") as mock_datetime:
             mock_datetime.now.return_value = now
 
             next_run = calculate_next_run(AlertFrequency.DAILY)
@@ -52,7 +53,8 @@ class TestCalculateNextRun:
         now = datetime(2026, 2, 13, 10, 0, 0, tzinfo=et_tz)  # Friday 10 AM
 
         from unittest.mock import patch
-        with patch('backend.jobs.scheduled_analyzer.datetime') as mock_datetime:
+
+        with patch("backend.jobs.scheduled_analyzer.datetime") as mock_datetime:
             mock_datetime.now.return_value = now
 
             next_run = calculate_next_run(AlertFrequency.DAILY)
@@ -67,7 +69,8 @@ class TestCalculateNextRun:
         now = datetime(2026, 2, 9, 6, 0, 0, tzinfo=et_tz)  # Monday 6 AM
 
         from unittest.mock import patch
-        with patch('backend.jobs.scheduled_analyzer.datetime') as mock_datetime:
+
+        with patch("backend.jobs.scheduled_analyzer.datetime") as mock_datetime:
             mock_datetime.now.return_value = now
 
             next_run = calculate_next_run(AlertFrequency.WEEKLY)
@@ -83,7 +86,8 @@ class TestCalculateNextRun:
         now = datetime(2026, 2, 9, 10, 0, 0, tzinfo=et_tz)  # Monday 10 AM
 
         from unittest.mock import patch
-        with patch('backend.jobs.scheduled_analyzer.datetime') as mock_datetime:
+
+        with patch("backend.jobs.scheduled_analyzer.datetime") as mock_datetime:
             mock_datetime.now.return_value = now
 
             next_run = calculate_next_run(AlertFrequency.WEEKLY)
@@ -98,7 +102,8 @@ class TestCalculateNextRun:
         now = datetime(2026, 2, 11, 10, 0, 0, tzinfo=et_tz)  # Wednesday
 
         from unittest.mock import patch
-        with patch('backend.jobs.scheduled_analyzer.datetime') as mock_datetime:
+
+        with patch("backend.jobs.scheduled_analyzer.datetime") as mock_datetime:
             mock_datetime.now.return_value = now
 
             next_run = calculate_next_run(AlertFrequency.WEEKLY)
@@ -114,7 +119,8 @@ class TestCalculateNextRun:
         now = datetime(2026, 2, 9, 11, 30, 0, tzinfo=et_tz)  # Monday 11:30 AM
 
         from unittest.mock import patch
-        with patch('backend.jobs.scheduled_analyzer.datetime') as mock_datetime:
+
+        with patch("backend.jobs.scheduled_analyzer.datetime") as mock_datetime:
             mock_datetime.now.return_value = now
 
             next_run = calculate_next_run(AlertFrequency.ON_CHANGE)
@@ -130,7 +136,8 @@ class TestCalculateNextRun:
         now = datetime(2026, 2, 9, 8, 0, 0, tzinfo=et_tz)  # Monday 8 AM
 
         from unittest.mock import patch
-        with patch('backend.jobs.scheduled_analyzer.datetime') as mock_datetime:
+
+        with patch("backend.jobs.scheduled_analyzer.datetime") as mock_datetime:
             mock_datetime.now.return_value = now
 
             next_run = calculate_next_run(AlertFrequency.ON_CHANGE)
@@ -146,7 +153,8 @@ class TestCalculateNextRun:
         now = datetime(2026, 2, 9, 18, 0, 0, tzinfo=et_tz)  # Monday 6 PM
 
         from unittest.mock import patch
-        with patch('backend.jobs.scheduled_analyzer.datetime') as mock_datetime:
+
+        with patch("backend.jobs.scheduled_analyzer.datetime") as mock_datetime:
             mock_datetime.now.return_value = now
 
             next_run = calculate_next_run(AlertFrequency.ON_CHANGE)
@@ -162,7 +170,8 @@ class TestCalculateNextRun:
         now = datetime(2026, 2, 13, 18, 0, 0, tzinfo=et_tz)  # Friday 6 PM
 
         from unittest.mock import patch
-        with patch('backend.jobs.scheduled_analyzer.datetime') as mock_datetime:
+
+        with patch("backend.jobs.scheduled_analyzer.datetime") as mock_datetime:
             mock_datetime.now.return_value = now
 
             next_run = calculate_next_run(AlertFrequency.ON_CHANGE)

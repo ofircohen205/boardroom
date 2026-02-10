@@ -6,9 +6,9 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.dao.portfolio import WatchlistDAO, PortfolioDAO
-from backend.db.models import Watchlist, WatchlistItem, Portfolio, Position
 from backend.ai.state.enums import Market
+from backend.dao.portfolio import PortfolioDAO, WatchlistDAO
+from backend.db.models import Portfolio, Position, Watchlist, WatchlistItem
 
 
 async def get_user_watchlists(user_id: UUID, db: AsyncSession) -> List[Watchlist]:
@@ -27,10 +27,7 @@ async def create_watchlist(user_id: UUID, name: str, db: AsyncSession) -> Watchl
 
 
 async def add_to_watchlist(
-    watchlist_id: UUID,
-    ticker: str,
-    market: Market,
-    db: AsyncSession
+    watchlist_id: UUID, ticker: str, market: Market, db: AsyncSession
 ) -> WatchlistItem:
     """Add a stock to a watchlist."""
     dao = WatchlistDAO.get_instance(db)
@@ -41,13 +38,11 @@ async def add_to_watchlist(
 
 
 async def remove_from_watchlist(
-    watchlist_id: UUID,
-    ticker: str,
-    db: AsyncSession
+    watchlist_id: UUID, ticker: str, db: AsyncSession
 ) -> bool:
     """Remove a stock from a watchlist."""
     dao = WatchlistDAO.get_instance(db)
-    
+
     # Find the item to remove
     result = await db.execute(
         select(WatchlistItem)
@@ -87,7 +82,7 @@ async def add_position(
     quantity: float,
     avg_entry_price: float,
     sector: str | None,
-    db: AsyncSession
+    db: AsyncSession,
 ) -> Position:
     """Add a position to a portfolio."""
     dao = PortfolioDAO.get_instance(db)

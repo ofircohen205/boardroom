@@ -256,4 +256,3 @@ export function TickerInput({ onAnalyze, isLoading, analysisMode, onModeChange }
   </div>
   );
 }
-

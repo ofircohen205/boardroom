@@ -6,16 +6,17 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.auth.dependencies import get_current_user
 from backend.db.database import get_db
 from backend.db.models import User
-from backend.auth.dependencies import get_current_user
 from backend.services.auth import (
-    register_user,
-    login_user,
-    UserAlreadyExistsError,
     InvalidCredentialsError,
+    UserAlreadyExistsError,
+    login_user,
+    register_user,
 )
-from .schemas import UserCreate, Token, UserResponse
+
+from .schemas import Token, UserCreate, UserResponse
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -39,23 +40,29 @@ async def register(user_data: UserCreate, db: AsyncSession = Depends(get_db)) ->
 @router.post("/login", response_model=Token)
 async def login(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ) -> Token:
     """Login and receive access token."""
     try:
-        user, access_token = await login_user(form_data.username, form_data.password, db)
+        user, access_token = await login_user(
+            form_data.username, form_data.password, db
+        )
         return Token(access_token=access_token, token_type="bearer")
     except InvalidCredentialsError as e:
-        raise HTTPException(status_code=401, detail=str(e), headers={"WWW-Authenticate": "Bearer"})
+        raise HTTPException(
+            status_code=401, detail=str(e), headers={"WWW-Authenticate": "Bearer"}
+        )
 
 
 @router.get("/me", response_model=UserResponse)
-async def get_current_user_info(current_user: Annotated[User, Depends(get_current_user)]) -> UserResponse:
+async def get_current_user_info(
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> UserResponse:
     """Get current user information."""
     return UserResponse(
         id=str(current_user.id),
         email=current_user.email,
         first_name=current_user.first_name,
         last_name=current_user.last_name,
-        created_at=current_user.created_at
+        created_at=current_user.created_at,
     )
