@@ -1,0 +1,27 @@
+# Ruff configuration
+[lint]
+# Enable specific rule sets
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # Pyflakes
+    "I",      # isort (import sorting)
+    "N",      # pep8-naming
+    "ASYNC",  # flake8-async
+    "RUF",    # ruff-specific rules
+]
+ignore = [
+    "E501",   # line too long (black handles this)
+]
+
+# Exclude test directories from some checks
+exclude = [
+    "tests/",
+    ".venv/",
+    "__pycache__/",
+]
+
+[format]
+# Match black's formatting
+indent-style = "space"
+quote-style = "double"
