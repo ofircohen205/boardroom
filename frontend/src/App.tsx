@@ -4,11 +4,15 @@ import { Dashboard } from "@/components/Dashboard";
 import AuthPage from '@/pages/AuthPage';
 import PortfolioPage from '@/pages/PortfolioPage';
 import { ComparePage } from '@/pages/ComparePage';
-import PerformancePage from '@/pages/PerformancePage'; // Added
+import PerformancePage from '@/pages/PerformancePage';
+import AlertsPage from '@/pages/AlertsPage';
+import SchedulesPage from '@/pages/SchedulesPage';
+import SettingsPage from '@/pages/SettingsPage';
+import AppLayout from '@/components/layout/AppLayout';
 import { Loader2 } from 'lucide-react';
 
 const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { token, isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -18,7 +22,8 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
     );
   }
 
-  if (!isAuthenticated) {
+  // Check for token instead of user to avoid race condition during login
+  if (!token) {
     return <Navigate to="/auth" replace />;
   }
 
@@ -29,45 +34,49 @@ function App() {
   return (
     <AuthProvider>
       <Router>
-        <div className="relative min-h-screen bg-background text-foreground antialiased selection:bg-primary/20 selection:text-primary overflow-hidden">
-          {/* Dynamic Background Effects */}
-          <div className="fixed inset-0 z-0 pointer-events-none">
-            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary/5 blur-[120px] animate-pulse-glow" />
-            <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-secondary/5 blur-[120px] animate-pulse-glow" style={{ animationDelay: "1.5s" }} />
-            <div className="absolute top-[20%] right-[10%] w-[20%] h-[20%] rounded-full bg-accent/5 blur-[80px] animate-float" />
-          </div>
+        <Routes>
+          {/* Auth page - no layout */}
+          <Route path="/auth" element={<AuthPage />} />
 
-          {/* Grid Pattern Overlay */}
-          <div className="fixed inset-0 z-0 pointer-events-none opacity-[0.03]" 
-               style={{ backgroundImage: `radial-gradient(circle at 1px 1px, white 1px, transparent 0)`, backgroundSize: '24px 24px' }} 
-          />
-
-          <div className="relative z-10">
-            <Routes>
-                <Route path="/auth" element={<AuthPage />} />
-                <Route path="/" element={
-                    <ProtectedRoute>
-                        <Dashboard />
-                    </ProtectedRoute>
-                } />
-                <Route path="/portfolio" element={
-                    <ProtectedRoute>
-                        <PortfolioPage />
-                    </ProtectedRoute>
-                } />
-                <Route path="/compare" element={
-                    <ProtectedRoute>
-                        <ComparePage />
-                    </ProtectedRoute>
-                } />
-                <Route path="/performance" element={
-                    <ProtectedRoute>
-                        <PerformancePage />
-                    </ProtectedRoute>
-                } />
-            </Routes>
-          </div>
-        </div>
+          {/* Authenticated routes - use AppLayout */}
+          <Route element={<AppLayout />}>
+            <Route path="/" element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/compare" element={
+              <ProtectedRoute>
+                <ComparePage />
+              </ProtectedRoute>
+            } />
+            <Route path="/portfolio" element={
+              <ProtectedRoute>
+                <PortfolioPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/performance" element={
+              <ProtectedRoute>
+                <PerformancePage />
+              </ProtectedRoute>
+            } />
+            <Route path="/alerts" element={
+              <ProtectedRoute>
+                <AlertsPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/schedules" element={
+              <ProtectedRoute>
+                <SchedulesPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/settings" element={
+              <ProtectedRoute>
+                <SettingsPage />
+              </ProtectedRoute>
+            } />
+          </Route>
+        </Routes>
       </Router>
     </AuthProvider>
   );

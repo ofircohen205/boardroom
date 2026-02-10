@@ -1,4 +1,7 @@
+from backend.db import get_db
 from contextlib import asynccontextmanager
+
+from sqlalchemy import text
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -41,3 +44,34 @@ app.include_router(websocket_router_root)
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
+
+
+@app.get("/health/db")
+async def postgres_health():
+    """Check PostgreSQL connection health."""
+    try:
+        # Get a session and execute a simple query
+        async for session in get_db():
+            await session.execute(text("SELECT 1"))
+            return {"status": "healthy", "service": "postgres"}
+    except Exception as e:
+        return {"status": "unhealthy", "service": "postgres", "error": str(e)}
+
+
+@app.get("/health/cache")
+async def redis_health():
+    """Check Redis connection health."""
+    try:
+        cache = get_cache()
+        stats = await cache.stats()
+        if stats.get("connected"):
+            return {"status": "healthy", "service": "redis", "stats": stats}
+        else:
+            return {
+                "status": "degraded",
+                "service": "redis",
+                "message": "Redis not connected, using in-memory fallback",
+                "stats": stats,
+            }
+    except Exception as e:
+        return {"status": "unhealthy", "service": "redis", "error": str(e)}

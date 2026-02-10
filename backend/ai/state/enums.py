@@ -48,4 +48,5 @@ class WSMessageType(str, Enum):
     VETO = "veto"
     DECISION = "decision"
     COMPARISON_RESULT = "comparison_result"
+    NOTIFICATION = "notification"
     ERROR = "error"

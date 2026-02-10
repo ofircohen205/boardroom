@@ -10,7 +10,6 @@ import { WatchlistSidebar } from "@/components/WatchlistSidebar";
 import { AnalysisHistory } from "@/components/AnalysisHistory";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import type { AnalysisMode } from "@/components/PresetSelector";
 import {
@@ -20,17 +19,14 @@ import {
   TrendingUp,
   Shield,
   Zap,
-  Briefcase,
   History,
-  LogOut,
   Menu,
-  GitCompare
+  GitCompare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function Dashboard() {
-  const { state, analyze, retry } = useWebSocket();
-  const { user, logout } = useAuth();
+  const { state, analyze, retry, connectionStatus } = useWebSocket();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showHistory, setShowHistory] = useState(false);
@@ -38,11 +34,6 @@ export function Dashboard() {
 
   const isLoading = state.activeAgents.size > 0;
   const hasStarted = state.ticker !== null;
-
-  const handleLogout = () => {
-      logout();
-      navigate('/auth');
-  };
 
   const handleTickerSelect = (ticker: string) => {
       analyze(ticker, "US", analysisMode);
@@ -67,7 +58,7 @@ export function Dashboard() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col h-full overflow-hidden relative">
           
-        {/* Header */}
+        {/* Minimal Header - just sidebar toggle and history */}
         <header className="h-14 border-b border-white/10 bg-card/30 backdrop-blur-md px-4 flex items-center justify-between z-20 shrink-0">
             <div className="flex items-center gap-4">
                 <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(!sidebarOpen)}>
@@ -75,25 +66,28 @@ export function Dashboard() {
                 </Button>
                 <div className="flex items-center gap-2">
                     <Zap className="w-5 h-5 text-primary fill-primary" />
-                    <span className="font-bold tracking-tight hidden sm:inline-block">Boardroom</span>
+                    <span className="font-bold tracking-tight hidden sm:inline-block">Dashboard</span>
                 </div>
             </div>
 
             <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm" onClick={() => navigate('/compare')} className="gap-2">
-                    <GitCompare className="w-4 h-4"/> <span className="hidden sm:inline">Compare</span>
-                </Button>
-                <Button variant="ghost" size="sm" onClick={() => navigate('/portfolio')} className="gap-2">
-                    <Briefcase className="w-4 h-4"/> <span className="hidden sm:inline">Portfolio</span>
-                </Button>
                 <Button variant="ghost" size="sm" onClick={() => setShowHistory(!showHistory)} className={cn("gap-2", showHistory && "bg-accent")}>
                     <History className="w-4 h-4"/> <span className="hidden sm:inline">History</span>
                 </Button>
-                <div className="h-4 w-[1px] bg-white/10 mx-2"></div>
-                <div className="text-xs text-muted-foreground mr-2 font-mono hidden sm:block">{user?.email}</div>
-                <Button variant="ghost" size="icon" onClick={handleLogout} title="Logout">
-                    <LogOut className="w-4 h-4 text-destructive"/>
-                </Button>
+
+                {/* Connection Status Indicator */}
+                {connectionStatus === "reconnecting" && (
+                  <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-yellow-500/10 border border-yellow-500/20">
+                    <div className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></div>
+                    <span className="text-xs text-yellow-600 dark:text-yellow-400 font-medium hidden sm:inline">Reconnecting...</span>
+                  </div>
+                )}
+                {connectionStatus === "connecting" && (
+                  <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-blue-500/10 border border-blue-500/20">
+                    <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
+                    <span className="text-xs text-blue-600 dark:text-blue-400 font-medium hidden sm:inline">Connecting...</span>
+                  </div>
+                )}
             </div>
         </header>
 

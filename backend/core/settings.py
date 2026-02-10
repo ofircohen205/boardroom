@@ -22,16 +22,27 @@ class Settings(BaseSettings):
     exa_api_key: str = ""
 
     # Authentication Configuration
-    jwt_secret: str = "secret"
+    # IMPORTANT: These secrets must be set in your .env file.
+    # You can generate a strong JWT_SECRET using: openssl rand -hex 32
+    # You can generate a Fernet key for API_KEY_ENCRYPTION_KEY in a Python shell:
+    # >>> from cryptography.fernet import Fernet
+    # >>> Fernet.generate_key().decode()
+    jwt_secret: str
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
-    api_key_encryption_key: str = "a_very_secret_key_that_should_be_32_bytes"
+    api_key_encryption_key: str  # A URL-safe base64-encoded 32-byte key
 
     # Database Configuration
     database_url: str = "postgresql+asyncpg://localhost/boardroom"
 
     # Redis Configuration
     redis_url: str = "redis://localhost:6379/0"
+
+    # Email Configuration (SendGrid)
+    sendgrid_api_key: str = ""
+    sendgrid_from_email: str = "noreply@boardroom.app"
+    sendgrid_from_name: str = "Boardroom"
+    email_notifications_enabled: bool = False
 
     model_config = {
         "env_file": ".env",

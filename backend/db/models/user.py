@@ -14,6 +14,7 @@ from .base import Base
 if TYPE_CHECKING:
     from .portfolio import Watchlist, Portfolio
     from .analysis import AnalysisSession
+    from .alerts import PriceAlert, Notification, ScheduledAnalysis
 
 
 class User(Base):
@@ -33,6 +34,9 @@ class User(Base):
     portfolios: Mapped[list["Portfolio"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     analysis_sessions: Mapped[list["AnalysisSession"]] = relationship(back_populates="user")
     api_keys: Mapped[list["UserAPIKey"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    price_alerts: Mapped[list["PriceAlert"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    notifications: Mapped[list["Notification"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    scheduled_analyses: Mapped[list["ScheduledAnalysis"]] = relationship(back_populates="user", cascade="all, delete-orphan")
 
 
 class UserAPIKey(Base):

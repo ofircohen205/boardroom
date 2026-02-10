@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { API_BASE_URL } from '@/lib/api';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2, Plus, Trash2, PieChart, TrendingUp } from 'lucide-react';
+import PageContainer from '@/components/layout/PageContainer';
 
 interface Position {
   id: string;
@@ -35,7 +37,7 @@ export default function PortfolioPage() {
 
   const fetchPortfolios = async () => {
     try {
-      const res = await fetch('http://localhost:8000/api/portfolios', {
+      const res = await fetch(`${API_BASE_URL}/api/portfolios`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.status === 401) logout();
@@ -54,7 +56,7 @@ export default function PortfolioPage() {
     if (!newTicker || !newQty || !newPrice) return;
     setAdding(true);
     try {
-      const res = await fetch(`http://localhost:8000/api/portfolios/${portfolioId}/positions`, {
+      const res = await fetch(`${API_BASE_URL}/api/portfolios/${portfolioId}/positions`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -82,7 +84,7 @@ export default function PortfolioPage() {
 
   const handleDeletePosition = async (portfolioId: string, positionId: string) => {
     try {
-      const res = await fetch(`http://localhost:8000/api/portfolios/${portfolioId}/positions/${positionId}`, {
+      const res = await fetch(`${API_BASE_URL}/api/portfolios/${portfolioId}/positions/${positionId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -105,14 +107,7 @@ export default function PortfolioPage() {
   const activePortfolio = portfolios[0]; // Just showing first for now
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/50">
-           {activePortfolio.name}
-        </h1>
-        <Button variant="outline" onClick={() => window.history.back()}>Back to Dashboard</Button>
-      </div>
-
+    <PageContainer maxWidth="wide" title={activePortfolio.name}>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Portfolio Stats Card (Placeholder) */}
         <Card className="md:col-span-3 bg-card/50 backdrop-blur border-white/10">
@@ -191,6 +186,6 @@ export default function PortfolioPage() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </PageContainer>
   );
 }

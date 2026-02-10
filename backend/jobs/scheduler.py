@@ -14,6 +14,8 @@ from sqlalchemy.orm import sessionmaker
 
 from backend.core.settings import settings
 from backend.jobs.outcome_tracker import run_outcome_tracker_job
+from backend.jobs.alert_checker import check_price_alerts
+from backend.jobs.scheduled_analyzer import run_scheduled_analyses
 from backend.core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -57,22 +59,79 @@ class JobScheduler:
         logger.info("Job scheduler stopped")
 
     async def _run_loop(self):
-        """Main scheduler loop - runs outcome tracker every hour."""
-        # Run immediately on startup
+        """
+        Main scheduler loop.
+        - Alert checker: every 5 minutes
+        - Scheduled analyzer: every 15 minutes
+        - Outcome tracker: every hour
+        """
+        # Run all jobs immediately on startup
+        await self._run_alert_checker()
+        await self._run_scheduled_analyzer()
         await self._run_outcome_tracker()
 
-        # Then run every hour
+        # Then run on schedule
+        minute_counter = 0
         while self.running:
             try:
-                await asyncio.sleep(3600)  # 1 hour
-                if self.running:
+                await asyncio.sleep(60)  # 1 minute
+                if not self.running:
+                    break
+
+                minute_counter += 1
+
+                # Alert checker: every 5 minutes
+                if minute_counter % 5 == 0:
+                    await self._run_alert_checker()
+
+                # Scheduled analyzer: every 15 minutes
+                if minute_counter % 15 == 0:
+                    await self._run_scheduled_analyzer()
+
+                # Outcome tracker: every hour
+                if minute_counter % 60 == 0:
                     await self._run_outcome_tracker()
+                    minute_counter = 0  # Reset counter
+
             except asyncio.CancelledError:
                 break
             except Exception as e:
                 logger.error(f"Error in scheduler loop: {e}", exc_info=True)
                 # Continue running even if one iteration fails
                 await asyncio.sleep(60)  # Wait 1 minute before retry
+
+    async def _run_alert_checker(self):
+        """Run the alert checker job."""
+        async with self.async_session_maker() as session:
+            try:
+                result = await check_price_alerts(session)
+                if result["success"]:
+                    if result.get("skipped") == "market_closed":
+                        logger.debug("Alert checker skipped: market closed")
+                    else:
+                        logger.info(
+                            f"Alert checker completed: {result['alerts_checked']} checked, "
+                            f"{result['alerts_triggered']} triggered"
+                        )
+                else:
+                    logger.error(f"Alert checker failed: {result.get('error')}")
+            except Exception as e:
+                logger.error(f"Failed to run alert checker: {e}", exc_info=True)
+
+    async def _run_scheduled_analyzer(self):
+        """Run the scheduled analyzer job."""
+        async with self.async_session_maker() as session:
+            try:
+                result = await run_scheduled_analyses(session)
+                if result["success"]:
+                    if result["schedules_run"] > 0:
+                        logger.info(
+                            f"Scheduled analyzer completed: {result['schedules_run']} analyses run"
+                        )
+                else:
+                    logger.error(f"Scheduled analyzer failed: {result.get('error')}")
+            except Exception as e:
+                logger.error(f"Failed to run scheduled analyzer: {e}", exc_info=True)
 
     async def _run_outcome_tracker(self):
         """Run the outcome tracker job."""

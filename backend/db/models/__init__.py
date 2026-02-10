@@ -5,6 +5,7 @@ from .user import User, UserAPIKey
 from .portfolio import Watchlist, WatchlistItem, Portfolio, Position
 from .analysis import AnalysisSession, AgentReport, FinalDecision
 from .performance import AnalysisOutcome, AgentAccuracy
+from .alerts import PriceAlert, Notification, ScheduledAnalysis, AlertCondition, NotificationType, AlertFrequency
 
 __all__ = [
     "Base",
@@ -19,4 +20,10 @@ __all__ = [
     "FinalDecision",
     "AnalysisOutcome",
     "AgentAccuracy",
+    "PriceAlert",
+    "Notification",
+    "ScheduledAnalysis",
+    "AlertCondition",
+    "NotificationType",
+    "AlertFrequency",
 ]

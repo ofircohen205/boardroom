@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+// import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +12,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  ArrowLeft,
   Loader2,
   Trophy,
   BarChart3,
@@ -22,9 +22,10 @@ import type { ComparisonResult, Sector } from "@/types/comparison";
 import { RelativePerformanceChart } from "@/components/RelativePerformanceChart";
 import { ComparisonTable } from "@/components/ComparisonTable";
 import { fetchAPI } from "@/lib/api";
+import PageContainer from "@/components/layout/PageContainer";
 
 export function ComparePage() {
-  const navigate = useNavigate();
+//   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [mode, setMode] = useState<"manual" | "sector">("manual");
   const [tickers, setTickers] = useState<string[]>([]);
@@ -116,29 +117,12 @@ export function ComparePage() {
   };
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate("/")}
-              className="gap-2 mb-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to Dashboard
-            </Button>
-            <h1 className="text-4xl font-black tracking-tight">
-              Comparative Analysis
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              Compare multiple stocks side-by-side or analyze an entire sector
-            </p>
-          </div>
-        </div>
-
+    <PageContainer
+      maxWidth="wide"
+      title="Comparative Analysis"
+      description="Compare multiple stocks side-by-side or analyze an entire sector"
+    >
+      <div className="space-y-6">
         {/* Input Section */}
         {!comparison && (
           <Card className="glass border-primary/20">
@@ -415,6 +399,6 @@ export function ComparePage() {
           </div>
         )}
       </div>
-    </div>
+    </PageContainer>
   );
 }

@@ -24,18 +24,18 @@ const PerformanceSummary: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="bg-gray-800 p-4 rounded-lg">
+      <div className="bg-card p-4 rounded-lg">
         <h2 className="text-lg font-semibold mb-2">Performance Summary</h2>
-        <p>Loading...</p>
+        <p className="text-muted-foreground">Loading...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-gray-800 p-4 rounded-lg">
+      <div className="bg-card p-4 rounded-lg">
         <h2 className="text-lg font-semibold mb-2">Performance Summary</h2>
-        <p className="text-red-500">{error}</p>
+        <p className="text-destructive">{error}</p>
       </div>
     );
   }
@@ -45,23 +45,23 @@ const PerformanceSummary: React.FC = () => {
   }
 
   return (
-    <div className="bg-gray-800 p-4 rounded-lg">
+    <div className="bg-card p-4 rounded-lg">
       <h2 className="text-lg font-semibold mb-2">Performance Summary</h2>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div>
-          <p className="text-sm text-gray-400">Total Analyses</p>
+          <p className="text-sm text-muted-foreground">Total Analyses</p>
           <p className="text-2xl font-bold">{summary.total_analyses}</p>
         </div>
         <div>
-          <p className="text-sm text-gray-400">Tracked Outcomes</p>
+          <p className="text-sm text-muted-foreground">Tracked Outcomes</p>
           <p className="text-2xl font-bold">{summary.tracked_outcomes}</p>
         </div>
         <div>
-          <p className="text-sm text-gray-400">7-Day Accuracy</p>
+          <p className="text-sm text-muted-foreground">7-Day Accuracy</p>
           <p className="text-2xl font-bold">{(summary.accuracy_7d * 100).toFixed(1)}%</p>
         </div>
         <div>
-          <p className="text-sm text-gray-400">30-Day Accuracy</p>
+          <p className="text-sm text-muted-foreground">30-Day Accuracy</p>
           <p className="text-2xl font-bold">{(summary.accuracy_30d * 100).toFixed(1)}%</p>
         </div>
       </div>

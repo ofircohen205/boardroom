@@ -13,6 +13,7 @@ from .user import UserDAO
 from .portfolio import WatchlistDAO, PortfolioDAO
 from .analysis import AnalysisDAO
 from .performance import PerformanceDAO
+from .alerts import PriceAlertDAO, NotificationDAO, ScheduledAnalysisDAO
 
 __all__ = [
     "BaseDAO",
@@ -21,4 +22,7 @@ __all__ = [
     "PortfolioDAO",
     "AnalysisDAO",
     "PerformanceDAO",
+    "PriceAlertDAO",
+    "NotificationDAO",
+    "ScheduledAnalysisDAO",
 ]

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Loader2, Trash2, TrendingUp, Plus, GitCompare } from 'lucide-react';
@@ -35,7 +36,7 @@ export function WatchlistSidebar({ onSelectTicker }: WatchlistSidebarProps) {
 
   const fetchWatchlists = async () => {
     try {
-      const res = await fetch('http://localhost:8000/api/watchlists', {
+      const res = await fetch(`${API_BASE_URL}/api/watchlists`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.status === 401) logout();
@@ -54,7 +55,7 @@ export function WatchlistSidebar({ onSelectTicker }: WatchlistSidebarProps) {
     if (!newTicker) return;
     setAdding(true);
     try {
-        const res = await fetch(`http://localhost:8000/api/watchlists/${watchlistId}/items`, {
+        const res = await fetch(`${API_BASE_URL}/api/watchlists/${watchlistId}/items`, {
             method: 'POST',
             headers: {
                 Authorization: `Bearer ${token}`,
@@ -75,7 +76,7 @@ export function WatchlistSidebar({ onSelectTicker }: WatchlistSidebarProps) {
 
   const handleDeleteItem = async (watchlistId: string, itemId: string) => {
     try {
-        const res = await fetch(`http://localhost:8000/api/watchlists/${watchlistId}/items/${itemId}`, {
+        const res = await fetch(`${API_BASE_URL}/api/watchlists/${watchlistId}/items/${itemId}`, {
             method: 'DELETE',
             headers: { Authorization: `Bearer ${token}` }
         });

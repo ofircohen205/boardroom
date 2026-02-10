@@ -16,6 +16,7 @@ from backend.db.models import User, AnalysisSession, AgentReport, FinalDecision,
 from backend.db.database import get_db
 from backend.services.performance_tracking.service import create_analysis_outcome
 from backend.ai.tools.market_data import get_market_data_client
+from .connection_manager import connection_manager
 
 logger = get_logger(__name__)
 
@@ -104,6 +105,10 @@ async def websocket_endpoint(
     # if not user:
     #     await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
     #     return
+
+    # Register connection for authenticated users (for notifications)
+    if user:
+        await connection_manager.connect(user.id, websocket)
 
     try:
         while True:
@@ -230,8 +235,12 @@ async def websocket_endpoint(
 
     except WebSocketDisconnect:
         logger.info("WebSocket disconnected.")
+        if user:
+            connection_manager.disconnect(user.id, websocket)
     except Exception as e:
         logger.error(f"WebSocket error: {e}", exc_info=True)
+        if user:
+            connection_manager.disconnect(user.id, websocket)
         try:
             await websocket.close(code=status.WS_1011_INTERNAL_ERROR)
         except:

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { API_BASE_URL } from '@/lib/api';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Loader2, History, CheckCircle, XCircle, ArrowUpCircle, ArrowDownCircle, MinusCircle } from 'lucide-react';
@@ -22,7 +23,7 @@ export function AnalysisHistory({ ticker }: { ticker?: string }) {
   const fetchHistory = useCallback(async () => {
     setLoading(true);
     try {
-      let url = 'http://localhost:8000/api/analyses?limit=10';
+      let url = `${API_BASE_URL}/api/analyses?limit=10`;
       if (ticker) url += `&ticker=${ticker}`;
       
       const res = await fetch(url, {
