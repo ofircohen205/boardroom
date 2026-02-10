@@ -21,8 +21,12 @@ help:
 	@echo "  migrate-new  Create new migration (usage: make migrate-new msg='description')"
 	@echo ""
 	@echo "Testing:"
-	@echo "  test         Run all tests"
+	@echo "  test         Run all tests (with PostgreSQL for integration tests)"
+	@echo "  test-unit    Run unit tests only (fast, uses SQLite)"
+	@echo "  test-integration Run integration tests only (uses PostgreSQL)"
 	@echo "  test-cov     Run tests with coverage"
+	@echo "  test-db-up   Start test database (PostgreSQL on port 5433)"
+	@echo "  test-db-down Stop test database"
 	@echo ""
 	@echo "Production:"
 	@echo "  prod         Start production environment"
@@ -76,11 +80,35 @@ migrate-new:
 	uv run alembic revision --autogenerate -m "$(msg)"
 
 # Testing
-test:
-	uv run pytest tests/ -v
+test-db-up:
+	docker compose -f docker/docker-compose.test.yml up -d
+	@echo "Waiting for test database to be ready..."
+	@sleep 2
+	@docker compose -f docker/docker-compose.test.yml exec postgres-test pg_isready -U boardroom_test || true
 
-test-cov:
-	uv run pytest tests/ -v --cov=backend --cov-report=term-missing
+test-db-down:
+	docker compose -f docker/docker-compose.test.yml down -v
+
+test-unit:
+	@echo "Running unit tests (SQLite)..."
+	uv run pytest tests/unit/ -v
+
+test-integration: test-db-up
+	@echo "Running integration tests (PostgreSQL)..."
+	TEST_DATABASE_URL=postgresql+asyncpg://boardroom_test:test_password@localhost:5433/boardroom_test \
+		uv run pytest tests/integration/ -v
+	$(MAKE) test-db-down
+
+test: test-db-up
+	@echo "Running all tests..."
+	TEST_DATABASE_URL=postgresql+asyncpg://boardroom_test:test_password@localhost:5433/boardroom_test \
+		uv run pytest tests/ -v
+	$(MAKE) test-db-down
+
+test-cov: test-db-up
+	TEST_DATABASE_URL=postgresql+asyncpg://boardroom_test:test_password@localhost:5433/boardroom_test \
+		uv run pytest tests/ -v --cov=backend --cov-report=term-missing
+	$(MAKE) test-db-down
 
 # Production
 prod:

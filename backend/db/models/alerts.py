@@ -5,8 +5,8 @@ from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, String, Float, Boolean, Index, Enum as SQLEnum, Text, JSON
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import ForeignKey, String, Float, Boolean, Index, Enum as SQLEnum, Text
+from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.ai.state.enums import Market
@@ -74,7 +74,7 @@ class Notification(Base):
     type: Mapped[NotificationType] = mapped_column(SQLEnum(NotificationType))
     title: Mapped[str] = mapped_column(String(255))
     body: Mapped[str] = mapped_column(Text)
-    data: Mapped[dict] = mapped_column(JSON, default=dict)  # Ticker, price, action, etc.
+    data: Mapped[dict] = mapped_column(JSONB, default=dict)  # Ticker, price, action, etc.
     read: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
     created_at: Mapped[datetime] = mapped_column(default=datetime.now, index=True)
 

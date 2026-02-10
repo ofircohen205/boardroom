@@ -4,8 +4,8 @@ import uuid
 from datetime import datetime
 from typing import Optional, TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, String, Float, Boolean, Text, Enum as SQLEnum, JSON
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import ForeignKey, String, Float, Boolean, Text, Enum as SQLEnum
+from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.ai.state.enums import Market, AgentType, Action
@@ -39,7 +39,7 @@ class AgentReport(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     session_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("analysis_sessions.id"))
     agent_type: Mapped[AgentType] = mapped_column(SQLEnum(AgentType))
-    report_data: Mapped[dict] = mapped_column(JSON)
+    report_data: Mapped[dict] = mapped_column(JSONB)
     created_at: Mapped[datetime] = mapped_column(default=datetime.now)
 
     # Relationships

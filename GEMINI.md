@@ -9,6 +9,7 @@ Boardroom is a multi-agent financial analysis system using LangGraph. Agents pas
 **Current Status:** Phase 0 (Core System) is complete. All 6 planned phases + quick wins remain to be implemented.
 
 **Key Documentation:**
+
 - [AGENTS.md](./AGENTS.md) — Detailed agent system architecture
 - [docs/plans/roadmap.md](./docs/plans/roadmap.md) — Implementation phases and roadmap
 - [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) — System architecture overview
@@ -59,6 +60,7 @@ cd frontend && npm install                    # Install JS dependencies
 ### Technology Stack
 
 **Backend:**
+
 - FastAPI + WebSocket for real-time communication
 - LangGraph for agent orchestration
 - PostgreSQL for audit trail and data persistence
@@ -67,6 +69,7 @@ cd frontend && npm install                    # Install JS dependencies
 - Redis for caching (optional)
 
 **Frontend:**
+
 - React 19 + TypeScript
 - Tailwind CSS v4 + shadcn/ui components
 - TradingView lightweight-charts
@@ -75,15 +78,18 @@ cd frontend && npm install                    # Install JS dependencies
 ### Agent Hierarchy
 
 **Analyst Agents (Workers):**
+
 - **Fundamental Agent** (`backend/agents/fundamental.py`): Pulls hard data via Yahoo Finance
 - **Sentiment Agent** (`backend/agents/sentiment.py`): Scans news/social via Exa
 - **Technical Agent** (`backend/agents/technical.py`): Analyzes price trends (MA, RSI)
 
 **Risk Manager (Brake)** (`backend/agents/risk_manager.py`):
+
 - Checks portfolio sector weight (max 30%)
 - Has veto power over trades
 
 **Chairperson (Closer)** (`backend/agents/chairperson.py`):
+
 - Weighs all reports
 - Makes final BUY/SELL/HOLD decision
 
@@ -179,12 +185,14 @@ AgentState = {
 ## Best Practices
 
 ### Code Style
+
 - **Backend:** Follow PEP 8, use type hints, async/await for I/O
 - **Frontend:** Use TypeScript strict mode, functional components, custom hooks
 - **Testing:** Aim for >80% coverage, mock external APIs
 - **Commits:** Use conventional commits (feat:, fix:, docs:, etc.)
 
 ### Working with Agents
+
 - Each agent is independent and can be tested in isolation
 - Agents receive data via parameters, not shared state mutation
 - All agent methods are async
@@ -192,23 +200,27 @@ AgentState = {
 - See [AGENTS.md](./AGENTS.md) for how to add new agents
 
 ### Working with Tools
+
 - Tools are in `backend/tools/` and are synchronous or async functions
 - Tools should handle errors gracefully and return sensible defaults
 - Cache expensive operations (market data, LLM calls)
 - Test tools with mocked external APIs
 
 ### Database Migrations
+
 - Always create migrations for schema changes: `make db-revision MESSAGE="add users table"`
 - Test migrations up and down before committing
 - Never modify existing migrations once merged to main
 
 ### Frontend Components
+
 - Use shadcn/ui components for consistency
 - Keep components small and focused (< 200 lines)
 - Use the `@/` alias for imports (maps to `src/`)
 - Charts use lightweight-charts library (TradingView)
 
 ### Docker Development
+
 - **Docker files structure:**
   - Compose files: `docker/docker-compose.{dev,prod}.yml`
   - Backend Dockerfiles: `backend/docker/Dockerfile.{dev,prod}`
@@ -221,6 +233,7 @@ AgentState = {
 ## Common Tasks
 
 ### Adding a New Agent
+
 1. Create agent class in `backend/agents/new_agent.py`
 2. Define report TypedDict in `backend/state/agent_state.py`
 3. Add agent to `BoardroomGraph` in `backend/graph/workflow.py`
@@ -233,6 +246,7 @@ AgentState = {
 See [AGENTS.md](./AGENTS.md) for detailed instructions.
 
 ### Adding a New Tool
+
 1. Create function in appropriate `backend/tools/*.py` file
 2. Add type hints and docstring
 3. Handle errors and edge cases
@@ -241,6 +255,7 @@ See [AGENTS.md](./AGENTS.md) for detailed instructions.
 6. Use in agent by calling the tool function
 
 ### Adding a New Endpoint
+
 1. Add route to `backend/api/routes.py`
 2. Use FastAPI dependency injection for auth (Phase 1+)
 3. Return Pydantic models for type safety
@@ -248,6 +263,7 @@ See [AGENTS.md](./AGENTS.md) for detailed instructions.
 5. Write tests in `tests/test_api.py` (or create new test file)
 
 ### Updating the Frontend
+
 1. Run frontend dev server: `cd frontend && npm run dev`
 2. Use shadcn CLI to add components: `npx shadcn@latest add <component>`
 3. Update types in `frontend/src/types/` to match backend
@@ -257,11 +273,13 @@ See [AGENTS.md](./AGENTS.md) for detailed instructions.
 ## Environment Variables
 
 Required:
+
 - `DATABASE_URL` — PostgreSQL connection string
 - `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` or `GOOGLE_API_KEY` — LLM provider API key
 - `EXA_API_KEY` — Exa search API key
 
 Optional:
+
 - `LLM_PROVIDER` — anthropic | openai | gemini (default: anthropic)
 - `REDIS_URL` — Redis connection string for caching
 - `JWT_SECRET` — Secret for JWT tokens (Phase 1+)
@@ -271,6 +289,7 @@ See `.env.example` for full list.
 ## Implementation Phases
 
 **✅ Phase 0: Core System (Complete)**
+
 - 5-agent analysis pipeline
 - Real-time WebSocket streaming
 - Stock search + charts + news
@@ -278,6 +297,7 @@ See `.env.example` for full list.
 - Multi-LLM support
 
 **🚧 Next Up:**
+
 1. **Phase 1:** Portfolio & Watchlists (user auth, saved tickers, positions)
 2. **Phase 2:** Performance Tracking (track accuracy of recommendations)
 3. **Phase 3:** Comparative Analysis (compare multiple stocks)
@@ -290,23 +310,43 @@ See [docs/plans/roadmap.md](./docs/plans/roadmap.md) for details.
 
 ## Testing
 
+### Running Tests
+
 ```bash
-# Run all tests
+# All tests (auto-starts PostgreSQL for integration tests)
 make test
 
-# Run specific test file
-uv run pytest tests/test_agents.py -v
+# Unit tests only (fast, uses SQLite)
+make test-unit
+
+# Integration tests only (uses PostgreSQL)
+make test-integration
 
 # Run with coverage
 make test-cov
 
+# Manual test database control
+make test-db-up      # Start test database
+make test-db-down    # Stop test database
+
+# Run specific test file
+uv run pytest tests/unit/test_agents.py -v
+
 # Run single test
-uv run pytest tests/test_agents.py::test_fundamental_agent -v
+uv run pytest tests/unit/test_agents.py::test_fundamental_agent -v
 ```
 
+### Test Database Strategy
+
+- **Unit tests** (`tests/unit/`): Use SQLite in-memory for speed
+- **Integration tests** (`tests/integration/`): Use PostgreSQL for production parity
+- Test database runs on port 5433 to avoid conflicts with development database (port 5432)
+- The `conftest.py` fixture automatically detects test type and uses the appropriate database
+
 **Testing Philosophy:**
+
 - Unit test each agent independently with mocked tools
-- Integration test the full workflow
+- Integration test the full workflow with real database queries
 - Mock external APIs (Yahoo Finance, Exa, LLM providers)
 - Use fixtures for common test data
 - Aim for >80% coverage
@@ -314,20 +354,24 @@ uv run pytest tests/test_agents.py::test_fundamental_agent -v
 ## Troubleshooting
 
 ### Backend won't start
+
 - Check PostgreSQL is running: `psql $DATABASE_URL`
 - Verify API keys are set in `.env`
 - Run migrations: `make db-migrate`
 
 ### Frontend build errors
+
 - Delete `node_modules` and reinstall: `rm -rf frontend/node_modules && cd frontend && npm install`
 - If using Docker, rebuild: `docker compose -f docker/docker-compose.dev.yml up -d --build --force-recreate boardroom-frontend`
 
 ### Tests failing
+
 - Ensure test database is separate from dev: use `TEST_DATABASE_URL`
 - Check that mocks are set up correctly
 - Run individual test to isolate: `pytest tests/test_file.py::test_name -v`
 
 ### WebSocket connection issues
+
 - Check CORS settings in `backend/main.py`
 - Verify WebSocket URL in `frontend/src/hooks/useWebSocket.ts`
 - Check browser console for errors
@@ -335,6 +379,7 @@ uv run pytest tests/test_agents.py::test_fundamental_agent -v
 ## Contributing
 
 When working on new features:
+
 1. Create a new branch from `main`
 2. Implement feature following best practices above
 3. Write tests (aim for >80% coverage)
