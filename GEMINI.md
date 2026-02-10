@@ -2,6 +2,12 @@
 
 This file provides guidance to Gemini when working with code in this repository.
 
+## Repository Information
+
+**Git Repository:** https://github.com/ofircohen205/boardroom
+
+> **Important:** When making significant corrections to approaches, code patterns, or architectural decisions, update this file (GEMINI.md) to prevent repeating the same mistakes in future sessions.
+
 ## Project Overview
 
 Boardroom is a multi-agent financial analysis system using LangGraph. Agents pass a "Token of Authority" between them to collaboratively analyze stocks and make trading decisions.
@@ -99,57 +105,130 @@ See [AGENTS.md](./AGENTS.md) for detailed agent documentation.
 
 ```
 backend/
-├── agents/          # All 5 agents + LLM abstraction
-├── api/             # FastAPI routes + WebSocket
-│   ├── routes.py    # REST endpoints
-│   └── websocket.py # Real-time analysis streaming
-├── auth/            # JWT authentication (Phase 1 - not yet implemented)
-├── dao/             # SQLAlchemy models for audit trail
-│   └── models.py    # Database models
-├── graph/           # LangGraph workflow
-│   └── workflow.py  # Agent orchestration logic
-├── state/           # TypedDicts and enums
-│   ├── agent_state.py  # State definitions
-│   └── enums.py        # Action, Market, AgentType enums
-├── tools/           # Market data, search, technical indicators
-│   ├── market_data.py       # Yahoo Finance integration
-│   ├── search.py            # Exa search for news/social
-│   ├── stock_search.py      # Stock symbol autocomplete
-│   └── technical_indicators.py  # MA, RSI calculations
-├── cache.py         # Caching layer
-├── config.py        # Settings and configuration
+├── core/            # ✨ Application fundamentals
+│   ├── settings.py  # Pydantic Settings (formerly config.py)
+│   ├── enums.py     # LLMProvider, MarketDataProvider
+│   ├── security.py  # JWT, password hashing
+│   ├── logging.py   # Structured logging
+│   └── exceptions.py # Base exceptions, error handlers
+│
+├── db/              # ✨ Database models layer
+│   ├── database.py  # Engine, session maker, get_db()
+│   └── models/      # SQLAlchemy models (modular)
+│       ├── base.py       # DeclarativeBase
+│       ├── user.py       # User, UserAPIKey
+│       ├── portfolio.py  # Watchlist, Portfolio, Position
+│       ├── analysis.py   # AnalysisSession, AgentReport, FinalDecision
+│       ├── alerts.py     # Alert, AlertHistory
+│       └── performance.py # AnalysisOutcome, AgentAccuracy
+│
+├── dao/             # ✨ Data Access Objects layer
+│   ├── base.py      # Base DAO with CRUD operations
+│   ├── user.py      # User data operations
+│   ├── portfolio.py # Portfolio/Watchlist operations
+│   ├── analysis.py  # Analysis session operations
+│   ├── alerts.py    # Alert operations
+│   └── performance.py # Performance tracking operations
+│
+├── ai/              # ✨ AI/LLM analysis system
+│   ├── workflow.py  # LangGraph orchestration
+│   ├── agents/      # All 5 agents + LLM abstraction
+│   │   ├── base.py
+│   │   ├── fundamental.py
+│   │   ├── sentiment.py
+│   │   ├── technical.py
+│   │   ├── risk_manager.py
+│   │   └── chairperson.py
+│   ├── state/       # TypedDicts and enums
+│   │   ├── agent_state.py  # State definitions
+│   │   └── enums.py        # Action, Market, AgentType enums
+│   └── tools/       # Market data, search, indicators
+│       ├── market_data.py       # Yahoo Finance integration
+│       ├── search.py            # Exa search for news/social
+│       ├── stock_search.py      # Stock symbol autocomplete
+│       ├── technical_indicators.py  # MA, RSI calculations
+│       ├── relative_strength.py     # Comparative metrics
+│       └── sector_data.py           # Sector information
+│
+├── api/             # ✨ FastAPI routes (feature-based organization)
+│   ├── __init__.py
+│   ├── routes.py         # Main router aggregation
+│   ├── auth/             # Authentication endpoints
+│   ├── analysis/         # Stock analysis endpoints
+│   ├── websocket/        # WebSocket connections
+│   ├── portfolios/       # Portfolio management
+│   ├── watchlists/       # Watchlist endpoints
+│   ├── alerts/           # Alert management
+│   ├── schedules/        # Scheduled analysis
+│   ├── performance/      # Performance tracking
+│   ├── settings/         # User settings
+│   ├── sectors/          # Sector information
+│   └── notifications/    # Notification endpoints
+│
+├── services/        # ✨ Business logic layer
+│   ├── __init__.py
+│   ├── auth/                    # Authentication services
+│   ├── analysis_history/        # Analysis history services
+│   ├── performance_tracking/    # Performance tracking
+│   ├── portfolio_management/    # Portfolio operations
+│   ├── alerts/                  # Alert services
+│   ├── settings/                # Settings management
+│   └── email.py                 # Email notifications
+│
+├── auth/            # Authentication dependencies
+│   └── dependencies.py  # get_current_user, etc.
+│
+├── jobs/            # Background jobs (APScheduler)
+│   ├── scheduler.py
+│   └── outcome_tracker.py
+│
 └── main.py          # FastAPI app entry point
 
 frontend/
 └── src/
-    ├── components/      # React dashboard components
-    │   ├── Dashboard.tsx      # Main dashboard
-    │   ├── AgentPanel.tsx     # Individual agent display
-    │   ├── DecisionCard.tsx   # Final decision display
-    │   ├── StockChart.tsx     # Price chart (lightweight-charts)
-    │   └── ui/                # shadcn/ui components
+    ├── components/      # React components
+    │   ├── layout/          # AppLayout, Navbar, Footer, PageContainer
+    │   ├── Dashboard.tsx    # Main analysis dashboard
+    │   ├── AgentPanel.tsx   # Individual agent display
+    │   ├── DecisionCard.tsx # Final decision display
+    │   ├── StockChart.tsx   # Price chart (lightweight-charts)
+    │   └── ui/              # shadcn/ui components
+    ├── pages/           # Route pages
+    │   ├── DashboardPage.tsx
+    │   ├── PortfolioPage.tsx
+    │   ├── AlertsPage.tsx
+    │   ├── SchedulesPage.tsx
+    │   ├── PerformancePage.tsx
+    │   ├── ComparePage.tsx
+    │   └── SettingsPage.tsx
     ├── hooks/           # React hooks
     │   └── useWebSocket.ts    # WebSocket state management
-    ├── pages/           # Route pages (Phase 1+ - not yet implemented)
-    ├── contexts/        # React contexts (Phase 1+ - not yet implemented)
+    ├── contexts/        # React contexts
+    │   └── AuthContext.tsx
     ├── types/           # TypeScript types
-    └── App.tsx          # Root component
+    ├── lib/             # Utilities
+    └── App.tsx          # Root component with routing
 
 tests/
-├── test_agents.py          # Agent unit tests
-├── test_tools.py           # Tool unit tests
-├── test_workflow.py        # Integration tests
-└── conftest.py             # Pytest fixtures
+├── conftest.py          # Pytest fixtures
+├── unit/                # Unit tests (SQLite in-memory)
+│   ├── test_agents.py
+│   ├── test_tools.py
+│   ├── test_dao.py
+│   └── ...
+└── integration/         # Integration tests (PostgreSQL)
+    ├── test_workflow.py
+    ├── test_api.py
+    └── ...
 
 docs/
 ├── plans/                  # Phase implementation plans
-│   ├── roadmap.md          # Overall roadmap
+│   ├── roadmap.md
 │   ├── phase-1-portfolio-watchlists.md
-│   ├── phase-2-performance-tracking.md
 │   └── ...
-├── ARCHITECTURE.md         # Architecture overview
-├── DEVELOPMENT.md          # Development guide
-└── SECURITY.md             # Security considerations
+├── ARCHITECTURE.md
+├── DEVELOPMENT.md
+└── SECURITY.md
 ```
 
 ### Data Flow
@@ -181,6 +260,81 @@ AgentState = {
     "audit_id": str,
 }
 ```
+
+## Code Quality Standards
+
+### General Coding Principles
+
+1. **Keep Code Clean:**
+   - Write clear, maintainable code following established patterns
+   - Remove "orphaned" code when making changes (unused imports, dead functions, commented-out blocks)
+   - Extract reused code into separate functions or files (DRY principle)
+   - If the same code appears 2+ times, refactor it into a shared function
+
+2. **Temporary Files:**
+   - All temporary test files, debugging scripts, and experimental code MUST go in the `tmp/` directory
+   - The `tmp/` directory is gitignored and should never be committed
+   - Clean up temporary files after they're no longer needed
+
+3. **Documentation:**
+   - Update relevant documentation files when making architectural changes:
+     - [CLAUDE.md](./CLAUDE.md) - Claude-specific guidance
+     - [GEMINI.md](./GEMINI.md) - Gemini-specific guidance and corrections
+     - [AGENTS.md](./AGENTS.md) - Agent system architecture
+     - [STATUS.md](./STATUS.md) - Project status, completed features, pending bugs
+   - Add docstrings to all new functions and classes
+   - Update inline comments for complex logic
+
+4. **Logging:**
+   - Every significant operation MUST include detailed logging
+   - Logs should be stored (not just printed to console)
+   - Use structured logging with appropriate levels (DEBUG, INFO, WARNING, ERROR)
+   - Include context in logs: ticker, agent name, operation, timing
+   - Good logs make debugging 10x easier - invest in them upfront
+
+### Git Workflow
+
+1. **Commit Discipline:**
+   - Make frequent, small commits rather than large, monolithic ones
+   - Each commit should represent a logical unit of work
+   - Use conventional commit messages: `feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`
+   - **Warning:** It's easy to get carried away and make dozens of changes without committing
+   - If "everything breaks," small commits make it much easier to identify and revert the problematic change
+
+2. **Protected Branches:**
+   - NEVER commit directly to `main` branch
+   - All work should be done in feature branches
+   - Use pull requests for code review before merging
+
+### AI/Data Project Specific Guidelines
+
+> **Critical for Data Analysis, Model Training, and Simulations:**
+
+This project involves financial data analysis, agent decision-making, and LLM interactions. Extra caution is required:
+
+1. **Beware of Silent Optimizations:**
+   - **NEVER** make assumptions to simplify runtime without explicit permission
+   - **Example:** If asked to analyze entire dataset, do NOT analyze only every 10th row to save time
+   - Always process the full dataset unless explicitly told otherwise
+   - If an operation would be expensive, ASK the user before optimizing
+
+2. **Numerical Accuracy:**
+   - Be extremely careful with numerical comparisons and thresholds
+   - Double-check logic for "greater than," "less than," "good," "bad" interpretations
+   - Example: Is a P/E ratio of 50 good or bad? Don't assume - use proper analysis
+   - Verify calculations match expected formulas (e.g., RSI, moving averages)
+
+3. **Follow Instructions Precisely:**
+   - Instructions in GEMINI.md, CLAUDE.md, and AGENTS.md are authoritative
+   - **However:** Sometimes these instructions may be ignored unintentionally
+   - If you notice yourself deviating from documented patterns, flag it and ask
+   - When in doubt, ask the user rather than making assumptions
+
+4. **Data Integrity:**
+   - Always validate data before processing
+   - Handle missing data explicitly (don't silently drop rows)
+   - Log data quality issues (missing fields, unexpected formats)
+   - Use type hints and runtime validation (Pydantic) for all data structures
 
 ## Best Practices
 
@@ -388,10 +542,28 @@ When working on new features:
 6. Commit with conventional commit messages
 7. Create PR with description of changes
 
-## Resources
+## Key Documentation Files
+
+- [GEMINI.md](./GEMINI.md) - This file (Gemini-specific guidance)
+- [CLAUDE.md](./CLAUDE.md) - Claude-specific guidance
+- [AGENTS.md](./AGENTS.md) - Detailed agent system architecture
+- [STATUS.md](./STATUS.md) - **Critical:** Project status, directory structure, completed work, pending bugs
+  - Updated after almost every code change
+  - Essential for understanding project state
+  - Required for starting new sessions or transferring code to others
+- [docs/plans/roadmap.md](./docs/plans/roadmap.md) - Implementation phases and roadmap
+- [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) - System architecture overview
+- [docs/DEVELOPMENT.md](./docs/DEVELOPMENT.md) - Development setup and workflow
+
+## External Resources
 
 - [FastAPI docs](https://fastapi.tiangolo.com/)
 - [LangGraph docs](https://langchain-ai.github.io/langgraph/)
 - [shadcn/ui components](https://ui.shadcn.com/)
 - [TradingView lightweight-charts](https://tradingview.github.io/lightweight-charts/)
 - [SQLAlchemy 2.0 docs](https://docs.sqlalchemy.org/en/20/)
+
+---
+
+**Last Updated:** 2026-02-10
+**Version:** 2.0.0

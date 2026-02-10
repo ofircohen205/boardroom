@@ -3,7 +3,7 @@ import type { Market, WSMessage, AnalysisState } from "../types";
 import type { ComparisonResult } from "../types/comparison";
 import { useAuth } from "@/contexts/AuthContext";
 
-const WS_BASE_URL = "ws://localhost:8000/ws/analyze";
+const WS_BASE_URL = (import.meta.env.VITE_WS_URL as string | undefined) || "ws://localhost:8000/ws/analyze";
 
 // Connection states
 export type ConnectionStatus = "disconnected" | "connecting" | "connected" | "reconnecting";
