@@ -115,7 +115,7 @@ async def trigger_alert(
         Created or updated Notification
     """
     # Local import to ensure availability in test context
-    from datetime import datetime
+    from datetime import datetime, timedelta
 
     alert_dao = PriceAlertDAO(db)
     notification_dao = NotificationDAO(db)
