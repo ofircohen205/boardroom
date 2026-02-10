@@ -1,5 +1,8 @@
 # Boardroom
 
+[![PR Checks](https://github.com/ofircohen205/boardroom/actions/workflows/pr-checks.yml/badge.svg)](https://github.com/ofircohen205/boardroom/actions/workflows/pr-checks.yml)
+[![Build & Push](https://github.com/ofircohen205/boardroom/actions/workflows/build-and-push.yml/badge.svg)](https://github.com/ofircohen205/boardroom/actions/workflows/build-and-push.yml)
+
 Multi-agent financial analysis system with React dashboard.
 
 ## Quick Start

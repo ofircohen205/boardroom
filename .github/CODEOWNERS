@@ -1,0 +1,19 @@
+# CODEOWNERS file - require approvals for sensitive areas
+
+# Backend core
+/backend/core/**          @ofircohen
+/backend/ai/**            @ofircohen
+/backend/db/**            @ofircohen
+
+# Frontend
+/frontend/src/**          @ofircohen
+
+# Configuration
+*.yml                     @ofircohen
+*.yaml                    @ofircohen
+pyproject.toml            @ofircohen
+Makefile                  @ofircohen
+docker/**                 @ofircohen
+
+# Documentation
+docs/                     @ofircohen
