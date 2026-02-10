@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { Dashboard } from "@/components/Dashboard";
@@ -11,7 +12,7 @@ import SettingsPage from '@/pages/SettingsPage';
 import AppLayout from '@/components/layout/AppLayout';
 import { Loader2 } from 'lucide-react';
 
-const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
+const ProtectedRoute = ({ children }: { children: ReactElement }) => {
   const { token, isLoading } = useAuth();
 
   if (isLoading) {

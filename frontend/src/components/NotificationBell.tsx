@@ -86,7 +86,7 @@ export function NotificationBell() {
     if (latestNotification) {
       // Add to notifications list if popover is open
       if (isOpen) {
-        setNotifications(prev => [latestNotification, ...prev]);
+        setNotifications(prev => [latestNotification as unknown as Notification, ...prev]);
       }
       // Increment unread count
       setUnreadCount(prev => prev + 1);

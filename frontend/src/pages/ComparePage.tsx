@@ -351,7 +351,8 @@ export function ComparePage() {
                   <CardTitle>Side-by-Side Comparison</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ComparisonTable data={comparison.stock_data} />
+                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                  <ComparisonTable data={comparison.stock_data as any} />
                 </CardContent>
               </Card>
             )}

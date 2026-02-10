@@ -35,7 +35,7 @@ export function useWebSocket() {
   const [latestNotification, setLatestNotification] = useState<Record<string, unknown> | null>(null);
 
   const wsRef = useRef<WebSocket | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const retryCountRef = useRef(0);
   const retryDelayRef = useRef(INITIAL_RETRY_DELAY);
   const shouldReconnectRef = useRef(false);
@@ -310,7 +310,7 @@ export function useWebSocket() {
 
       setupWebSocket(ws, (msg: WSMessage) => {
         if (msg.type === "comparison_result") {
-          setComparisonResult(msg.data as ComparisonResult);
+          setComparisonResult(msg.data as unknown as ComparisonResult);
         } else if (msg.type === "error") {
           setState((prev) => ({ ...prev, error: msg.data.message as string }));
         }
@@ -350,9 +350,9 @@ export function useWebSocket() {
       reconnectTimeoutRef.current = setTimeout(() => {
         const request = lastRequestRef.current;
         if (request?.type === "compare") {
-          compareStocks(request.data.tickers, request.data.market);
+          compareStocks(request.data.tickers as string[], request.data.market as Market);
         } else if (request?.data) {
-          analyze(request.data.ticker, request.data.market, request.data.mode);
+          analyze(request.data.ticker as string, request.data.market as Market, request.data.mode as string);
         }
       }, delay);
     };

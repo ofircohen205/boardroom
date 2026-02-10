@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Decision, AgentPerformance } from "@/types";
 import { Card, CardContent } from "@/components/ui/card";
 import {
