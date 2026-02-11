@@ -11,7 +11,13 @@ select = [
     "RUF",    # ruff-specific rules
 ]
 ignore = [
+    "E402",   # module level import not at top of file (allow for conditional imports, monkeypatches)
     "E501",   # line too long (black handles this)
+    "E711",   # comparison to None should be 'if cond is None:'
+    "E712",   # comparison to True should be 'if cond is True:'
+    "E722",   # do not use bare 'except'
+    "F821",   # undefined name
+    "F841",   # local variable assigned but never used
 ]
 
 # Exclude test directories from some checks
