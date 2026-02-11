@@ -1,9 +1,10 @@
 # backend/jobs/alert_checker.py
 """Background job to check price alerts and trigger notifications."""
+
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from zoneinfo import ZoneInfo
 
 from backend.ai.tools.market_data import get_market_data_client
 from backend.core.logging import get_logger

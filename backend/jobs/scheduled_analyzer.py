@@ -1,9 +1,10 @@
 # backend/jobs/scheduled_analyzer.py
 """Background job to run scheduled analyses."""
+
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from zoneinfo import ZoneInfo
 
 from backend.ai.workflow import BoardroomGraph
 from backend.core.logging import get_logger
