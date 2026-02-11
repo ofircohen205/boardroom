@@ -7,9 +7,9 @@ from zoneinfo import ZoneInfo
 
 from backend.ai.tools.market_data import get_market_data_client
 from backend.core.logging import get_logger
-from backend.dao.alerts import PriceAlertDAO
+from backend.dao.alerts import NotificationDAO, PriceAlertDAO
 from backend.db.models import AlertCondition
-from backend.services.alerts import trigger_alert
+from backend.services.alerts.service import AlertService
 
 logger = get_logger(__name__)
 
@@ -154,6 +154,8 @@ async def check_price_alerts(db: AsyncSession) -> dict:
 
     logger.info("Starting alert checker job")
     alert_dao = PriceAlertDAO(db)
+    # TODO: Refactor jobs to be class-based and inject services
+    alert_service = AlertService(alert_dao, NotificationDAO(db))
 
     try:
         # Get all unique (ticker, market) pairs with active alerts
@@ -234,7 +236,7 @@ async def check_price_alerts(db: AsyncSession) -> dict:
                 # Check alert condition (baseline_price now stored in alert object for change_pct)
                 if check_alert_condition(alert, current_price):
                     try:
-                        await trigger_alert(db, alert, current_price)
+                        await alert_service.trigger_alert(db, alert, current_price)
                         alerts_triggered += 1
                         logger.info(
                             f"Triggered alert {alert.id} for {ticker} at ${current_price}"

@@ -15,20 +15,25 @@ Boardroom is a multi-agent financial analysis system using LangGraph. Agents pas
 **Current Status:**
 
 - ✅ Phase 0 (Core System) complete - 5-agent pipeline, WebSocket streaming
-- ✅ Backend Refactoring (50% complete) - Core, DB, and AI layers reorganized
+- ✅ Backend Refactoring (95% complete) - Full services layer with dependency injection
 - ⏳ Phases 1-6 (Features) remain to be implemented
 
 **Recent Changes:**
 
-- **Backend layered architecture refactoring** (50% complete - see `docs/REFACTORING_SUMMARY.md`)
-  - ✅ Phase 1: Core module (`backend/core/` - settings, security, exceptions)
-  - ✅ Phase 2: Database layer (`backend/db/` - modular models)
-  - ✅ Phase 6: AI module (`backend/ai/` - unified AI components)
-  - ⏳ Phases 3-5 pending: DAO, Services, API layers
+- **Backend services layer refactoring** (✅ COMPLETE - Feb 2026)
+  - ✅ Phase 0: DAO layer standardization (singleton → direct instantiation)
+  - ✅ Phase 1: BaseService + exception hierarchy (`backend/services/base.py`)
+  - ✅ Phase 2: Missing service classes (WatchlistService, ScheduleService, AnalysisService)
+  - ✅ Phase 3: Function-based → class-based services (AuthService, PortfolioService)
+  - ✅ Phase 4: Dependency injection wiring in API endpoints (`backend/services/dependencies.py`)
+  - ✅ Phase 6: Documentation (SERVICES.md, DEPENDENCY_INJECTION.md)
+  - ⏭️ Phase 5: Testing (deferred)
 
 **Key Documentation:**
 
 - [AGENTS.md](./AGENTS.md) — Detailed agent system architecture
+- [docs/SERVICES.md](./docs/SERVICES.md) — Services layer architecture and usage
+- [docs/DEPENDENCY_INJECTION.md](./docs/DEPENDENCY_INJECTION.md) — Dependency injection patterns
 - [docs/plans/roadmap.md](./docs/plans/roadmap.md) — Implementation phases and roadmap
 - [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) — System architecture overview
 - [docs/DEVELOPMENT.md](./docs/DEVELOPMENT.md) — Development setup and workflow
@@ -320,6 +325,7 @@ AgentState = {
    - Use conventional commit messages: `feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`
    - **Warning:** It's easy to get "carried away" with Claude Code and make dozens of changes without committing
    - If "everything breaks," small commits make it much easier to identify and revert the problematic change
+   - **IMPORTANT:** Do NOT add `Co-Authored-By:` footers or author information to commits—all commits are by the user
 
 2. **Protected Branches:**
    - NEVER commit directly to `main` branch
@@ -426,6 +432,58 @@ from backend.ai.tools.market_data import get_market_data_client
 - Tools should handle errors gracefully and return sensible defaults
 - Cache expensive operations (market data, LLM calls)
 - Test tools with mocked external APIs
+
+### Services Layer (Phase 4 Refactoring)
+
+**Architecture:** Services encapsulate business logic between API endpoints and DAOs.
+
+**Service Injection Pattern:**
+```python
+# In backend/services/dependencies.py - define factory functions
+async def get_portfolio_service(db: AsyncSession) -> PortfolioService:
+    return PortfolioService(PortfolioDAO(db))
+
+# In API endpoint - inject the service
+@router.post("/portfolios")
+async def create_portfolio(
+    data: PortfolioCreate,
+    service: PortfolioService = Depends(get_portfolio_service),
+    db: AsyncSession = Depends(get_db),
+):
+    portfolio = await service.create_portfolio(current_user.id, data.name, db)
+    return PortfolioSchema.from_orm(portfolio)
+```
+
+**Best Practices:**
+- Each service has a corresponding factory function in `backend/services/dependencies.py`
+- Services receive DAOs through constructor (constructor injection)
+- Services don't manage their own database sessions - callers pass `db` parameter
+- All service methods are async
+- Services raise domain-specific exceptions (inherit from `ServiceError`)
+- Endpoints handle service exceptions and map to HTTP status codes
+
+**Exception Handling:**
+```python
+try:
+    schedule = await service.create_scheduled_analysis(...)
+except ScheduleRateLimitError as e:
+    raise HTTPException(status_code=400, detail=str(e))
+except ScheduleError as e:
+    logger.error(f"Failed: {e}")
+    raise HTTPException(status_code=500, detail="Operation failed")
+```
+
+**Available Services:**
+- `AuthService` - User registration, login, authentication
+- `PortfolioService` - Portfolio CRUD and position management
+- `WatchlistService` - Watchlist CRUD and item management
+- `ScheduleService` - Scheduled analysis management
+- `AnalysisService` - Analysis session and decision tracking
+- `AlertService` - Price alert management
+- `PerformanceService` - Performance tracking and outcomes
+- `SettingsService` - User profile and settings
+
+See [docs/SERVICES.md](./docs/SERVICES.md) and [docs/DEPENDENCY_INJECTION.md](./docs/DEPENDENCY_INJECTION.md) for detailed documentation.
 
 ### Database Migrations
 

@@ -4,7 +4,8 @@ from unittest.mock import patch
 
 import pytest
 
-from backend.services.email import EmailService, get_email_service
+from backend.services.dependencies import get_email_service
+from backend.services.email.service import EmailService
 
 
 class TestEmailService:

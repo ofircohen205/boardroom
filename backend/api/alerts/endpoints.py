@@ -84,7 +84,6 @@ async def delete_alert(
     alert_id: UUID,
     current_user: User = Depends(get_current_user),
     service: AlertService = Depends(get_alert_service),
-    db: AsyncSession = Depends(get_db),
 ):
     """
     Delete a price alert.
@@ -105,7 +104,7 @@ async def delete_alert(
         )
 
     await service.price_alert_dao.delete(alert_id)
-    await db.commit()
+    await service.price_alert_dao.session.commit()
 
     logger.info(f"User {current_user.id} deleted alert {alert_id}")
 
@@ -115,7 +114,6 @@ async def reset_alert(
     alert_id: UUID,
     current_user: User = Depends(get_current_user),
     service: AlertService = Depends(get_alert_service),
-    db: AsyncSession = Depends(get_db),
 ):
     """
     Reset a triggered alert to re-enable it.
@@ -136,7 +134,7 @@ async def reset_alert(
         )
 
     updated_alert = await service.price_alert_dao.reset_alert(alert_id)
-    await db.commit()
+    await service.price_alert_dao.session.commit()
 
     logger.info(f"User {current_user.id} reset alert {alert_id}")
     return updated_alert
@@ -148,7 +146,6 @@ async def toggle_alert(
     toggle_data: PriceAlertToggle,
     current_user: User = Depends(get_current_user),
     service: AlertService = Depends(get_alert_service),
-    db: AsyncSession = Depends(get_db),
 ):
     """
     Toggle alert active status (pause/resume).
@@ -168,7 +165,7 @@ async def toggle_alert(
 
     alert.active = toggle_data.active
     updated_alert = await service.price_alert_dao.update(alert)
-    await db.commit()
+    await service.price_alert_dao.session.commit()
 
     logger.info(
         f"User {current_user.id} toggled alert {alert_id} to active={toggle_data.active}"

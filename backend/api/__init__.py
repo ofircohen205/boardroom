@@ -9,6 +9,7 @@ from .analysis.endpoints import router as analysis_router
 from .auth.endpoints import router as auth_router
 from .backtest import router as backtest_router
 from .notifications.endpoints import router as notifications_router
+from .paper import router as paper_router
 from .portfolios.endpoints import router as portfolios_router
 
 # Utility routes (markets, cache, stock search)
@@ -29,6 +30,7 @@ api_router.include_router(analysis_router)
 api_router.include_router(auth_router)
 api_router.include_router(backtest_router)
 api_router.include_router(notifications_router)
+api_router.include_router(paper_router)
 api_router.include_router(portfolios_router)
 api_router.include_router(schedules_router)
 api_router.include_router(sectors_router)
