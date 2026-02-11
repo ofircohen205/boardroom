@@ -6,6 +6,7 @@ from sqlalchemy import text
 
 from backend.api import api_router, websocket_router_root
 from backend.core.cache import get_cache
+from backend.core.settings import settings
 from backend.db import get_db
 from backend.jobs.scheduler import start_scheduler, stop_scheduler
 
@@ -25,9 +26,12 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Boardroom", version="0.1.0", lifespan=lifespan)
 
+# Parse CORS origins from settings (comma-separated string)
+cors_origins = [origin.strip() for origin in settings.cors_origins.split(",")]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Vite dev server
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

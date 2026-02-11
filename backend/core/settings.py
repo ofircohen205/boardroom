@@ -44,6 +44,11 @@ class Settings(BaseSettings):
     sendgrid_from_name: str = "Boardroom"
     email_notifications_enabled: bool = False
 
+    # CORS Configuration
+    cors_origins: str = (
+        "http://localhost:5173"  # Comma-separated list of allowed origins
+    )
+
     model_config = {
         "env_file": ".env",
         "env_file_encoding": "utf-8",
