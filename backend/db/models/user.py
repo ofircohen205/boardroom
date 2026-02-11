@@ -1,5 +1,6 @@
 # backend/db/models/user.py
 """User and authentication models."""
+
 import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
@@ -16,6 +17,7 @@ from .base import Base
 if TYPE_CHECKING:
     from .alerts import Notification, PriceAlert, ScheduledAnalysis
     from .analysis import AnalysisSession
+    from .backtesting import BacktestResult, PaperAccount, Strategy
     from .portfolio import Portfolio, Watchlist
 
 
@@ -54,6 +56,15 @@ class User(Base):
         back_populates="user", cascade="all, delete-orphan"
     )
     scheduled_analyses: Mapped[list["ScheduledAnalysis"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+    strategies: Mapped[list["Strategy"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+    paper_accounts: Mapped[list["PaperAccount"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+    backtest_results: Mapped[list["BacktestResult"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
 

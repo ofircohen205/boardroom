@@ -1,4 +1,5 @@
 from datetime import datetime
+from unittest.mock import MagicMock
 from uuid import uuid4
 
 from backend.ai.state.enums import Action, AgentType, Market
@@ -45,8 +46,6 @@ def test_final_decision_creation():
 # ============================================================================
 # DAO Tests (Unit tests with mocks - no database required)
 # ============================================================================
-
-from unittest.mock import MagicMock
 
 
 def test_user_dao_initialization():

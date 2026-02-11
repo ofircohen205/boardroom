@@ -5,7 +5,7 @@
 repos:
   # General file fixers
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v6.0.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
@@ -17,11 +17,11 @@ repos:
 
   # Python formatting & linting
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.2.0
+    rev: v0.15.0
     hooks:
       - id: ruff-format
       - id: ruff
-        args: ['--fix', '--ignore=E402,E712,E711,F821,F841,E722']
+        args: ['--fix']
 
   # Python type checking (strict check in CI only, not in commits)
   # Note: Full mypy checks happen in CI pipeline, not in local commits
@@ -45,7 +45,7 @@ default_language_version:
   python: python3.13
   node: 18.17.0
 
-default_stages: [commit]
+default_stages: [pre-commit]
 ci:
   autofix_commit_msg: 'chore: auto-format with pre-commit'
   autofix_prs: true

@@ -1,5 +1,6 @@
 # backend/db/models/alerts.py
 """Alert and notification models."""
+
 import uuid
 from datetime import datetime
 from enum import Enum

@@ -178,9 +178,9 @@ async def test_parallel_execution_timing():
         elapsed = time.monotonic() - start
 
         # If sequential, would take ~0.3s. Parallel should be ~0.1s.
-        assert (
-            elapsed < 0.25
-        ), f"Expected parallel execution (<0.25s), took {elapsed:.2f}s"
+        assert elapsed < 0.25, (
+            f"Expected parallel execution (<0.25s), took {elapsed:.2f}s"
+        )
 
 
 @pytest.mark.asyncio

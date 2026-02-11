@@ -1,15 +1,16 @@
 # backend/jobs/scheduled_analyzer.py
 """Background job to run scheduled analyses."""
+
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from zoneinfo import ZoneInfo
 
 from backend.ai.workflow import BoardroomGraph
 from backend.core.logging import get_logger
-from backend.dao.alerts import ScheduledAnalysisDAO
+from backend.dao.alerts import NotificationDAO, PriceAlertDAO, ScheduledAnalysisDAO
 from backend.db.models import AlertFrequency
-from backend.services.alerts import create_analysis_notification
+from backend.services.alerts.service import AlertService
 
 logger = get_logger(__name__)
 
@@ -111,6 +112,8 @@ async def run_scheduled_analyses(db: AsyncSession) -> dict:
 
     logger.info("Starting scheduled analyzer job")
     schedule_dao = ScheduledAnalysisDAO(db)
+    # TODO: Refactor jobs to be class-based and inject services
+    alert_service = AlertService(PriceAlertDAO(db), NotificationDAO(db))
 
     try:
         # Get all due schedules
@@ -159,7 +162,7 @@ async def run_scheduled_analyses(db: AsyncSession) -> dict:
                         )
 
                     # Create notification
-                    await create_analysis_notification(
+                    await alert_service.create_analysis_notification(
                         db=db,
                         user_id=schedule.user_id,
                         ticker=schedule.ticker,

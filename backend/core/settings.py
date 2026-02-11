@@ -1,5 +1,6 @@
 # backend/core/settings.py
 """Application settings and configuration."""
+
 from pydantic_settings import BaseSettings
 
 from .enums import LLMProvider, MarketDataProvider

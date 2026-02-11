@@ -1,5 +1,6 @@
 # backend/dao/base.py
 """Base DAO with common CRUD operations."""
+
 from functools import lru_cache
 from typing import ClassVar, Generic, List, Optional, Type, TypeVar
 from uuid import UUID
@@ -54,6 +55,7 @@ class BaseDAO(Generic[T]):
         """Create a new record."""
         instance = self.model(**kwargs)
         self.session.add(instance)
+        await self.session.commit()
         await self.session.flush()
         await self.session.refresh(instance)
         return instance
@@ -61,6 +63,7 @@ class BaseDAO(Generic[T]):
     async def update(self, instance: T) -> T:
         """Update an existing record."""
         self.session.add(instance)
+        await self.session.commit()
         await self.session.flush()
         await self.session.refresh(instance)
         return instance

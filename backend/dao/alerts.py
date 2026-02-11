@@ -1,10 +1,11 @@
 # backend/dao/alerts.py
 """Data Access Objects for alerts and notifications."""
+
 from datetime import datetime, timedelta
 from typing import Optional
 from uuid import UUID
 
-from sqlalchemy import and_, func, or_, select
+from sqlalchemy import and_, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.ai.state.enums import Market
@@ -41,7 +42,7 @@ class PriceAlertDAO(BaseDAO[PriceAlert]):
         query = select(PriceAlert).where(PriceAlert.user_id == user_id)
 
         if active_only:
-            query = query.where(PriceAlert.active == True)
+            query = query.where(PriceAlert.active)
 
         query = query.order_by(PriceAlert.created_at.desc())
 
@@ -68,10 +69,10 @@ class PriceAlertDAO(BaseDAO[PriceAlert]):
             and_(
                 PriceAlert.ticker == ticker,
                 PriceAlert.market == market,
-                PriceAlert.active == True,
-                PriceAlert.triggered == False,
+                PriceAlert.active,
+                not PriceAlert.triggered,
                 or_(
-                    PriceAlert.cooldown_until == None, PriceAlert.cooldown_until <= now
+                    PriceAlert.cooldown_until is None, PriceAlert.cooldown_until <= now
                 ),
             )
         )
@@ -93,10 +94,10 @@ class PriceAlertDAO(BaseDAO[PriceAlert]):
             select(PriceAlert.ticker, PriceAlert.market)
             .where(
                 and_(
-                    PriceAlert.active == True,
-                    PriceAlert.triggered == False,
+                    PriceAlert.active,
+                    not PriceAlert.triggered,
                     or_(
-                        PriceAlert.cooldown_until == None,
+                        PriceAlert.cooldown_until is None,
                         PriceAlert.cooldown_until <= now,
                     ),
                 )
@@ -168,7 +169,7 @@ class NotificationDAO(BaseDAO[Notification]):
         query = select(Notification).where(Notification.user_id == user_id)
 
         if unread_only:
-            query = query.where(Notification.read == False)
+            query = query.where(not Notification.read)
 
         query = query.order_by(Notification.created_at.desc()).limit(limit)
 
@@ -188,7 +189,7 @@ class NotificationDAO(BaseDAO[Notification]):
         result = await self.session.execute(
             select(func.count())
             .select_from(Notification)
-            .where(and_(Notification.user_id == user_id, Notification.read == False))
+            .where(and_(Notification.user_id == user_id, not Notification.read))
         )
         return result.scalar() or 0
 
@@ -222,7 +223,7 @@ class NotificationDAO(BaseDAO[Notification]):
 
         result = await self.session.execute(
             update(Notification)
-            .where(and_(Notification.user_id == user_id, Notification.read == False))
+            .where(and_(Notification.user_id == user_id, not Notification.read))
             .values(read=True)
         )
         await self.session.flush()
@@ -307,8 +308,8 @@ class ScheduledAnalysisDAO(BaseDAO[ScheduledAnalysis]):
 
         query = select(ScheduledAnalysis).where(
             and_(
-                ScheduledAnalysis.active == True,
-                ScheduledAnalysis.next_run != None,
+                ScheduledAnalysis.active,
+                ScheduledAnalysis.next_run is not None,
                 ScheduledAnalysis.next_run <= now,
             )
         )

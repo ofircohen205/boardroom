@@ -1,8 +1,8 @@
 # tests/test_market_hours.py
 """Tests for market hours detection (Phase 4b - TASE support)."""
+
 from datetime import datetime
 from unittest.mock import patch
-
 from zoneinfo import ZoneInfo
 
 from backend.jobs.alert_checker import (

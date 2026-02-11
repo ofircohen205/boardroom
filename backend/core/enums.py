@@ -1,5 +1,6 @@
 # backend/core/enums.py
 """Application-wide enumerations."""
+
 from enum import Enum
 
 

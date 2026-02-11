@@ -1,5 +1,6 @@
 # backend/api/notifications/schemas.py
 """Pydantic schemas for notifications API."""
+
 from datetime import datetime
 from uuid import UUID
 

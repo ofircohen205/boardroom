@@ -1,5 +1,6 @@
 # backend/api/schedules/endpoints.py
 """API endpoints for scheduled analyses."""
+
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -8,10 +9,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.ai.state.enums import Market
 from backend.auth.dependencies import get_current_user
 from backend.core.logging import get_logger
-from backend.dao.alerts import ScheduledAnalysisDAO
 from backend.db.database import get_db
-from backend.db.models import AlertFrequency, User
-from backend.jobs.scheduled_analyzer import calculate_next_run
+from backend.db.models import User
+from backend.services.dependencies import get_schedule_service
+from backend.services.schedules.exceptions import (
+    ScheduleError,
+    ScheduleNotFoundError,
+    ScheduleRateLimitError,
+)
+from backend.services.schedules.service import ScheduleService
 
 from .schemas import (
     ScheduledAnalysisCreate,
@@ -30,6 +36,7 @@ router = APIRouter(prefix="/schedules", tags=["schedules"])
 async def create_schedule(
     schedule_data: ScheduledAnalysisCreate,
     current_user: User = Depends(get_current_user),
+    service: ScheduleService = Depends(get_schedule_service),
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -41,55 +48,25 @@ async def create_schedule(
     - on_change: Every hour during market hours (10 AM - 4 PM ET)
     """
     try:
-        schedule_dao = ScheduledAnalysisDAO(db)
-
-        # Rate limiting: max 50 schedules per user
-        schedule_count = await schedule_dao.count_user_schedules(current_user.id)
-        if schedule_count >= 50:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Maximum 50 scheduled analyses per user exceeded",
-            )
-
-        # Check for duplicate (same ticker + market + frequency)
-        existing = await schedule_dao.get_by_ticker_market_frequency(
-            user_id=current_user.id,
-            ticker=schedule_data.ticker,
-            market=Market(schedule_data.market),
-            frequency=AlertFrequency(schedule_data.frequency),
-        )
-        if existing:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Schedule already exists for {schedule_data.ticker} ({schedule_data.market}) with frequency {schedule_data.frequency}",
-            )
-
-        # Calculate next run time
-        frequency = AlertFrequency(schedule_data.frequency)
-        next_run = calculate_next_run(frequency)
-
-        # Create schedule
-        schedule = await schedule_dao.create(
+        # Create schedule using service (includes rate limiting)
+        schedule = await service.create_scheduled_analysis(
             user_id=current_user.id,
             ticker=schedule_data.ticker.upper(),
             market=Market(schedule_data.market),
-            frequency=frequency,
-            next_run=next_run,
-            active=True,
+            frequency=schedule_data.frequency,
+            db=db,
         )
-        await db.commit()
 
         logger.info(
             f"User {current_user.id} created schedule {schedule.id} for {schedule.ticker} "
-            f"({schedule.market.value}) {schedule.frequency.value} - next run: {next_run}"
+            f"({schedule.market.value}) {schedule.frequency} - next run: {schedule.next_run}"
         )
         return schedule
 
-    except HTTPException:
-        raise
-    except Exception as e:
+    except ScheduleRateLimitError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except ScheduleError as e:
         logger.error(f"Failed to create schedule: {e}", exc_info=True)
-        await db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create schedule",
@@ -98,13 +75,13 @@ async def create_schedule(
 
 @router.get("", response_model=list[ScheduledAnalysisSchema])
 async def list_schedules(
-    current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
+    current_user: User = Depends(get_current_user),
+    service: ScheduleService = Depends(get_schedule_service),
 ):
     """
     List all scheduled analyses for the current user.
     """
-    schedule_dao = ScheduledAnalysisDAO(db)
-    schedules = await schedule_dao.get_user_schedules(current_user.id)
+    schedules = await service.get_user_schedules(current_user.id)
     return schedules
 
 
@@ -112,6 +89,7 @@ async def list_schedules(
 async def delete_schedule(
     schedule_id: UUID,
     current_user: User = Depends(get_current_user),
+    service: ScheduleService = Depends(get_schedule_service),
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -119,24 +97,19 @@ async def delete_schedule(
 
     Only the owner can delete their schedule.
     """
-    schedule_dao = ScheduledAnalysisDAO(db)
-    schedule = await schedule_dao.get_by_id(schedule_id)
-
-    if not schedule:
+    try:
+        await service.delete_schedule(schedule_id, db)
+        logger.info(f"User {current_user.id} deleted schedule {schedule_id}")
+    except ScheduleNotFoundError:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Schedule not found"
         )
-
-    if schedule.user_id != current_user.id:
+    except ScheduleError as e:
+        logger.error(f"Failed to delete schedule: {e}", exc_info=True)
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to delete this schedule",
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to delete schedule",
         )
-
-    await schedule_dao.delete(schedule_id)
-    await db.commit()
-
-    logger.info(f"User {current_user.id} deleted schedule {schedule_id}")
 
 
 @router.patch("/{schedule_id}/toggle", response_model=ScheduledAnalysisSchema)
@@ -144,6 +117,7 @@ async def toggle_schedule(
     schedule_id: UUID,
     toggle_data: ScheduledAnalysisToggle,
     current_user: User = Depends(get_current_user),
+    service: ScheduleService = Depends(get_schedule_service),
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -152,33 +126,21 @@ async def toggle_schedule(
     When reactivating a paused schedule, the next_run time is recalculated
     to avoid running stale schedules immediately.
     """
-    schedule_dao = ScheduledAnalysisDAO(db)
-    schedule = await schedule_dao.get_by_id(schedule_id)
-
-    if not schedule:
+    try:
+        updated_schedule = await service.toggle_schedule(
+            schedule_id, toggle_data.active, db
+        )
+        logger.info(
+            f"User {current_user.id} toggled schedule {schedule_id} to active={toggle_data.active}"
+        )
+        return updated_schedule
+    except ScheduleNotFoundError:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Schedule not found"
         )
-
-    if schedule.user_id != current_user.id:
+    except ScheduleError as e:
+        logger.error(f"Failed to toggle schedule: {e}", exc_info=True)
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to modify this schedule",
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to toggle schedule",
         )
-
-    schedule.active = toggle_data.active
-
-    # If reactivating, recalculate next_run to avoid immediate execution
-    if toggle_data.active:
-        schedule.next_run = calculate_next_run(schedule.frequency, schedule.last_run)
-        logger.info(
-            f"Reactivating schedule {schedule_id}, next run recalculated to {schedule.next_run}"
-        )
-
-    updated_schedule = await schedule_dao.update(schedule)
-    await db.commit()
-
-    logger.info(
-        f"User {current_user.id} toggled schedule {schedule_id} to active={toggle_data.active}"
-    )
-    return updated_schedule

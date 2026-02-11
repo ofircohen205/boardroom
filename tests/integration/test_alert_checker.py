@@ -1,4 +1,5 @@
 """Integration tests for alert checker job."""
+
 import uuid
 from datetime import datetime
 from unittest.mock import AsyncMock, patch
@@ -150,7 +151,7 @@ class TestAlertCheckerJob:
         alert_dao = PriceAlertDAO(test_db_session)
 
         # Create an alert that is in cooldown
-        alert = await alert_dao.create(
+        await alert_dao.create(
             user_id=test_user.id,
             ticker="AAPL",
             market=Market.US,

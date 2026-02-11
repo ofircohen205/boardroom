@@ -114,7 +114,7 @@ async def search_stocks(
             info = ticker.info
 
             # Check if we got valid data
-            if info and info.get("shortName") or info.get("longName"):
+            if (info and info.get("shortName")) or info.get("longName"):
                 name = info.get("shortName") or info.get("longName") or query_upper
                 exchange = info.get("exchange") or (
                     "TASE" if market == Market.TASE else "US"

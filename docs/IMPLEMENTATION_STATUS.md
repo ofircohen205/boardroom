@@ -2,8 +2,8 @@
 
 Detailed breakdown of what's completed, what's in progress, and what remains for each phase.
 
-**Last Updated:** Feb 10, 2026
-**Overall Progress:** 98% across all planned phases
+**Last Updated:** Feb 11, 2026
+**Overall Progress:** 99% across all planned phases
 
 **Quick Summary:**
 
@@ -13,10 +13,12 @@ Detailed breakdown of what's completed, what's in progress, and what remains for
 - ✅ Phase 3 (Comparison) — 100% COMPLETE: Backend API, frontend page, full multi-stock comparison
 - ✅ Phase 4a (Alerts & Notifications) — 100% COMPLETE: Price alerts, notifications, WebSocket push, alert checker job
 - ✅ Phase 4b (Scheduled Analysis & Enhanced Notifications) — 100% COMPLETE: Scheduled analysis, TASE support, WebSocket reconnection, notification grouping, SendGrid foundation
-- ✅ Backend Refactoring — 100% COMPLETE: Modular routers (auth, watchlists, portfolios, analysis, sectors, websocket, alerts, notifications, schedules)
+- ✅ Phase 5 (Backtesting & Simulation) — 100% COMPLETE: Historical data pipeline, rules-based backtest engine, strategy customization, WebSocket backtest API, paper trading system, full frontend UI
+- ✅ Backend Refactoring — 100% COMPLETE: Modular routers (auth, watchlists, portfolios, analysis, sectors, websocket, alerts, notifications, schedules, strategies, backtest, paper)
 - ✅ Frontend Refactoring — 100% COMPLETE: Shared layout components (AppLayout, Navbar, Footer, PageContainer) implemented. All pages migrated to shared layout. Styling inconsistencies fixed.
 - ✅ User Settings Page — 100% COMPLETE: Profile management, password change, API key CRUD
-- ⏳ Phase 5-6 — Not started
+- ⏳ Services Layer Refactoring — 0% - Wrap service functionalities in dedicated classes per domain
+- ⏳ Phase 6 — Not started
 
 ---
 
@@ -845,6 +847,719 @@ All Phase 4b features have been implemented and tested:
 **Dependencies:** Phase 4a (alerts infrastructure)
 
 **Status:** Production-ready. All Phase 4b goals met.
+
+---
+
+## Phase 5: Backtesting & Simulation ✅ 100% COMPLETE
+
+Historical backtesting, strategy customization, and paper trading fully implemented.
+
+### ✅ COMPLETED
+
+**Backend Database Models** (`backend/db/models/backtesting.py`):
+
+- ✅ `HistoricalPrice` — Daily OHLCV data with (ticker, date) unique constraint
+  - Columns: ticker, date, open, high, low, close, adjusted_close, volume
+  - Uses `adjusted_close` for backtest calculations (handles splits/dividends)
+  - Indexes on (ticker, date) for efficient range queries
+- ✅ `HistoricalFundamentals` — Quarterly snapshots (revenue, earnings, P/E, debt)
+  - Columns: ticker, quarter_date, revenue, net_income, pe_ratio, debt_to_equity
+- ✅ `Strategy` — User-owned strategy configurations
+  - JSONB `config` column stores agent weights: `{"fundamental": 0.3, "technical": 0.4, "sentiment": 0.3}`
+  - Validation: weights must sum to 1.0
+  - User-specific strategies with name and description
+- ✅ `BacktestResult` — Completed backtest records
+  - Performance metrics: total_return, annualized_return, sharpe_ratio, max_drawdown, win_rate
+  - JSONB `equity_curve` and `trades` columns for full execution history
+  - Links to user, strategy, and config used
+- ✅ `PaperAccount` — Virtual trading accounts
+  - Tracks: cash_balance, total_value, initial_balance
+  - Links to user and strategy
+- ✅ `PaperTrade` — Trade execution records
+  - Columns: ticker, action (BUY/SELL), quantity, price, total, timestamp
+  - Links to PaperAccount
+- ✅ `PaperPosition` — Open position tracking
+  - Columns: ticker, quantity, entry_price, current_value
+  - Automatic updates on trade execution
+
+**Backend Data Pipeline** (`backend/data/historical.py`):
+
+- ✅ `fetch_and_store_historical_prices()` — Yahoo Finance integration
+  - Fetches OHLCV data for date ranges
+  - Handles duplicates with ON CONFLICT
+  - Returns count of inserted records
+- ✅ `get_price_range()` — Query price data for backtesting
+  - Returns sorted list of prices by date
+  - Efficient for date range queries
+- ✅ `get_latest_price()` — Current market price for paper trading
+  - Real-time price fetching for trade execution
+
+**Backend Backtest Engine** (`backend/backtest/engine.py`):
+
+- ✅ Rules-based scoring system (no LLM calls for speed)
+  - `TechnicalScorer`: MA crossovers, RSI, price trends → 0-100 score
+  - `FundamentalScorer`: P/E ratio, revenue growth, profit margins, debt → 0-100 score
+  - `SentimentScorer`: Price momentum (5-day return) as sentiment proxy → 0-100 score
+  - `ChairpersonScorer`: Weighted combination of scores → BUY/SELL/HOLD decision
+- ✅ `run_backtest()` — Full backtest execution
+  - Iterates through historical dates at check_frequency (daily/weekly)
+  - Calculates agent scores for each date
+  - Generates trade signals based on thresholds (>70 = BUY, <30 = SELL)
+  - Executes trades with position sizing
+  - Applies stop loss and take profit rules
+  - Tracks equity curve
+  - Calculates performance metrics (Sharpe, drawdown, win rate)
+- ✅ Position management
+  - Tracks open positions, entry prices, unrealized P&L
+  - Validates sufficient cash before buy orders
+  - Prevents short selling (cannot sell without position)
+- ✅ Risk management
+  - Stop loss: Auto-exit on % loss (e.g., -10%)
+  - Take profit: Auto-exit on % gain (e.g., +20%)
+  - Position sizing: Configurable % of capital per trade
+- ✅ Performance metrics
+  - Total return, annualized return
+  - Sharpe ratio (risk-adjusted return)
+  - Max drawdown (largest peak-to-trough decline)
+  - Win rate (% of profitable trades)
+  - Buy-and-hold comparison baseline
+
+**Backend REST API Endpoints:**
+
+**Strategies** (`backend/api/strategies/router.py`):
+- ✅ `POST /api/strategies` — Create strategy (validates weights sum to 1.0)
+- ✅ `GET /api/strategies` — List user's strategies
+- ✅ `GET /api/strategies/{id}` — Get strategy details
+- ✅ `PUT /api/strategies/{id}` — Update strategy
+- ✅ `DELETE /api/strategies/{id}` — Delete strategy
+
+**Backtest** (`backend/api/backtest/`):
+- ✅ `WS /ws/backtest?token={jwt}` — WebSocket backtest execution
+  - Message types: `backtest_started`, `backtest_progress`, `backtest_completed`, `backtest_error`
+  - Real-time progress updates: "Processing 2024-01-15 (45/365 days)"
+  - Fetches historical data, runs backtest, saves results
+- ✅ `GET /api/backtest/results` — List past backtest results
+- ✅ `GET /api/backtest/results/{id}` — Get specific result with equity curve and trades
+
+**Paper Trading** (`backend/api/paper/router.py`):
+- ✅ `POST /api/paper/accounts` — Create paper account
+- ✅ `GET /api/paper/accounts` — List user's accounts
+- ✅ `GET /api/paper/accounts/{id}` — Account summary (cash, positions, total value)
+- ✅ `POST /api/paper/accounts/{id}/trades` — Execute paper trade (BUY/SELL)
+- ✅ `GET /api/paper/accounts/{id}/trades` — Trade history
+- ✅ `GET /api/paper/accounts/{id}/performance` — Performance metrics
+- ✅ `GET /api/paper/accounts/{id}/positions` — Current open positions
+- ✅ `DELETE /api/paper/accounts/{id}/positions/{position_id}` — Close position
+- ✅ Trade validation:
+  - BUY: Validates sufficient cash balance
+  - SELL: Validates sufficient shares owned
+  - Real-time price fetching from Yahoo Finance
+
+**Backend DAOs** (`backend/dao/backtesting.py`):
+
+- ✅ `StrategyDAO` — Strategy CRUD operations
+- ✅ `BacktestResultDAO` — Result storage and retrieval
+- ✅ `PaperAccountDAO` — Account management
+  - `create_account()`, `get_user_accounts()`, `get_account()`
+  - `execute_trade()` — Trade execution with validation
+  - `get_account_positions()`, `get_account_trades()`
+  - `get_account_performance()` — Calculate P&L and returns
+
+**Frontend Pages:**
+
+- ✅ `StrategiesPage.tsx` (`/strategies`) — Strategy management
+  - Create/edit strategy form
+  - `AgentWeightSliders` component with auto-adjustment to sum to 1.0
+  - Strategy list with edit/delete actions
+  - "Test this strategy" button → links to backtest
+- ✅ `BacktestPage.tsx` (`/backtest`) — Backtest execution and results
+  - `BacktestForm` component: ticker, date range, strategy selector, capital, frequency
+  - WebSocket integration for real-time progress updates
+  - Progress bar: "Processing... 45%"
+  - `EquityCurveChart` component using lightweight-charts `AreaSeries`
+  - `BacktestSummary` component: metric cards (return, Sharpe, drawdown, win rate)
+  - `TradeLog` component: table of all trades with P&L
+  - Comparison line: equity vs buy-and-hold
+- ✅ `PaperTradingPage.tsx` (`/paper-trading`) — Virtual trading
+  - Account selector/creator
+  - Account overview cards: total value, cash, P&L, return %
+  - Position table with current prices and unrealized P&L
+  - `ExecuteTradeDialog` component for buy/sell trades
+  - Real-time position updates
+  - Trade history table
+
+**Frontend Components:**
+
+- ✅ `AgentWeightSliders.tsx` — Interactive sliders for strategy weights
+  - Three sliders (fundamental, technical, sentiment)
+  - Auto-adjustment: changing one slider proportionally distributes remaining weight to others
+  - Always maintains sum = 1.0
+  - Visual weight distribution display
+- ✅ `BacktestForm.tsx` — Configuration form
+  - Ticker input, strategy dropdown, date pickers
+  - Capital input, frequency selector (daily/weekly)
+  - Position size slider (0.1-1.0)
+  - Optional stop loss and take profit inputs
+  - Validation: all required fields must be filled
+- ✅ `EquityCurveChart.tsx` — Equity visualization
+  - Area chart using lightweight-charts
+  - Shows equity over time
+  - Comparison line for buy-and-hold strategy
+  - Tooltips with date and value
+- ✅ `BacktestSummary.tsx` — Performance metrics cards
+  - Grid layout with 6 metric cards
+  - Color-coded: green for positive, red for negative
+  - Icons for trend direction
+  - Subtitle explanations for each metric
+- ✅ `TradeLog.tsx` — Trade history table
+  - Columns: date, type (BUY/SELL), quantity, price, total
+  - Color-coded arrows for buy (green) vs sell (red)
+  - Currency formatting
+  - Empty state message
+- ✅ `CreateAccountDialog.tsx` — Paper account creation modal
+- ✅ `ExecuteTradeDialog.tsx` — Trade execution modal
+- ✅ `AccountOverview.tsx` — Summary cards for paper account
+- ✅ `PaperPerformanceChart.tsx` — Account value over time
+
+**Frontend Types** (`frontend/src/types/`):
+
+- ✅ `backtest.ts` — BacktestConfig, BacktestResult, Trade, EquityPoint types
+- ✅ `strategy.ts` — Strategy, StrategyWeights, StrategyCreate types
+- ✅ `paper.ts` — PaperAccount, PaperTrade, PaperPosition types
+
+**Frontend Integration:**
+
+- ✅ Routes added to `App.tsx`: `/strategies`, `/backtest`, `/paper-trading`
+- ✅ Navigation links added to `Navbar.tsx`:
+  - Strategies (Target icon)
+  - Backtest (Activity icon)
+  - Paper Trading (Wallet icon)
+- ✅ WebSocket integration in `useWebSocket.ts` (backtest message handlers)
+
+**Database Migration:**
+
+- ✅ Migration `ab39d61d2eff_add_backtesting_tables.py`:
+  - Created `tradetype` enum (BUY, SELL)
+  - Created `backtestfrequency` enum (daily, weekly)
+  - Created 7 tables: HistoricalPrice, HistoricalFundamentals, Strategy, BacktestResult, PaperAccount, PaperTrade, PaperPosition
+  - Conditional enum creation (avoids duplicate errors)
+  - Composite indexes for performance
+  - CASCADE delete on foreign keys
+
+**Documentation:**
+
+- ✅ `docs/BACKTESTING.md` — Comprehensive guide:
+  - Strategy builder usage and guidelines
+  - Backtest configuration and execution
+  - Results interpretation (metrics explained)
+  - Paper trading workflows
+  - **Important disclaimers** about limitations
+  - API reference for all endpoints
+  - Troubleshooting guide
+  - Best practices
+
+**Tests:**
+
+- ✅ `tests/unit/test_backtest_scoring.py` — Scoring logic tests:
+  - Technical scorer: uptrend, downtrend, sideways, RSI, insufficient data
+  - Fundamental scorer: strong/weak/moderate fundamentals, missing data
+  - Sentiment scorer: positive/negative/flat momentum
+  - Chairperson scorer: weighted calculations, thresholds, edge cases
+  - Total: 20 unit tests for scoring accuracy
+- ✅ `tests/integration/test_backtest_flow.py` — Full flow tests:
+  - Historical data fetching and storage
+  - Backtest equity curve generation
+  - Trade execution based on signals
+  - Stop loss triggering
+  - Metrics calculation (Sharpe, drawdown, win rate)
+  - Paper account creation
+  - Paper trade execution (BUY/SELL)
+  - Insufficient funds/shares validation
+  - Total: 12 integration tests for end-to-end flows
+
+### Business Rules Implemented
+
+**Backtesting:**
+- **Rules-based scoring:** No LLM calls, deterministic results, fast execution
+- **Look-ahead bias prevention:** Technical indicators require warmup period (50 days for MA50)
+- **Position sizing:** Configurable percentage of capital per trade (default: 50%)
+- **Stop loss:** Auto-exit on % loss threshold (e.g., -10%)
+- **Take profit:** Auto-exit on % gain threshold (e.g., +20%)
+- **No short selling:** Cannot sell without existing position
+- **Buy-and-hold baseline:** Always compare strategy vs passive investing
+
+**Strategy Customization:**
+- **Weight validation:** Fundamental + Technical + Sentiment must = 1.0
+- **User isolation:** Strategies are user-specific, not shared
+- **Naming:** Unique strategy names per user recommended
+
+**Paper Trading:**
+- **Real-time prices:** Fetches current market prices from Yahoo Finance
+- **Trade validation:**
+  - BUY: Requires sufficient cash balance
+  - SELL: Requires sufficient shares in position
+- **Position tracking:** Automatic creation/update of positions on trades
+- **P&L calculation:**
+  - Unrealized: (Current Price - Entry Price) × Quantity
+  - Realized: Calculated on SELL trades
+- **Account isolation:** Each user can have multiple paper accounts
+
+### ✅ ALL COMPLETE
+
+All Phase 5 features have been implemented and tested:
+
+- ✅ Historical data pipeline with Yahoo Finance integration
+- ✅ Rules-based backtest engine with scoring system
+- ✅ Strategy customization with weight validation
+- ✅ WebSocket backtest API with real-time progress
+- ✅ Paper trading system with account management
+- ✅ Frontend UI for all features (strategies, backtest, paper trading)
+- ✅ Comprehensive test suite (32 tests total)
+- ✅ Full documentation with disclaimers
+- ✅ Database migration successfully applied
+- ✅ Navigation and routing integrated
+
+### Known Limitations & Disclaimers
+
+**Documented prominently in `docs/BACKTESTING.md`:**
+
+1. **Simplified Scoring:** Backtest uses rules-based scoring, not live LLM analysis. Results are approximations.
+2. **No Historical Sentiment:** Cannot replay news/social media. Uses price momentum as proxy.
+3. **Look-Ahead Bias:** Technical indicators need warmup period (50 days for MA50). Early trades may be inaccurate.
+4. **Survivorship Bias:** Only tests stocks that still exist today. Delisted stocks excluded.
+5. **No Slippage/Commissions:** Assumes perfect execution at closing prices. Real trading has costs.
+6. **Past Performance ≠ Future Results:** Historical results are for educational purposes only.
+
+**Paper Trading Limitations:**
+- No order execution delays
+- No liquidity constraints
+- No market impact from large orders
+- No emotional factors (real money feels different)
+
+### Impact
+
+- **Historical validation:** Users can test strategies on past data before committing real capital
+- **Risk-free practice:** Paper trading allows skill-building without financial risk
+- **Strategy experimentation:** Custom agent weights enable personalized trading approaches
+- **Educational value:** Backtest results teach about risk/reward trade-offs
+- **Data foundation:** Historical price data supports future features (charting, analysis improvements)
+- **Foundation for Phase 6:** Exports, reports, API webhooks can leverage backtest results
+
+**Dependencies:** Phase 1 (Auth), Phase 2 (Performance tracking patterns)
+
+**Status:** Production-ready. All Phase 5 goals met.
+
+---
+
+## Services Layer Refactoring ✅ 100% COMPLETE
+
+Consolidate business logic into dedicated service classes organized by domain for better encapsulation, testability, and maintainability.
+
+### Current State
+
+The services layer currently has:
+- Functions and utilities scattered across `backend/services/` with no clear class hierarchy
+- `SettingsService` as one example of class-based service (reference implementation)
+- Mixed approaches: some services use functions, some use classes
+- Limited reusability and harder to mock for testing
+- No dependency injection or clear interfaces
+
+### Goal
+
+Create dedicated service classes for each domain, wrapping all related business logic with:
+- Clear class hierarchy with `BaseService` foundation
+- Method organization grouped by domain
+- Dependency injection for DAOs and external services
+- Comprehensive type hints and docstrings
+- Consistent error handling with custom exceptions
+- Interface definitions for test mocking
+
+### Plan
+
+#### Phase 0: DAO Layer Refactoring (Prerequisite)
+
+**Current State:** DAOs exist but lack consistent structure and clear instantiation pattern.
+
+**Refactoring Approach (Module-Level Instance Pattern):**
+
+Instead of singletons, use regular classes with module-level instances. This provides:
+- ✅ Single instance per module (production behavior)
+- ✅ Easy to mock/replace for testing (just reassign the module variable)
+- ✅ Simpler to understand than singleton pattern
+- ✅ No inheritance overhead or metaclass magic
+
+**Pattern Structure:**
+
+```python
+# backend/dao/user.py
+from backend.db.database import AsyncSession
+
+class UserDAO:
+    def __init__(self, session: AsyncSession):
+        self.session = session
+
+    async def get_by_id(self, user_id: int) -> User:
+        # implementation
+        pass
+
+# Create module-level instance (used in production)
+user_dao = UserDAO
+
+# Import and use in services:
+from backend.dao.user import user_dao
+# In service: user = await user_dao(session).get_by_id(user_id)
+```
+
+**Alternative with Factory Pattern:**
+
+```python
+# backend/dao/__init__.py - centralized DAO registry
+from backend.dao.user import UserDAO
+from backend.dao.portfolio import PortfolioDAO
+from backend.dao.alert import AlertDAO
+# ... etc
+
+# Create factory function
+def get_daos(session: AsyncSession):
+    return {
+        'user': UserDAO(session),
+        'portfolio': PortfolioDAO(session),
+        'alert': AlertDAO(session),
+        # ... all DAOs
+    }
+```
+
+**Tasks for Phase 0:**
+
+1. **Audit existing DAOs** in `backend/dao/`:
+   - List all DAO classes
+   - Check if they have consistent constructor signatures
+   - Identify if any are using singleton patterns
+
+2. **Standardize DAO structure:**
+   - Each DAO takes `session: AsyncSession` in `__init__`
+   - All async methods with proper type hints
+   - Consistent error handling
+   - Add docstrings
+
+3. **Create `backend/dao/__init__.py`:**
+   - Export all DAO classes
+   - Optional: Add factory function `get_daos(session)` for convenience
+   - Document instantiation pattern
+
+4. **Update service layer to use DAOs:**
+   - Services receive DAO instances via dependency injection
+   - Example: `AuthService(user_dao=UserDAO(session))`
+
+**Why this pattern is better than singletons:**
+- No global state issues
+- Easier to test (can inject mock DAOs)
+- Clear dependency flow (services declare what DAOs they need)
+- Supports async session management better
+- More Pythonic and explicit
+
+**Estimated Time:** 2-3 hours
+
+---
+
+#### Phase 1: Foundation & Architecture
+
+1. **Create `backend/services/base.py`:**
+   - `BaseService` abstract class with common patterns
+   - Error handling helpers
+   - Logging utilities
+   - Type hints for common patterns
+   - Constructor that accepts DAO instances
+
+2. **Create service exception base** in `backend/services/exceptions.py`:
+   - `ServiceError` — base exception for all services
+   - Pattern: each domain gets custom exceptions (e.g., `AuthService` → `AuthError`, `PortfolioService` → `PortfolioError`)
+
+3. **Service organization structure:**
+   ```
+   backend/services/
+   ├── __init__.py                 # Export all services
+   ├── base.py                     # BaseService with DAO injection helpers
+   ├── exceptions.py               # ServiceError hierarchy
+   ├── auth/
+   │   ├── __init__.py
+   │   ├── service.py              # AuthService (depends on UserDAO)
+   │   └── exceptions.py           # AuthError, RegistrationError, etc.
+   ├── portfolio/
+   │   ├── __init__.py
+   │   ├── service.py              # PortfolioService (depends on PortfolioDAO, PositionDAO)
+   │   └── exceptions.py           # PortfolioError, etc.
+   ├── watchlist/
+   │   ├── __init__.py
+   │   ├── service.py              # WatchlistService (depends on WatchlistDAO)
+   │   └── exceptions.py           # WatchlistError, etc.
+   ├── analysis/
+   │   ├── __init__.py
+   │   ├── service.py              # AnalysisService (depends on AnalysisDAO)
+   │   └── exceptions.py           # AnalysisError, etc.
+   ├── alerts/
+   │   ├── __init__.py
+   │   ├── service.py              # AlertService (depends on AlertDAO, NotificationDAO)
+   │   └── exceptions.py           # AlertError, etc.
+   ├── performance/
+   │   ├── __init__.py
+   │   ├── service.py              # PerformanceService (depends on PerformanceDAO)
+   │   └── exceptions.py           # PerformanceError, etc.
+   ├── schedules/
+   │   ├── __init__.py
+   │   ├── service.py              # ScheduleService (depends on ScheduleDAO)
+   │   └── exceptions.py           # ScheduleError, etc.
+   └── settings/
+       ├── __init__.py
+       ├── service.py              # SettingsService (already exists, move here)
+       └── exceptions.py           # SettingsError (already exists, move here)
+   ```
+
+#### Phase 2: Service Classes (with DAO Injection)
+
+**AuthService:**
+```python
+class AuthService(BaseService):
+    def __init__(self, user_dao: UserDAO):
+        self.user_dao = user_dao
+
+    async def register_user(email, password, first_name, last_name) → User
+    async def authenticate_user(email, password) → User
+    def create_access_token(user_id) → str
+    def verify_token(token) → dict
+    def refresh_token(refresh_token) → str
+```
+
+**PortfolioService:**
+```python
+class PortfolioService(BaseService):
+    def __init__(self, portfolio_dao: PortfolioDAO, position_dao: PositionDAO):
+        self.portfolio_dao = portfolio_dao
+        self.position_dao = position_dao
+
+    async def create_portfolio(user_id, name, description) → Portfolio
+    async def add_position(portfolio_id, ticker, quantity, entry_price) → Position
+    async def remove_position(position_id) → None
+    async def get_portfolio_with_positions(portfolio_id) → Portfolio
+    async def calculate_portfolio_metrics(portfolio_id) → dict
+```
+
+**WatchlistService:**
+```python
+class WatchlistService(BaseService):
+    def __init__(self, watchlist_dao: WatchlistDAO):
+        self.watchlist_dao = watchlist_dao
+
+    async def create_watchlist(user_id, name) → Watchlist
+    async def add_item(watchlist_id, ticker) → WatchlistItem
+    async def remove_item(watchlist_item_id) → None
+    async def get_watchlist_items(watchlist_id) → List[WatchlistItem]
+```
+
+**AnalysisService:**
+```python
+class AnalysisService(BaseService):
+    def __init__(self, analysis_dao: AnalysisDAO):
+        self.analysis_dao = analysis_dao
+
+    async def create_analysis_session(user_id, ticker, market) → AnalysisSession
+    async def get_user_analysis_history(user_id, limit, ticker) → List[AnalysisSession]
+    async def save_agent_reports(session_id, reports) → None
+    async def save_final_decision(session_id, decision) → None
+```
+
+**AlertService:**
+```python
+class AlertService(BaseService):
+    def __init__(self, alert_dao: AlertDAO, notification_dao: NotificationDAO):
+        self.alert_dao = alert_dao
+        self.notification_dao = notification_dao
+
+    async def create_price_alert(user_id, ticker, condition, target_value) → PriceAlert
+    async def trigger_alert(alert_id) → Notification
+    async def reset_alert(alert_id) → None
+    async def toggle_alert(alert_id) → None
+    async def delete_alert(alert_id) → None
+```
+
+**PerformanceService:**
+```python
+class PerformanceService(BaseService):
+    def __init__(self, performance_dao: PerformanceDAO):
+        self.performance_dao = performance_dao
+
+    async def update_analysis_outcome(session_id, prices_data) → None
+    async def calculate_outcome_correctness(recommendation, prices) → bool
+    async def get_summary_statistics(user_id) → dict
+    async def get_agent_accuracy(agent_type, period) → dict
+```
+
+**ScheduleService:**
+```python
+class ScheduleService(BaseService):
+    def __init__(self, schedule_dao: ScheduleDAO):
+        self.schedule_dao = schedule_dao
+
+    async def create_scheduled_analysis(user_id, ticker, frequency) → ScheduledAnalysis
+    async def get_due_schedules() → List[ScheduledAnalysis]
+    async def execute_scheduled_analysis(schedule_id) → AnalysisSession
+    async def update_run_times(schedule_id, next_run) → None
+    async def toggle_schedule(schedule_id) → None
+```
+
+**SettingsService** (already exists, move + enhance):
+```python
+class SettingsService(BaseService):
+    def __init__(self, user_dao: UserDAO, api_key_dao: APIKeyDAO):
+        self.user_dao = user_dao
+        self.api_key_dao = api_key_dao
+
+    # Move from backend/services/settings/service.py
+    # Keep all existing methods
+    # Update to use injected DAOs
+```
+
+#### Phase 3: Dependency Injection & Refactor Endpoints
+
+1. Update all route handlers to inject services instead of calling functions directly
+2. Create service initialization in `backend/main.py`
+3. Update existing API endpoints to use service classes
+4. Example:
+   ```python
+   # Before
+   from backend.services.auth import register_user
+
+   @auth_router.post("/register")
+   async def register(data: RegisterRequest):
+       user = await register_user(data.email, data.password)
+       return user
+
+   # After
+   from backend.services.auth import AuthService
+
+   @auth_router.post("/register")
+   async def register(data: RegisterRequest, service: AuthService = Depends()):
+       user = await service.register_user(data.email, data.password)
+       return user
+   ```
+
+#### Phase 4: Testing & Verification
+
+1. Create test mocks for each service class
+2. Write unit tests for all service methods
+3. Verify existing integration tests still pass
+4. Add tests for error handling and edge cases
+
+#### Phase 5: Documentation
+
+1. Add docstrings to all service classes and methods
+2. Create `docs/SERVICES.md` with:
+   - Service class overview
+   - Method signatures and return types
+   - Error handling patterns
+   - Dependency graph
+   - Example usage
+
+### Files to Create
+
+**Phase 0 (DAO Refactoring):**
+- `backend/dao/__init__.py` — DAO registry and factory function
+
+**Phase 1+ (Services Refactoring):**
+- `backend/services/base.py` — BaseService abstract class
+- `backend/services/exceptions.py` — ServiceError hierarchy
+- `backend/services/auth/__init__.py`
+- `backend/services/auth/service.py` — AuthService class (with UserDAO injection)
+- `backend/services/auth/exceptions.py` — Auth-specific exceptions
+- `backend/services/portfolio/__init__.py`
+- `backend/services/portfolio/service.py` — PortfolioService class (with DAO injection)
+- `backend/services/portfolio/exceptions.py` — Portfolio-specific exceptions
+- `backend/services/watchlist/__init__.py`
+- `backend/services/watchlist/service.py` — WatchlistService class (with DAO injection)
+- `backend/services/watchlist/exceptions.py` — Watchlist-specific exceptions
+- `backend/services/analysis/__init__.py`
+- `backend/services/analysis/service.py` — AnalysisService class (with DAO injection)
+- `backend/services/analysis/exceptions.py` — Analysis-specific exceptions
+- `backend/services/alerts/__init__.py`
+- `backend/services/alerts/service.py` — AlertService class (with DAO injection)
+- `backend/services/alerts/exceptions.py` — Alert-specific exceptions
+- `backend/services/performance/__init__.py`
+- `backend/services/performance/service.py` — PerformanceService class (with DAO injection)
+- `backend/services/performance/exceptions.py` — Performance-specific exceptions
+- `backend/services/schedules/__init__.py`
+- `backend/services/schedules/service.py` — ScheduleService class (with DAO injection)
+- `backend/services/schedules/exceptions.py` — Schedule-specific exceptions
+- `docs/SERVICES.md` — Service layer documentation
+- `docs/DAO_PATTERN.md` — DAO module-level instance pattern guide
+
+### Files to Modify
+
+**Phase 0 (DAO Refactoring):**
+- `backend/dao/user.py` — ensure class structure and session injection
+- `backend/dao/portfolio.py` — ensure class structure and session injection
+- `backend/dao/watchlist.py` — ensure class structure and session injection
+- `backend/dao/analysis.py` — ensure class structure and session injection
+- `backend/dao/alert.py` — ensure class structure and session injection
+- `backend/dao/performance.py` — ensure class structure and session injection
+- `backend/dao/schedule.py` — ensure class structure and session injection
+- `backend/dao/settings.py` — ensure class structure and session injection (if exists)
+
+**Phase 1+ (Services Refactoring):**
+- `backend/services/__init__.py` — export all service classes and factory function
+- `backend/services/settings/service.py` — refactor to use DAO injection, inherit from BaseService
+- All endpoint files in `backend/api/` — inject services instead of calling functions
+- `backend/main.py` — initialize service layer with dependency injection
+- Test files — update to use service classes with mocked DAOs
+
+### Benefits
+
+1. **Encapsulation:** Related business logic grouped in classes
+2. **Testability:** Services can be mocked easily for testing
+3. **Reusability:** Services used across multiple endpoints
+4. **Maintainability:** Clear separation of concerns
+5. **Scalability:** Easy to add new service methods
+6. **Type Safety:** Strong typing with proper annotations
+7. **Error Handling:** Consistent error patterns across services
+8. **Documentation:** Self-documenting code with clear interfaces
+
+### Dependencies
+
+- Requires completion of Phase 4b (all endpoints defined)
+- No blocking external dependencies
+
+### Estimated Effort
+
+- **Phase 0 (DAO Refactoring):** 2-3 hours
+  - Audit existing DAO classes
+  - Standardize structure and injection pattern
+  - Create `backend/dao/__init__.py` registry
+- **Phase 1 (Service Foundation):** 2-3 hours
+  - Create `BaseService`, exception hierarchy
+  - Set up service directory structure
+- **Phase 2 (Service Classes):** 6-8 hours
+  - Implement 7 service classes with DAO injection
+  - Add docstrings and type hints
+- **Phase 3 (DI & Refactor Endpoints):** 4-6 hours
+  - Update all API endpoints
+  - Wire services into FastAPI routes
+  - Update `backend/main.py`
+- **Phase 4 (Testing):** 3-4 hours
+  - Write service unit tests with mock DAOs
+  - Update integration tests
+  - Verify existing tests still pass
+- **Phase 5 (Documentation):** 1-2 hours
+  - Create `docs/SERVICES.md`
+  - Create `docs/DAO_PATTERN.md`
+  - Update CLAUDE.md with service patterns
+- **Total: 18-26 hours (2-3 days)**
+
+### Status
+
+⏳ **NOT STARTED** — Ready to begin once approved.
+
+**Dependencies:**
+- Phase 0 (DAO refactoring) must complete before Phase 1
+- Can be done independently of all other phases
 
 ---
 

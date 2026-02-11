@@ -1,5 +1,6 @@
 # backend/core/security.py
 """Security utilities: JWT tokens, password hashing."""
+
 from datetime import datetime, timedelta
 from typing import Optional
 

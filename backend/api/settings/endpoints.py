@@ -1,5 +1,6 @@
 # backend/api/settings/endpoints.py
 """User settings endpoints."""
+
 from typing import Annotated, List
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -9,18 +10,13 @@ from backend.auth.dependencies import get_current_user
 from backend.core.enums import LLMProvider
 from backend.db.database import get_db
 from backend.db.models import User
+from backend.services.dependencies import get_settings_service
 from backend.services.settings.exceptions import (
     EmailAlreadyTakenError,
     InvalidPasswordError,
     SettingsError,
 )
-from backend.services.settings.service import (
-    change_password,
-    delete_api_key,
-    get_api_keys_masked,
-    update_profile,
-    upsert_api_key,
-)
+from backend.services.settings.service import SettingsService
 
 from .schemas import (
     APIKeyCreate,
@@ -54,11 +50,12 @@ async def get_profile(
 async def update_profile_endpoint(
     data: ProfileUpdate,
     current_user: Annotated[User, Depends(get_current_user)],
+    service: SettingsService = Depends(get_settings_service),
     db: AsyncSession = Depends(get_db),
 ) -> ProfileResponse:
     """Update current user profile."""
     try:
-        result = await update_profile(
+        result = await service.update_profile(
             user_id=current_user.id,
             db=db,
             first_name=data.first_name,
@@ -79,11 +76,12 @@ async def update_profile_endpoint(
 async def change_password_endpoint(
     data: PasswordChange,
     current_user: Annotated[User, Depends(get_current_user)],
+    service: SettingsService = Depends(get_settings_service),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """Change current user's password."""
     try:
-        await change_password(
+        await service.change_password(
             user_id=current_user.id,
             current_password=data.current_password,
             new_password=data.new_password,
@@ -102,10 +100,11 @@ async def change_password_endpoint(
 @router.get("/api-keys", response_model=List[APIKeyResponse])
 async def list_api_keys(
     current_user: Annotated[User, Depends(get_current_user)],
+    service: SettingsService = Depends(get_settings_service),
     db: AsyncSession = Depends(get_db),
 ) -> List[APIKeyResponse]:
     """List all API keys for the current user (masked)."""
-    keys = await get_api_keys_masked(user_id=current_user.id, db=db)
+    keys = await service.get_api_keys_masked(user_id=current_user.id, db=db)
     return [APIKeyResponse(**k) for k in keys]
 
 
@@ -113,10 +112,11 @@ async def list_api_keys(
 async def create_or_update_api_key(
     data: APIKeyCreate,
     current_user: Annotated[User, Depends(get_current_user)],
+    service: SettingsService = Depends(get_settings_service),
     db: AsyncSession = Depends(get_db),
 ) -> APIKeyResponse:
     """Create or update an API key for a provider."""
-    result = await upsert_api_key(
+    result = await service.upsert_api_key(
         user_id=current_user.id,
         provider=data.provider,
         raw_key=data.api_key,
@@ -129,10 +129,11 @@ async def create_or_update_api_key(
 async def delete_api_key_endpoint(
     provider: LLMProvider,
     current_user: Annotated[User, Depends(get_current_user)],
+    service: SettingsService = Depends(get_settings_service),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """Delete an API key by provider."""
-    deleted = await delete_api_key(
+    deleted = await service.delete_api_key(
         user_id=current_user.id,
         provider=provider,
         db=db,

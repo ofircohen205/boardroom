@@ -1,5 +1,6 @@
 # backend/api/portfolios/endpoints.py
 """Portfolio endpoints."""
+
 from typing import Annotated
 from uuid import UUID
 
@@ -10,11 +11,8 @@ from backend.ai.state.enums import Market
 from backend.auth.dependencies import get_current_user
 from backend.db.database import get_db
 from backend.db.models import User
-from backend.services.portfolio_management import (
-    add_position,
-    create_portfolio,
-    get_user_portfolios,
-)
+from backend.services.dependencies import get_portfolio_service
+from backend.services.portfolio_management.service import PortfolioService
 
 from .schemas import PortfolioPositionSchema, PortfolioSchema
 
@@ -24,10 +22,10 @@ router = APIRouter(prefix="/portfolios", tags=["portfolios"])
 @router.get("")
 async def list_portfolios(
     current_user: Annotated[User, Depends(get_current_user)],
-    db: AsyncSession = Depends(get_db),
+    service: PortfolioService = Depends(get_portfolio_service),
 ) -> list[PortfolioSchema]:
     """Get all portfolios for current user."""
-    portfolios = await get_user_portfolios(current_user.id, db)
+    portfolios = await service.get_user_portfolios(current_user.id)
     return [
         PortfolioSchema(
             id=str(p.id),
@@ -52,10 +50,11 @@ async def list_portfolios(
 async def create_new_portfolio(
     name: str,
     current_user: Annotated[User, Depends(get_current_user)],
+    service: PortfolioService = Depends(get_portfolio_service),
     db: AsyncSession = Depends(get_db),
 ) -> PortfolioSchema:
     """Create a new portfolio."""
-    portfolio = await create_portfolio(current_user.id, name, db)
+    portfolio = await service.create_portfolio(current_user.id, name, db)
     return PortfolioSchema(id=str(portfolio.id), name=portfolio.name, positions=[])
 
 
@@ -67,12 +66,13 @@ async def add_new_position(
     quantity: float,
     entry_price: float,
     current_user: Annotated[User, Depends(get_current_user)],
+    service: PortfolioService = Depends(get_portfolio_service),
     db: AsyncSession = Depends(get_db),
     sector: str | None = None,
 ) -> PortfolioPositionSchema:
     """Add a position to a portfolio."""
     market_enum = Market.TASE if market == "TASE" else Market.US
-    position = await add_position(
+    position = await service.add_position(
         portfolio_id, ticker, market_enum, quantity, entry_price, sector, db
     )
     return PortfolioPositionSchema(

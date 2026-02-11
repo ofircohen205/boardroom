@@ -1,5 +1,6 @@
 # backend/api/auth/schemas.py
 """Auth request/response schemas."""
+
 from datetime import datetime
 
 from pydantic import BaseModel, EmailStr

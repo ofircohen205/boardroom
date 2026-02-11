@@ -30,7 +30,6 @@ async def compare_stocks(request: CompareRequest) -> dict:
     graph = create_boardroom_graph()
 
     # Run comparison (non-streaming version for REST API)
-    all_results = {}
     async for event in graph.run_comparison_streaming(request.tickers, request.market):
         if event["type"].value == "comparison_result":
             return event["data"]

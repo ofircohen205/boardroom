@@ -1,5 +1,6 @@
 # backend/api/schedules/schemas.py
 """Pydantic schemas for scheduled analysis API."""
+
 from datetime import datetime
 from uuid import UUID
 

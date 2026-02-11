@@ -1,7 +1,7 @@
 # tests/test_scheduled_analysis.py
 """Tests for scheduled analysis features (Phase 4b)."""
-from datetime import datetime, timedelta
 
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from backend.db.models import AlertFrequency

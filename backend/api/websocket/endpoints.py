@@ -1,5 +1,6 @@
 # backend/api/websocket/endpoints.py
-"""WebSocket endpoint for real-time analysis streaming."""
+"""WebSocket endpoints for real-time analysis and backtesting."""
+
 import uuid
 from datetime import datetime
 
@@ -12,6 +13,7 @@ from sqlalchemy.orm import selectinload
 from backend.ai.state.enums import Action, AnalysisMode, Market, WSMessageType
 from backend.ai.tools.market_data import get_market_data_client
 from backend.ai.workflow import BoardroomGraph
+from backend.api.backtest.websocket import router as backtest_ws_router
 from backend.core.logging import get_logger
 from backend.core.settings import settings
 from backend.db.database import get_db
@@ -29,6 +31,9 @@ from .connection_manager import connection_manager
 logger = get_logger(__name__)
 
 router = APIRouter(tags=["websocket"])
+
+# Include backtest WebSocket router
+router.include_router(backtest_ws_router)
 
 
 async def get_current_user_ws(token: str, db: AsyncSession) -> User | None:
@@ -275,7 +280,7 @@ async def websocket_endpoint(
             connection_manager.disconnect(user.id, websocket)
         try:
             await websocket.close(code=status.WS_1011_INTERNAL_ERROR)
-        except:
+        except Exception:
             pass
 
 

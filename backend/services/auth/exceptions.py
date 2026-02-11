@@ -1,5 +1,6 @@
 # backend/services/auth/exceptions.py
 """Authentication service exceptions."""
+
 from backend.core.exceptions import BoardroomError
 
 
