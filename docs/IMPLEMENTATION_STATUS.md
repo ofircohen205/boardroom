@@ -2,8 +2,8 @@
 
 Detailed breakdown of what's completed, what's in progress, and what remains for each phase.
 
-**Last Updated:** Feb 10, 2026
-**Overall Progress:** 98% across all planned phases
+**Last Updated:** Feb 11, 2026
+**Overall Progress:** 99% across all planned phases
 
 **Quick Summary:**
 
@@ -13,11 +13,12 @@ Detailed breakdown of what's completed, what's in progress, and what remains for
 - ✅ Phase 3 (Comparison) — 100% COMPLETE: Backend API, frontend page, full multi-stock comparison
 - ✅ Phase 4a (Alerts & Notifications) — 100% COMPLETE: Price alerts, notifications, WebSocket push, alert checker job
 - ✅ Phase 4b (Scheduled Analysis & Enhanced Notifications) — 100% COMPLETE: Scheduled analysis, TASE support, WebSocket reconnection, notification grouping, SendGrid foundation
-- ✅ Backend Refactoring — 100% COMPLETE: Modular routers (auth, watchlists, portfolios, analysis, sectors, websocket, alerts, notifications, schedules)
+- ✅ Phase 5 (Backtesting & Simulation) — 100% COMPLETE: Historical data pipeline, rules-based backtest engine, strategy customization, WebSocket backtest API, paper trading system, full frontend UI
+- ✅ Backend Refactoring — 100% COMPLETE: Modular routers (auth, watchlists, portfolios, analysis, sectors, websocket, alerts, notifications, schedules, strategies, backtest, paper)
 - ✅ Frontend Refactoring — 100% COMPLETE: Shared layout components (AppLayout, Navbar, Footer, PageContainer) implemented. All pages migrated to shared layout. Styling inconsistencies fixed.
 - ✅ User Settings Page — 100% COMPLETE: Profile management, password change, API key CRUD
 - ⏳ Services Layer Refactoring — 0% - Wrap service functionalities in dedicated classes per domain
-- ⏳ Phase 5-6 — Not started
+- ⏳ Phase 6 — Not started
 
 ---
 
@@ -846,6 +847,307 @@ All Phase 4b features have been implemented and tested:
 **Dependencies:** Phase 4a (alerts infrastructure)
 
 **Status:** Production-ready. All Phase 4b goals met.
+
+---
+
+## Phase 5: Backtesting & Simulation ✅ 100% COMPLETE
+
+Historical backtesting, strategy customization, and paper trading fully implemented.
+
+### ✅ COMPLETED
+
+**Backend Database Models** (`backend/db/models/backtesting.py`):
+
+- ✅ `HistoricalPrice` — Daily OHLCV data with (ticker, date) unique constraint
+  - Columns: ticker, date, open, high, low, close, adjusted_close, volume
+  - Uses `adjusted_close` for backtest calculations (handles splits/dividends)
+  - Indexes on (ticker, date) for efficient range queries
+- ✅ `HistoricalFundamentals` — Quarterly snapshots (revenue, earnings, P/E, debt)
+  - Columns: ticker, quarter_date, revenue, net_income, pe_ratio, debt_to_equity
+- ✅ `Strategy` — User-owned strategy configurations
+  - JSONB `config` column stores agent weights: `{"fundamental": 0.3, "technical": 0.4, "sentiment": 0.3}`
+  - Validation: weights must sum to 1.0
+  - User-specific strategies with name and description
+- ✅ `BacktestResult` — Completed backtest records
+  - Performance metrics: total_return, annualized_return, sharpe_ratio, max_drawdown, win_rate
+  - JSONB `equity_curve` and `trades` columns for full execution history
+  - Links to user, strategy, and config used
+- ✅ `PaperAccount` — Virtual trading accounts
+  - Tracks: cash_balance, total_value, initial_balance
+  - Links to user and strategy
+- ✅ `PaperTrade` — Trade execution records
+  - Columns: ticker, action (BUY/SELL), quantity, price, total, timestamp
+  - Links to PaperAccount
+- ✅ `PaperPosition` — Open position tracking
+  - Columns: ticker, quantity, entry_price, current_value
+  - Automatic updates on trade execution
+
+**Backend Data Pipeline** (`backend/data/historical.py`):
+
+- ✅ `fetch_and_store_historical_prices()` — Yahoo Finance integration
+  - Fetches OHLCV data for date ranges
+  - Handles duplicates with ON CONFLICT
+  - Returns count of inserted records
+- ✅ `get_price_range()` — Query price data for backtesting
+  - Returns sorted list of prices by date
+  - Efficient for date range queries
+- ✅ `get_latest_price()` — Current market price for paper trading
+  - Real-time price fetching for trade execution
+
+**Backend Backtest Engine** (`backend/backtest/engine.py`):
+
+- ✅ Rules-based scoring system (no LLM calls for speed)
+  - `TechnicalScorer`: MA crossovers, RSI, price trends → 0-100 score
+  - `FundamentalScorer`: P/E ratio, revenue growth, profit margins, debt → 0-100 score
+  - `SentimentScorer`: Price momentum (5-day return) as sentiment proxy → 0-100 score
+  - `ChairpersonScorer`: Weighted combination of scores → BUY/SELL/HOLD decision
+- ✅ `run_backtest()` — Full backtest execution
+  - Iterates through historical dates at check_frequency (daily/weekly)
+  - Calculates agent scores for each date
+  - Generates trade signals based on thresholds (>70 = BUY, <30 = SELL)
+  - Executes trades with position sizing
+  - Applies stop loss and take profit rules
+  - Tracks equity curve
+  - Calculates performance metrics (Sharpe, drawdown, win rate)
+- ✅ Position management
+  - Tracks open positions, entry prices, unrealized P&L
+  - Validates sufficient cash before buy orders
+  - Prevents short selling (cannot sell without position)
+- ✅ Risk management
+  - Stop loss: Auto-exit on % loss (e.g., -10%)
+  - Take profit: Auto-exit on % gain (e.g., +20%)
+  - Position sizing: Configurable % of capital per trade
+- ✅ Performance metrics
+  - Total return, annualized return
+  - Sharpe ratio (risk-adjusted return)
+  - Max drawdown (largest peak-to-trough decline)
+  - Win rate (% of profitable trades)
+  - Buy-and-hold comparison baseline
+
+**Backend REST API Endpoints:**
+
+**Strategies** (`backend/api/strategies/router.py`):
+- ✅ `POST /api/strategies` — Create strategy (validates weights sum to 1.0)
+- ✅ `GET /api/strategies` — List user's strategies
+- ✅ `GET /api/strategies/{id}` — Get strategy details
+- ✅ `PUT /api/strategies/{id}` — Update strategy
+- ✅ `DELETE /api/strategies/{id}` — Delete strategy
+
+**Backtest** (`backend/api/backtest/`):
+- ✅ `WS /ws/backtest?token={jwt}` — WebSocket backtest execution
+  - Message types: `backtest_started`, `backtest_progress`, `backtest_completed`, `backtest_error`
+  - Real-time progress updates: "Processing 2024-01-15 (45/365 days)"
+  - Fetches historical data, runs backtest, saves results
+- ✅ `GET /api/backtest/results` — List past backtest results
+- ✅ `GET /api/backtest/results/{id}` — Get specific result with equity curve and trades
+
+**Paper Trading** (`backend/api/paper/router.py`):
+- ✅ `POST /api/paper/accounts` — Create paper account
+- ✅ `GET /api/paper/accounts` — List user's accounts
+- ✅ `GET /api/paper/accounts/{id}` — Account summary (cash, positions, total value)
+- ✅ `POST /api/paper/accounts/{id}/trades` — Execute paper trade (BUY/SELL)
+- ✅ `GET /api/paper/accounts/{id}/trades` — Trade history
+- ✅ `GET /api/paper/accounts/{id}/performance` — Performance metrics
+- ✅ `GET /api/paper/accounts/{id}/positions` — Current open positions
+- ✅ `DELETE /api/paper/accounts/{id}/positions/{position_id}` — Close position
+- ✅ Trade validation:
+  - BUY: Validates sufficient cash balance
+  - SELL: Validates sufficient shares owned
+  - Real-time price fetching from Yahoo Finance
+
+**Backend DAOs** (`backend/dao/backtesting.py`):
+
+- ✅ `StrategyDAO` — Strategy CRUD operations
+- ✅ `BacktestResultDAO` — Result storage and retrieval
+- ✅ `PaperAccountDAO` — Account management
+  - `create_account()`, `get_user_accounts()`, `get_account()`
+  - `execute_trade()` — Trade execution with validation
+  - `get_account_positions()`, `get_account_trades()`
+  - `get_account_performance()` — Calculate P&L and returns
+
+**Frontend Pages:**
+
+- ✅ `StrategiesPage.tsx` (`/strategies`) — Strategy management
+  - Create/edit strategy form
+  - `AgentWeightSliders` component with auto-adjustment to sum to 1.0
+  - Strategy list with edit/delete actions
+  - "Test this strategy" button → links to backtest
+- ✅ `BacktestPage.tsx` (`/backtest`) — Backtest execution and results
+  - `BacktestForm` component: ticker, date range, strategy selector, capital, frequency
+  - WebSocket integration for real-time progress updates
+  - Progress bar: "Processing... 45%"
+  - `EquityCurveChart` component using lightweight-charts `AreaSeries`
+  - `BacktestSummary` component: metric cards (return, Sharpe, drawdown, win rate)
+  - `TradeLog` component: table of all trades with P&L
+  - Comparison line: equity vs buy-and-hold
+- ✅ `PaperTradingPage.tsx` (`/paper-trading`) — Virtual trading
+  - Account selector/creator
+  - Account overview cards: total value, cash, P&L, return %
+  - Position table with current prices and unrealized P&L
+  - `ExecuteTradeDialog` component for buy/sell trades
+  - Real-time position updates
+  - Trade history table
+
+**Frontend Components:**
+
+- ✅ `AgentWeightSliders.tsx` — Interactive sliders for strategy weights
+  - Three sliders (fundamental, technical, sentiment)
+  - Auto-adjustment: changing one slider proportionally distributes remaining weight to others
+  - Always maintains sum = 1.0
+  - Visual weight distribution display
+- ✅ `BacktestForm.tsx` — Configuration form
+  - Ticker input, strategy dropdown, date pickers
+  - Capital input, frequency selector (daily/weekly)
+  - Position size slider (0.1-1.0)
+  - Optional stop loss and take profit inputs
+  - Validation: all required fields must be filled
+- ✅ `EquityCurveChart.tsx` — Equity visualization
+  - Area chart using lightweight-charts
+  - Shows equity over time
+  - Comparison line for buy-and-hold strategy
+  - Tooltips with date and value
+- ✅ `BacktestSummary.tsx` — Performance metrics cards
+  - Grid layout with 6 metric cards
+  - Color-coded: green for positive, red for negative
+  - Icons for trend direction
+  - Subtitle explanations for each metric
+- ✅ `TradeLog.tsx` — Trade history table
+  - Columns: date, type (BUY/SELL), quantity, price, total
+  - Color-coded arrows for buy (green) vs sell (red)
+  - Currency formatting
+  - Empty state message
+- ✅ `CreateAccountDialog.tsx` — Paper account creation modal
+- ✅ `ExecuteTradeDialog.tsx` — Trade execution modal
+- ✅ `AccountOverview.tsx` — Summary cards for paper account
+- ✅ `PaperPerformanceChart.tsx` — Account value over time
+
+**Frontend Types** (`frontend/src/types/`):
+
+- ✅ `backtest.ts` — BacktestConfig, BacktestResult, Trade, EquityPoint types
+- ✅ `strategy.ts` — Strategy, StrategyWeights, StrategyCreate types
+- ✅ `paper.ts` — PaperAccount, PaperTrade, PaperPosition types
+
+**Frontend Integration:**
+
+- ✅ Routes added to `App.tsx`: `/strategies`, `/backtest`, `/paper-trading`
+- ✅ Navigation links added to `Navbar.tsx`:
+  - Strategies (Target icon)
+  - Backtest (Activity icon)
+  - Paper Trading (Wallet icon)
+- ✅ WebSocket integration in `useWebSocket.ts` (backtest message handlers)
+
+**Database Migration:**
+
+- ✅ Migration `ab39d61d2eff_add_backtesting_tables.py`:
+  - Created `tradetype` enum (BUY, SELL)
+  - Created `backtestfrequency` enum (daily, weekly)
+  - Created 7 tables: HistoricalPrice, HistoricalFundamentals, Strategy, BacktestResult, PaperAccount, PaperTrade, PaperPosition
+  - Conditional enum creation (avoids duplicate errors)
+  - Composite indexes for performance
+  - CASCADE delete on foreign keys
+
+**Documentation:**
+
+- ✅ `docs/BACKTESTING.md` — Comprehensive guide:
+  - Strategy builder usage and guidelines
+  - Backtest configuration and execution
+  - Results interpretation (metrics explained)
+  - Paper trading workflows
+  - **Important disclaimers** about limitations
+  - API reference for all endpoints
+  - Troubleshooting guide
+  - Best practices
+
+**Tests:**
+
+- ✅ `tests/unit/test_backtest_scoring.py` — Scoring logic tests:
+  - Technical scorer: uptrend, downtrend, sideways, RSI, insufficient data
+  - Fundamental scorer: strong/weak/moderate fundamentals, missing data
+  - Sentiment scorer: positive/negative/flat momentum
+  - Chairperson scorer: weighted calculations, thresholds, edge cases
+  - Total: 20 unit tests for scoring accuracy
+- ✅ `tests/integration/test_backtest_flow.py` — Full flow tests:
+  - Historical data fetching and storage
+  - Backtest equity curve generation
+  - Trade execution based on signals
+  - Stop loss triggering
+  - Metrics calculation (Sharpe, drawdown, win rate)
+  - Paper account creation
+  - Paper trade execution (BUY/SELL)
+  - Insufficient funds/shares validation
+  - Total: 12 integration tests for end-to-end flows
+
+### Business Rules Implemented
+
+**Backtesting:**
+- **Rules-based scoring:** No LLM calls, deterministic results, fast execution
+- **Look-ahead bias prevention:** Technical indicators require warmup period (50 days for MA50)
+- **Position sizing:** Configurable percentage of capital per trade (default: 50%)
+- **Stop loss:** Auto-exit on % loss threshold (e.g., -10%)
+- **Take profit:** Auto-exit on % gain threshold (e.g., +20%)
+- **No short selling:** Cannot sell without existing position
+- **Buy-and-hold baseline:** Always compare strategy vs passive investing
+
+**Strategy Customization:**
+- **Weight validation:** Fundamental + Technical + Sentiment must = 1.0
+- **User isolation:** Strategies are user-specific, not shared
+- **Naming:** Unique strategy names per user recommended
+
+**Paper Trading:**
+- **Real-time prices:** Fetches current market prices from Yahoo Finance
+- **Trade validation:**
+  - BUY: Requires sufficient cash balance
+  - SELL: Requires sufficient shares in position
+- **Position tracking:** Automatic creation/update of positions on trades
+- **P&L calculation:**
+  - Unrealized: (Current Price - Entry Price) × Quantity
+  - Realized: Calculated on SELL trades
+- **Account isolation:** Each user can have multiple paper accounts
+
+### ✅ ALL COMPLETE
+
+All Phase 5 features have been implemented and tested:
+
+- ✅ Historical data pipeline with Yahoo Finance integration
+- ✅ Rules-based backtest engine with scoring system
+- ✅ Strategy customization with weight validation
+- ✅ WebSocket backtest API with real-time progress
+- ✅ Paper trading system with account management
+- ✅ Frontend UI for all features (strategies, backtest, paper trading)
+- ✅ Comprehensive test suite (32 tests total)
+- ✅ Full documentation with disclaimers
+- ✅ Database migration successfully applied
+- ✅ Navigation and routing integrated
+
+### Known Limitations & Disclaimers
+
+**Documented prominently in `docs/BACKTESTING.md`:**
+
+1. **Simplified Scoring:** Backtest uses rules-based scoring, not live LLM analysis. Results are approximations.
+2. **No Historical Sentiment:** Cannot replay news/social media. Uses price momentum as proxy.
+3. **Look-Ahead Bias:** Technical indicators need warmup period (50 days for MA50). Early trades may be inaccurate.
+4. **Survivorship Bias:** Only tests stocks that still exist today. Delisted stocks excluded.
+5. **No Slippage/Commissions:** Assumes perfect execution at closing prices. Real trading has costs.
+6. **Past Performance ≠ Future Results:** Historical results are for educational purposes only.
+
+**Paper Trading Limitations:**
+- No order execution delays
+- No liquidity constraints
+- No market impact from large orders
+- No emotional factors (real money feels different)
+
+### Impact
+
+- **Historical validation:** Users can test strategies on past data before committing real capital
+- **Risk-free practice:** Paper trading allows skill-building without financial risk
+- **Strategy experimentation:** Custom agent weights enable personalized trading approaches
+- **Educational value:** Backtest results teach about risk/reward trade-offs
+- **Data foundation:** Historical price data supports future features (charting, analysis improvements)
+- **Foundation for Phase 6:** Exports, reports, API webhooks can leverage backtest results
+
+**Dependencies:** Phase 1 (Auth), Phase 2 (Performance tracking patterns)
+
+**Status:** Production-ready. All Phase 5 goals met.
 
 ---
 

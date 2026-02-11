@@ -9,6 +9,9 @@ import PerformancePage from '@/pages/PerformancePage';
 import AlertsPage from '@/pages/AlertsPage';
 import SchedulesPage from '@/pages/SchedulesPage';
 import SettingsPage from '@/pages/SettingsPage';
+import { StrategiesPage } from '@/pages/StrategiesPage';
+import { BacktestPage } from '@/pages/BacktestPage';
+import { PaperTradingPage } from '@/pages/PaperTradingPage';
 import AppLayout from '@/components/layout/AppLayout';
 import { Loader2 } from 'lucide-react';
 
@@ -74,6 +77,21 @@ function App() {
             <Route path="/settings" element={
               <ProtectedRoute>
                 <SettingsPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/strategies" element={
+              <ProtectedRoute>
+                <StrategiesPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/backtest" element={
+              <ProtectedRoute>
+                <BacktestPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/paper-trading" element={
+              <ProtectedRoute>
+                <PaperTradingPage />
               </ProtectedRoute>
             } />
           </Route>

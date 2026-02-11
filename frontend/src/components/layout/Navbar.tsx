@@ -13,12 +13,18 @@ import {
   Menu,
   X,
   LogOut,
+  Target,
+  Activity,
+  Wallet,
 } from 'lucide-react';
 
 const navLinks = [
   // { to: '/', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/compare', label: 'Compare', icon: GitCompare },
   { to: '/portfolio', label: 'Portfolio', icon: Briefcase },
+  { to: '/strategies', label: 'Strategies', icon: Target },
+  { to: '/backtest', label: 'Backtest', icon: Activity },
+  { to: '/paper-trading', label: 'Paper Trading', icon: Wallet },
   { to: '/performance', label: 'Performance', icon: TrendingUp },
   { to: '/alerts', label: 'Alerts', icon: Bell },
   { to: '/schedules', label: 'Schedules', icon: Calendar },
