@@ -1,5 +1,6 @@
 # backend/services/settings/service.py
 """User settings service layer."""
+
 import base64
 import binascii
 from typing import List

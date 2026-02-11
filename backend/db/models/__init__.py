@@ -1,5 +1,6 @@
 # backend/db/models/__init__.py
 """Database models for the Boardroom application."""
+
 from .alerts import (
     AlertCondition,
     AlertFrequency,

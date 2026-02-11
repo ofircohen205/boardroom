@@ -1,5 +1,6 @@
 # backend/api/websocket/connection_manager.py
 """WebSocket connection manager for real-time notifications."""
+
 from typing import Dict, Set
 from uuid import UUID
 

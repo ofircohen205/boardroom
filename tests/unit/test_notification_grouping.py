@@ -1,5 +1,6 @@
 # tests/test_notification_grouping.py
 """Tests for notification grouping feature (Phase 4b)."""
+
 from datetime import datetime, timedelta
 from typing import ClassVar
 from unittest.mock import AsyncMock, patch

@@ -8,6 +8,7 @@ all SQL queries and database operations. This makes it easier to:
 - Maintain consistent query patterns
 - Refactor database schema without touching business logic
 """
+
 from .alerts import NotificationDAO, PriceAlertDAO, ScheduledAnalysisDAO
 from .analysis import AnalysisDAO
 from .backtesting import (

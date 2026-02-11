@@ -1,5 +1,6 @@
 # backend/services/watchlist/exceptions.py
 """Watchlist service exceptions."""
+
 from backend.services.exceptions import ServiceError
 
 

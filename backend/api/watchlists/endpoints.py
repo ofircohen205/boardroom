@@ -1,5 +1,6 @@
 # backend/api/watchlists/endpoints.py
 """Watchlist endpoints."""
+
 from typing import Annotated
 from uuid import UUID
 

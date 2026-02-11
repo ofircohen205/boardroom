@@ -64,7 +64,7 @@ export function StrategyForm({
           <Textarea
             id="strategy-description"
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDescription(e.target.value)}
             placeholder="Optional description of your strategy..."
             maxLength={500}
             rows={3}

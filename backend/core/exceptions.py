@@ -1,5 +1,6 @@
 # backend/core/exceptions.py
 """Base exceptions and error handlers for the application."""
+
 from typing import Any, Dict, Optional
 
 

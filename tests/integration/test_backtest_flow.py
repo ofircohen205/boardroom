@@ -78,9 +78,9 @@ class TestHistoricalDataPipeline:
         prices = await get_price_range(db_session, ticker, start, end)
 
         assert len(prices) == 10, "Should retrieve all 10 prices"
-        assert (
-            prices[0].date <= prices[-1].date
-        ), "Prices should be in ascending date order"
+        assert prices[0].date <= prices[-1].date, (
+            "Prices should be in ascending date order"
+        )
 
 
 @pytest.mark.asyncio
@@ -135,9 +135,9 @@ class TestBacktestEngine:
 
         # Verify result structure
         assert result.total_return is not None, "Should calculate total return"
-        assert (
-            result.annualized_return is not None
-        ), "Should calculate annualized return"
+        assert result.annualized_return is not None, (
+            "Should calculate annualized return"
+        )
         assert result.max_drawdown <= 0, "Max drawdown should be <= 0"
         assert len(result.equity_curve) > 0, "Should generate equity curve"
         assert len(result.trades) >= 0, "Should have trades list"

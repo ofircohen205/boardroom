@@ -1,5 +1,6 @@
 # backend/api/routes.py
 """Utility endpoints (markets, cache, stock search)."""
+
 from fastapi import APIRouter
 
 from backend.ai.state.enums import Market

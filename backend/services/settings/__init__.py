@@ -1,4 +1,5 @@
 """User settings service package."""
+
 from .exceptions import (
     EmailAlreadyTakenError,
     InvalidPasswordError,

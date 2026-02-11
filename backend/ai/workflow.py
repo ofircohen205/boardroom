@@ -114,9 +114,9 @@ class BoardroomGraph:
             yield {"type": WSMessageType.AGENT_STARTED, "agent": agent_type, "data": {}}
 
         # Run analysts in parallel, streaming completions as they finish
-        completion_queue: asyncio.Queue[
-            tuple[AgentType, dict | None, str | None]
-        ] = asyncio.Queue()
+        completion_queue: asyncio.Queue[tuple[AgentType, dict | None, str | None]] = (
+            asyncio.Queue()
+        )
 
         async def _run_agent(agent_type: AgentType, coro):
             try:
@@ -461,11 +461,11 @@ class BoardroomGraph:
 """
         for i, data in enumerate(comparison_data, 1):
             prompt += f"""
-{i}. {data['ticker']}
-   Recommendation: {data['action']} (confidence: {data['confidence']:.0%})
-   Fundamental: {data['fundamental_summary']}
-   Sentiment: {data['sentiment_summary']}
-   Technical: {data['technical_summary']}
+{i}. {data["ticker"]}
+   Recommendation: {data["action"]} (confidence: {data["confidence"]:.0%})
+   Fundamental: {data["fundamental_summary"]}
+   Sentiment: {data["sentiment_summary"]}
+   Technical: {data["technical_summary"]}
 """
 
         prompt += """

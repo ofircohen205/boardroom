@@ -1,5 +1,6 @@
 # backend/api/websocket/endpoints.py
 """WebSocket endpoints for real-time analysis and backtesting."""
+
 import uuid
 from datetime import datetime
 

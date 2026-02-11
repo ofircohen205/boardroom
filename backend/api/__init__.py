@@ -1,5 +1,6 @@
 # backend/api/__init__.py
 """API routers organized by domain."""
+
 from fastapi import APIRouter
 
 from .alerts.endpoints import router as alerts_router

@@ -13,11 +13,11 @@ class FundamentalAgent:
         stock_data = await self.market_data.get_stock_data(ticker, market)
 
         prompt = f"""Analyze the fundamental data for {ticker}:
-- P/E Ratio: {stock_data.get('pe_ratio', 'N/A')}
-- Revenue Growth: {stock_data.get('revenue_growth', 'N/A')}
-- Debt to Equity: {stock_data.get('debt_to_equity', 'N/A')}
-- Market Cap: {stock_data.get('market_cap', 'N/A')}
-- Sector: {stock_data.get('sector', 'N/A')}
+- P/E Ratio: {stock_data.get("pe_ratio", "N/A")}
+- Revenue Growth: {stock_data.get("revenue_growth", "N/A")}
+- Debt to Equity: {stock_data.get("debt_to_equity", "N/A")}
+- Market Cap: {stock_data.get("market_cap", "N/A")}
+- Sector: {stock_data.get("sector", "N/A")}
 
 Provide a brief fundamental analysis summary (2-3 sentences)."""
 

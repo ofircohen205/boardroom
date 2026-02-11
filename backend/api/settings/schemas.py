@@ -1,5 +1,6 @@
 # backend/api/settings/schemas.py
 """Settings request/response schemas."""
+
 from datetime import datetime
 from typing import Optional
 

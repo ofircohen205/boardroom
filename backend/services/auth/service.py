@@ -1,5 +1,6 @@
 # backend/services/auth/service.py
 """Authentication service - handles user registration and login."""
+
 from datetime import timedelta
 from typing import Optional
 

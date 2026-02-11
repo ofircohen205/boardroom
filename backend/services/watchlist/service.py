@@ -1,5 +1,6 @@
 # backend/services/watchlist/service.py
 """Watchlist service - manages user watchlists and items."""
+
 from typing import List
 from uuid import UUID
 

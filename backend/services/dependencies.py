@@ -4,6 +4,7 @@
 These functions are used with FastAPI's Depends() to inject properly
 configured service instances into endpoints.
 """
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.dao import (

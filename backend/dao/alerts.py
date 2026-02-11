@@ -1,5 +1,6 @@
 # backend/dao/alerts.py
 """Data Access Objects for alerts and notifications."""
+
 from datetime import datetime, timedelta
 from typing import Optional
 from uuid import UUID

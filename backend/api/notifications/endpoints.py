@@ -1,5 +1,6 @@
 # backend/api/notifications/endpoints.py
 """API endpoints for notifications."""
+
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status

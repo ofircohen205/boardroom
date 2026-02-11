@@ -1,4 +1,5 @@
 """Tests for alerts system."""
+
 from datetime import datetime, timedelta
 
 import pytest

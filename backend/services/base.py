@@ -1,5 +1,6 @@
 # backend/services/base.py
 """Base service class with common functionality for all services."""
+
 from abc import ABC
 from typing import Optional
 

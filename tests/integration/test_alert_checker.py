@@ -1,4 +1,5 @@
 """Integration tests for alert checker job."""
+
 import uuid
 from datetime import datetime
 from unittest.mock import AsyncMock, patch

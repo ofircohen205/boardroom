@@ -1,5 +1,6 @@
 # backend/api/analysis/endpoints.py
 """Analysis history endpoints."""
+
 from typing import Annotated
 
 from fastapi import APIRouter, Depends

@@ -1,5 +1,6 @@
 # backend/services/schedules/service.py
 """Schedule service - manages scheduled analysis execution."""
+
 from datetime import datetime
 from typing import List
 from uuid import UUID

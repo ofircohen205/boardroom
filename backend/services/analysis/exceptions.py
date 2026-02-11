@@ -1,5 +1,6 @@
 # backend/services/analysis/exceptions.py
 """Analysis service exceptions."""
+
 from backend.services.exceptions import ServiceError
 
 

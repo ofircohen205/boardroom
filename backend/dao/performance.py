@@ -1,5 +1,6 @@
 # backend/dao/performance.py
 """Performance tracking data access objects."""
+
 from typing import List, Optional
 from uuid import UUID
 

@@ -1,5 +1,6 @@
 # backend/dao/user.py
 """User data access objects."""
+
 from typing import List, Optional
 from uuid import UUID
 

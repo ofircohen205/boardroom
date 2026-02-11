@@ -1,5 +1,6 @@
 # backend/db/models/base.py
 """SQLAlchemy declarative base."""
+
 from sqlalchemy.orm import DeclarativeBase
 
 

@@ -48,19 +48,19 @@ class RiskManagerAgent:
                 portfolio_sector_weight=portfolio_tech_weight,
                 var_95=var_95,
                 veto=True,
-                veto_reason=f"Portfolio already {portfolio_tech_weight*100:.0f}% in {sector}, exceeds {self.MAX_SECTOR_WEIGHT*100:.0f}% limit",
+                veto_reason=f"Portfolio already {portfolio_tech_weight * 100:.0f}% in {sector}, exceeds {self.MAX_SECTOR_WEIGHT * 100:.0f}% limit",
             )
 
         # LLM-based risk assessment
         prompt = f"""As a risk manager, assess whether to VETO this trade for {ticker} ({sector}):
 
-Portfolio {sector} weight: {portfolio_tech_weight*100:.1f}%
-Max allowed: {self.MAX_SECTOR_WEIGHT*100:.0f}%
-95% Value at Risk (daily): {var_95*100:.2f}%
+Portfolio {sector} weight: {portfolio_tech_weight * 100:.1f}%
+Max allowed: {self.MAX_SECTOR_WEIGHT * 100:.0f}%
+95% Value at Risk (daily): {var_95 * 100:.2f}%
 
-Fundamental summary: {fundamental['summary'] if fundamental else 'N/A'}
-Sentiment: {sentiment['overall_sentiment'] if sentiment else 'N/A'}
-Technical trend: {technical['trend'].value if technical else 'N/A'}
+Fundamental summary: {fundamental["summary"] if fundamental else "N/A"}
+Sentiment: {sentiment["overall_sentiment"] if sentiment else "N/A"}
+Technical trend: {technical["trend"].value if technical else "N/A"}
 
 Consider:
 1. Concentration risk

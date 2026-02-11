@@ -1,5 +1,6 @@
 # tests/test_email_service.py
 """Tests for email service stub (Phase 4b)."""
+
 from unittest.mock import patch
 
 import pytest

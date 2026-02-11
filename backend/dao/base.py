@@ -1,5 +1,6 @@
 # backend/dao/base.py
 """Base DAO with common CRUD operations."""
+
 from functools import lru_cache
 from typing import ClassVar, Generic, List, Optional, Type, TypeVar
 from uuid import UUID

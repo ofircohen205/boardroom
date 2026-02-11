@@ -28,8 +28,8 @@ class ChairpersonAgent:
         if fundamental:
             available_reports.append(
                 f"""FUNDAMENTAL ANALYSIS:
-{fundamental['summary']}
-- P/E: {fundamental['pe_ratio']}, Revenue Growth: {fundamental['revenue_growth']*100:.1f}%, D/E: {fundamental['debt_to_equity']}"""
+{fundamental["summary"]}
+- P/E: {fundamental["pe_ratio"]}, Revenue Growth: {fundamental["revenue_growth"] * 100:.1f}%, D/E: {fundamental["debt_to_equity"]}"""
             )
         else:
             available_reports.append("FUNDAMENTAL ANALYSIS: [Data unavailable]")
@@ -37,8 +37,8 @@ class ChairpersonAgent:
         if sentiment:
             available_reports.append(
                 f"""SENTIMENT ANALYSIS:
-{sentiment['summary']}
-- Overall sentiment: {sentiment['overall_sentiment']:.2f} (-1 to 1 scale)"""
+{sentiment["summary"]}
+- Overall sentiment: {sentiment["overall_sentiment"]:.2f} (-1 to 1 scale)"""
             )
         else:
             available_reports.append("SENTIMENT ANALYSIS: [Data unavailable]")
@@ -46,8 +46,8 @@ class ChairpersonAgent:
         if technical:
             available_reports.append(
                 f"""TECHNICAL ANALYSIS:
-{technical['summary']}
-- Trend: {technical['trend'].value}, RSI: {technical['rsi']:.1f}"""
+{technical["summary"]}
+- Trend: {technical["trend"].value}, RSI: {technical["rsi"]:.1f}"""
             )
         else:
             available_reports.append("TECHNICAL ANALYSIS: [Data unavailable]")

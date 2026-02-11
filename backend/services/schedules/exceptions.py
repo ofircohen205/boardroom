@@ -1,5 +1,6 @@
 # backend/services/schedules/exceptions.py
 """Schedule service exceptions."""
+
 from backend.services.exceptions import ServiceError
 
 

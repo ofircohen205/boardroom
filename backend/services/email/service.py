@@ -1,5 +1,6 @@
 # backend/services/email.py
 """Email notification service using SendGrid."""
+
 from typing import Optional
 
 from backend.core.logging import get_logger

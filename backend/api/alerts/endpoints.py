@@ -1,5 +1,6 @@
 # backend/api/alerts/endpoints.py
 """API endpoints for price alerts."""
+
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status

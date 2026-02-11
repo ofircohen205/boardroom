@@ -1,5 +1,6 @@
 # backend/api/auth/endpoints.py
 """Authentication endpoints."""
+
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException

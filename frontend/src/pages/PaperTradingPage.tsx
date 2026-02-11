@@ -2,7 +2,7 @@
  * Paper trading page for virtual trading practice.
  */
 
-import { PageContainer } from "@/components/layout/PageContainer";
+import PageContainer from "@/components/layout/PageContainer";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -48,10 +48,45 @@ export function PaperTradingPage() {
   const [isTradeDialogOpen, setIsTradeDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  const fetchAccounts = useCallback(async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch("http://localhost:8000/api/paper/accounts", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setAccounts(data);
+        if (data.length > 0 && !selectedAccount) {
+          setSelectedAccount(data[0]);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch accounts:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [selectedAccount]);
+
+  const fetchStrategies = useCallback(async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch("http://localhost:8000/api/strategies", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setStrategies(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch strategies:", error);
+    }
+  }, []);
+
   useEffect(() => {
     fetchAccounts();
     fetchStrategies();
-  }, [fetchAccounts]);
+  }, [fetchAccounts, fetchStrategies]);
 
   const fetchAccountDetails = useCallback(async (accountId: string) => {
     try {
@@ -75,46 +110,11 @@ export function PaperTradingPage() {
     }
   }, []);
 
-  const fetchAccounts = useCallback(async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:8000/api/paper/accounts", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setAccounts(data);
-        if (data.length > 0 && !selectedAccount) {
-          setSelectedAccount(data[0]);
-        }
-      }
-    } catch (error) {
-      console.error("Failed to fetch accounts:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [selectedAccount]);
-
   useEffect(() => {
     if (selectedAccount) {
       fetchAccountDetails(selectedAccount.id);
     }
   }, [selectedAccount?.id, fetchAccountDetails]);
-
-  const fetchStrategies = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:8000/api/strategies", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setStrategies(data);
-      }
-    } catch (error) {
-      console.error("Failed to fetch strategies:", error);
-    }
-  };
 
   const handleCreateAccount = async (data: PaperAccountCreate) => {
     try {

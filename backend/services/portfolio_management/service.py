@@ -1,5 +1,6 @@
 # backend/services/portfolio_management/service.py
 """Portfolio and watchlist management service."""
+
 from typing import List
 from uuid import UUID
 

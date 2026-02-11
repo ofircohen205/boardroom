@@ -1,5 +1,6 @@
 # backend/services/alerts/service.py
 """Business logic for alerts and notifications."""
+
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession

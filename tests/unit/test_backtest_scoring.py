@@ -56,9 +56,9 @@ class TestTechnicalScorer:
         """Test that insufficient data returns neutral score."""
         prices = [Decimal("100"), Decimal("101")]  # < 14 days for RSI
         score = calculate_technical_score(prices)
-        assert (
-            45 <= score <= 55
-        ), f"Insufficient data should return neutral ~50, got {score}"
+        assert 45 <= score <= 55, (
+            f"Insufficient data should return neutral ~50, got {score}"
+        )
 
     def test_empty_prices_returns_neutral(self):
         """Test that empty price list returns neutral score."""
@@ -97,9 +97,9 @@ class TestFundamentalScorer:
             profit_margin=Decimal("0.10"),
             debt_to_equity=Decimal("0.8"),
         )
-        assert (
-            40 <= score <= 60
-        ), f"Moderate fundamentals should score 40-60, got {score}"
+        assert 40 <= score <= 60, (
+            f"Moderate fundamentals should score 40-60, got {score}"
+        )
 
     def test_missing_data_returns_neutral(self):
         """Test that missing fundamental data returns neutral score."""
@@ -120,18 +120,18 @@ class TestSentimentScorer:
         # Recent prices show strong upward momentum
         prices = [Decimal(str(100 + i * 3)) for i in range(10)]
         score = calculate_sentiment_score(prices)
-        assert (
-            70 <= score <= 100
-        ), f"Strong positive momentum should score 70+, got {score}"
+        assert 70 <= score <= 100, (
+            f"Strong positive momentum should score 70+, got {score}"
+        )
 
     def test_strong_negative_momentum_scores_low(self):
         """Test that strong negative momentum generates low score (< 30)."""
         # Recent prices show strong downward momentum
         prices = [Decimal(str(100 - i * 3)) for i in range(10)]
         score = calculate_sentiment_score(prices)
-        assert (
-            0 <= score <= 30
-        ), f"Strong negative momentum should score < 30, got {score}"
+        assert 0 <= score <= 30, (
+            f"Strong negative momentum should score < 30, got {score}"
+        )
 
     def test_flat_momentum_scores_neutral(self):
         """Test that flat momentum scores near neutral (45-55)."""
@@ -212,9 +212,9 @@ class TestChairpersonScorer:
         decision2 = generate_trade_decision(scores, technical_heavy)
         # 0.1*80 + 0.8*30 + 0.1*30 = 8 + 24 + 3 = 35 → HOLD or SELL
 
-        assert (
-            decision1 != decision2
-        ), "Different weights should produce different decisions"
+        assert decision1 != decision2, (
+            "Different weights should produce different decisions"
+        )
 
     def test_edge_case_threshold_buy(self):
         """Test that score exactly at 70 threshold generates BUY."""

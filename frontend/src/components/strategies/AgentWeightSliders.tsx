@@ -69,10 +69,6 @@ export function AgentWeightSliders({
     onChange(updatedWeights);
   };
 
-  const handleAdjustmentEnd = () => {
-    setIsAdjusting(null);
-  };
-
   const formatPercentage = (value: number) => `${(value * 100).toFixed(0)}%`;
 
   const sum =
@@ -94,8 +90,7 @@ export function AgentWeightSliders({
           max={100}
           step={1}
           value={[localWeights.fundamental * 100]}
-          onValueChange={([value]) => handleWeightChange("fundamental", value)}
-          onValueCommit={handleAdjustmentEnd}
+          onValueChange={([value]: number[]) => handleWeightChange("fundamental", value)}
           className="cursor-pointer"
         />
         <p className="text-xs text-muted-foreground">
@@ -116,8 +111,7 @@ export function AgentWeightSliders({
           max={100}
           step={1}
           value={[localWeights.technical * 100]}
-          onValueChange={([value]) => handleWeightChange("technical", value)}
-          onValueCommit={handleAdjustmentEnd}
+          onValueChange={([value]: number[]) => handleWeightChange("technical", value)}
           className="cursor-pointer"
         />
         <p className="text-xs text-muted-foreground">
@@ -138,8 +132,7 @@ export function AgentWeightSliders({
           max={100}
           step={1}
           value={[localWeights.sentiment * 100]}
-          onValueChange={([value]) => handleWeightChange("sentiment", value)}
-          onValueCommit={handleAdjustmentEnd}
+          onValueChange={([value]: number[]) => handleWeightChange("sentiment", value)}
           className="cursor-pointer"
         />
         <p className="text-xs text-muted-foreground">

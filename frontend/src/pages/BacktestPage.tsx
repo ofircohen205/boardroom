@@ -5,7 +5,7 @@
 import { BacktestForm } from "@/components/backtest/BacktestForm";
 import { BacktestSummary } from "@/components/backtest/BacktestSummary";
 import { TradeLog } from "@/components/backtest/TradeLog";
-import { PageContainer } from "@/components/layout/PageContainer";
+import PageContainer from "@/components/layout/PageContainer";
 import {
   Card,
   CardContent,

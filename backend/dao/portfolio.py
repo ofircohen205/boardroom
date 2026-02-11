@@ -1,5 +1,6 @@
 # backend/dao/portfolio.py
 """Portfolio and watchlist data access objects."""
+
 from typing import List, Optional
 from uuid import UUID
 

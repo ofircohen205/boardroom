@@ -2,7 +2,7 @@
  * Strategies page for managing trading strategies.
  */
 
-import { PageContainer } from "@/components/layout/PageContainer";
+import PageContainer from "@/components/layout/PageContainer";
 import { StrategyForm } from "@/components/strategies/StrategyForm";
 import { Button } from "@/components/ui/button";
 import {

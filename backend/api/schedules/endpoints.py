@@ -1,5 +1,6 @@
 # backend/api/schedules/endpoints.py
 """API endpoints for scheduled analyses."""
+
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
