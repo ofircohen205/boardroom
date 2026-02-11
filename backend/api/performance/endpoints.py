@@ -1,3 +1,4 @@
+# backend/api/performance/endpoints.py
 """
 API endpoints for performance tracking and analytics.
 
@@ -18,16 +19,17 @@ from backend.ai.state.enums import AgentType
 from backend.db.database import get_db
 from backend.db.models import AgentAccuracy, AnalysisOutcome
 from backend.jobs.scheduler import get_scheduler
-from backend.services.performance_tracking.service import (
-    get_performance_summary,
-    get_recent_outcomes,
-)
+from backend.services.dependencies import get_performance_service
+from backend.services.performance_tracking.service import PerformanceService
 
 router = APIRouter(prefix="/performance", tags=["performance"])
 
 
 @router.get("/summary")
-async def get_summary(db: AsyncSession = Depends(get_db)):
+async def get_summary(
+    service: PerformanceService = Depends(get_performance_service),
+    db: AsyncSession = Depends(get_db),
+):
     """
     Get overall performance summary.
 
@@ -37,7 +39,7 @@ async def get_summary(db: AsyncSession = Depends(get_db)):
         - Breakdown by action type (BUY/SELL/HOLD)
     """
     try:
-        summary = await get_performance_summary(db)
+        summary = await service.get_performance_summary(db)
         return summary
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -47,6 +49,7 @@ async def get_summary(db: AsyncSession = Depends(get_db)):
 async def get_recent(
     limit: int = 20,
     ticker: Optional[str] = None,
+    service: PerformanceService = Depends(get_performance_service),
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -60,7 +63,7 @@ async def get_recent(
         List of recent outcomes with price returns
     """
     try:
-        outcomes = await get_recent_outcomes(db, limit=limit, ticker=ticker)
+        outcomes = await service.get_recent_outcomes(db, limit=limit, ticker=ticker)
         return {"outcomes": outcomes}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

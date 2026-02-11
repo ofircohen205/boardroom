@@ -303,15 +303,3 @@ class EmailService:
         </body>
         </html>
         """
-
-
-# Global email service instance
-_email_service: Optional[EmailService] = None
-
-
-def get_email_service() -> EmailService:
-    """Get or create the global email service instance."""
-    global _email_service
-    if _email_service is None:
-        _email_service = EmailService()
-    return _email_service

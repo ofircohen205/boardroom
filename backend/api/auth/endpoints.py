@@ -9,12 +9,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.auth.dependencies import get_current_user
 from backend.db.database import get_db
 from backend.db.models import User
-from backend.services.auth import (
+from backend.services.auth.exceptions import (
     InvalidCredentialsError,
     UserAlreadyExistsError,
-    login_user,
-    register_user,
 )
+from backend.services.auth.service import AuthService
+from backend.services.dependencies import get_auth_service
 
 from .schemas import Token, UserCreate, UserResponse
 
@@ -22,10 +22,14 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @router.post("/register", response_model=Token)
-async def register(user_data: UserCreate, db: AsyncSession = Depends(get_db)) -> Token:
+async def register(
+    user_data: UserCreate,
+    service: AuthService = Depends(get_auth_service),
+    db: AsyncSession = Depends(get_db),
+) -> Token:
     """Register a new user account."""
     try:
-        user, access_token = await register_user(
+        user, access_token = await service.register_user(
             user_data.email,
             user_data.password,
             user_data.first_name,
@@ -40,11 +44,12 @@ async def register(user_data: UserCreate, db: AsyncSession = Depends(get_db)) ->
 @router.post("/login", response_model=Token)
 async def login(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    service: AuthService = Depends(get_auth_service),
     db: AsyncSession = Depends(get_db),
 ) -> Token:
     """Login and receive access token."""
     try:
-        user, access_token = await login_user(
+        user, access_token = await service.login_user(
             form_data.username, form_data.password, db
         )
         return Token(access_token=access_token, token_type="bearer")

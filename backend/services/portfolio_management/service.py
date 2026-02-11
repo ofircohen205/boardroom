@@ -6,10 +6,9 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.ai.state.enums import Market
-from backend.dao.portfolio import PortfolioDAO, WatchlistDAO
-from backend.db.models import Portfolio, Position, Watchlist, WatchlistItem
+from backend.dao.portfolio import PortfolioDAO
+from backend.db.models import Portfolio, Position
 from backend.services.base import BaseService
-from backend.services.watchlist.service import WatchlistService
 
 
 class PortfolioService(BaseService):
@@ -91,60 +90,3 @@ class PortfolioService(BaseService):
         await db.commit()
         await db.refresh(position)
         return position
-
-
-# For backward compatibility, keep module-level functions
-async def get_user_watchlists(user_id: UUID, db: AsyncSession) -> List[Watchlist]:
-    """Get all watchlists for a user. Deprecated: Use WatchlistService directly."""
-    service = WatchlistService(WatchlistDAO(db))
-    return await service.get_user_watchlists(user_id)
-
-
-async def create_watchlist(user_id: UUID, name: str, db: AsyncSession) -> Watchlist:
-    """Create a new watchlist for a user. Deprecated: Use WatchlistService directly."""
-    service = WatchlistService(WatchlistDAO(db))
-    return await service.create_watchlist(user_id, name, db)
-
-
-async def add_to_watchlist(
-    watchlist_id: UUID, ticker: str, market: Market, db: AsyncSession
-) -> WatchlistItem:
-    """Add a stock to a watchlist. Deprecated: Use WatchlistService directly."""
-    service = WatchlistService(WatchlistDAO(db))
-    return await service.add_to_watchlist(watchlist_id, ticker, market, db)
-
-
-async def remove_from_watchlist(
-    watchlist_id: UUID, ticker: str, db: AsyncSession
-) -> bool:
-    """Remove a stock from a watchlist. Deprecated: Use WatchlistService directly."""
-    service = WatchlistService(WatchlistDAO(db))
-    return await service.remove_from_watchlist(watchlist_id, ticker, db)
-
-
-async def get_user_portfolios(user_id: UUID, db: AsyncSession) -> List[Portfolio]:
-    """Get all portfolios for a user. Deprecated: Use PortfolioService directly."""
-    service = PortfolioService(PortfolioDAO(db))
-    return await service.get_user_portfolios(user_id)
-
-
-async def create_portfolio(user_id: UUID, name: str, db: AsyncSession) -> Portfolio:
-    """Create a new portfolio for a user. Deprecated: Use PortfolioService directly."""
-    service = PortfolioService(PortfolioDAO(db))
-    return await service.create_portfolio(user_id, name, db)
-
-
-async def add_position(
-    portfolio_id: UUID,
-    ticker: str,
-    market: Market,
-    quantity: float,
-    avg_entry_price: float,
-    sector: str | None,
-    db: AsyncSession,
-) -> Position:
-    """Add a position to a portfolio. Deprecated: Use PortfolioService directly."""
-    service = PortfolioService(PortfolioDAO(db))
-    return await service.add_position(
-        portfolio_id, ticker, market, quantity, avg_entry_price, sector, db
-    )

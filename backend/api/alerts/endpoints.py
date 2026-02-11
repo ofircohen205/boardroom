@@ -8,10 +8,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.ai.state.enums import Market
 from backend.auth.dependencies import get_current_user
 from backend.core.logging import get_logger
-from backend.dao.alerts import PriceAlertDAO
 from backend.db.database import get_db
 from backend.db.models import AlertCondition, User
-from backend.services.alerts import AlertValidationError, create_price_alert
+from backend.services.alerts.service import AlertService, AlertValidationError
+from backend.services.dependencies import get_alert_service
 
 from .schemas import PriceAlertCreate, PriceAlertSchema, PriceAlertToggle
 
@@ -24,6 +24,7 @@ router = APIRouter(prefix="/alerts", tags=["alerts"])
 async def create_alert(
     alert_data: PriceAlertCreate,
     current_user: User = Depends(get_current_user),
+    service: AlertService = Depends(get_alert_service),
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -35,7 +36,7 @@ async def create_alert(
     - Change_pct is between 0.1 and 100
     """
     try:
-        alert = await create_price_alert(
+        alert = await service.create_price_alert(
             db=db,
             user_id=current_user.id,
             ticker=alert_data.ticker,
@@ -64,7 +65,7 @@ async def create_alert(
 async def list_alerts(
     active_only: bool = Query(True, description="Only return active alerts"),
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    service: AlertService = Depends(get_alert_service),
 ):
     """
     List all alerts for the current user.
@@ -72,8 +73,9 @@ async def list_alerts(
     Query params:
     - active_only: If true (default), only return active alerts
     """
-    alert_dao = PriceAlertDAO(db)
-    alerts = await alert_dao.get_user_alerts(current_user.id, active_only=active_only)
+    alerts = await service.price_alert_dao.get_user_alerts(
+        current_user.id, active_only=active_only
+    )
     return alerts
 
 
@@ -81,6 +83,7 @@ async def list_alerts(
 async def delete_alert(
     alert_id: UUID,
     current_user: User = Depends(get_current_user),
+    service: AlertService = Depends(get_alert_service),
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -88,8 +91,7 @@ async def delete_alert(
 
     Only the owner can delete their alert.
     """
-    alert_dao = PriceAlertDAO(db)
-    alert = await alert_dao.get_by_id(alert_id)
+    alert = await service.price_alert_dao.get_by_id(alert_id)
 
     if not alert:
         raise HTTPException(
@@ -102,7 +104,7 @@ async def delete_alert(
             detail="Not authorized to delete this alert",
         )
 
-    await alert_dao.delete(alert_id)
+    await service.price_alert_dao.delete(alert_id)
     await db.commit()
 
     logger.info(f"User {current_user.id} deleted alert {alert_id}")
@@ -112,6 +114,7 @@ async def delete_alert(
 async def reset_alert(
     alert_id: UUID,
     current_user: User = Depends(get_current_user),
+    service: AlertService = Depends(get_alert_service),
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -119,8 +122,7 @@ async def reset_alert(
 
     Clears triggered status and cooldown.
     """
-    alert_dao = PriceAlertDAO(db)
-    alert = await alert_dao.get_by_id(alert_id)
+    alert = await service.price_alert_dao.get_by_id(alert_id)
 
     if not alert:
         raise HTTPException(
@@ -133,7 +135,7 @@ async def reset_alert(
             detail="Not authorized to modify this alert",
         )
 
-    updated_alert = await alert_dao.reset_alert(alert_id)
+    updated_alert = await service.price_alert_dao.reset_alert(alert_id)
     await db.commit()
 
     logger.info(f"User {current_user.id} reset alert {alert_id}")
@@ -145,13 +147,13 @@ async def toggle_alert(
     alert_id: UUID,
     toggle_data: PriceAlertToggle,
     current_user: User = Depends(get_current_user),
+    service: AlertService = Depends(get_alert_service),
     db: AsyncSession = Depends(get_db),
 ):
     """
     Toggle alert active status (pause/resume).
     """
-    alert_dao = PriceAlertDAO(db)
-    alert = await alert_dao.get_by_id(alert_id)
+    alert = await service.price_alert_dao.get_by_id(alert_id)
 
     if not alert:
         raise HTTPException(
@@ -165,7 +167,7 @@ async def toggle_alert(
         )
 
     alert.active = toggle_data.active
-    updated_alert = await alert_dao.update(alert)
+    updated_alert = await service.price_alert_dao.update(alert)
     await db.commit()
 
     logger.info(
