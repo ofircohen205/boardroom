@@ -10,6 +10,15 @@ all SQL queries and database operations. This makes it easier to:
 """
 from .alerts import NotificationDAO, PriceAlertDAO, ScheduledAnalysisDAO
 from .analysis import AnalysisDAO
+from .backtesting import (
+    BacktestResultDAO,
+    HistoricalFundamentalsDAO,
+    HistoricalPriceDAO,
+    PaperAccountDAO,
+    PaperPositionDAO,
+    PaperTradeDAO,
+    StrategyDAO,
+)
 from .base import BaseDAO
 from .performance import PerformanceDAO
 from .portfolio import PortfolioDAO, WatchlistDAO
@@ -25,4 +34,11 @@ __all__ = [
     "PriceAlertDAO",
     "NotificationDAO",
     "ScheduledAnalysisDAO",
+    "HistoricalPriceDAO",
+    "HistoricalFundamentalsDAO",
+    "StrategyDAO",
+    "PaperAccountDAO",
+    "PaperTradeDAO",
+    "PaperPositionDAO",
+    "BacktestResultDAO",
 ]

@@ -9,6 +9,17 @@ from .alerts import (
     ScheduledAnalysis,
 )
 from .analysis import AgentReport, AnalysisSession, FinalDecision
+from .backtesting import (
+    BacktestFrequency,
+    BacktestResult,
+    HistoricalFundamentals,
+    HistoricalPrice,
+    PaperAccount,
+    PaperPosition,
+    PaperTrade,
+    Strategy,
+    TradeType,
+)
 from .base import Base
 from .performance import AgentAccuracy, AnalysisOutcome
 from .portfolio import Portfolio, Position, Watchlist, WatchlistItem
@@ -33,4 +44,13 @@ __all__ = [
     "AlertCondition",
     "NotificationType",
     "AlertFrequency",
+    "HistoricalPrice",
+    "HistoricalFundamentals",
+    "Strategy",
+    "PaperAccount",
+    "PaperTrade",
+    "PaperPosition",
+    "BacktestResult",
+    "TradeType",
+    "BacktestFrequency",
 ]
