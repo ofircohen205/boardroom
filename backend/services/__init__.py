@@ -1,5 +1,6 @@
 # backend/services/__init__.py
 """Business logic services organized by domain."""
+from .analysis.service import AnalysisService
 from .analysis_history.service import (
     create_analysis_session,
     get_user_analysis_history,
@@ -18,11 +19,17 @@ from .portfolio_management.service import (
     get_user_watchlists,
     remove_from_watchlist,
 )
+from .schedules.service import ScheduleService
+from .watchlist.service import WatchlistService
 
 __all__ = [
     # Base classes
     "BaseService",
     "ServiceError",
+    # Service classes
+    "WatchlistService",
+    "ScheduleService",
+    "AnalysisService",
     # Auth service functions
     "register_user",
     "login_user",
