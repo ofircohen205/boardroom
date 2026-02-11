@@ -57,7 +57,7 @@ async def update_profile(
     email: str | None = None,
 ) -> dict:
     """Update user profile fields. Returns updated user data."""
-    dao = UserDAO.get_instance(db)
+    dao = UserDAO(db)
     user = await dao.get_by_id(user_id)
     if not user:
         raise SettingsError("User not found")
@@ -93,7 +93,7 @@ async def change_password(
     db: AsyncSession,
 ) -> None:
     """Change user password. Validates current password first."""
-    dao = UserDAO.get_instance(db)
+    dao = UserDAO(db)
     user = await dao.get_by_id(user_id)
     if not user:
         raise SettingsError("User not found")
@@ -108,7 +108,7 @@ async def change_password(
 
 async def get_api_keys_masked(user_id, db: AsyncSession) -> List[dict]:
     """Get all API keys for a user with masked values."""
-    dao = UserDAO.get_instance(db)
+    dao = UserDAO(db)
     keys = await dao.get_api_keys(user_id)
     fernet = _get_fernet()
 
@@ -138,7 +138,7 @@ async def upsert_api_key(
     fernet = _get_fernet()
     encrypted = fernet.encrypt(raw_key.encode())
 
-    dao = UserDAO.get_instance(db)
+    dao = UserDAO(db)
     api_key = await dao.create_api_key(user_id, provider, encrypted)
     await db.commit()
 
@@ -151,7 +151,7 @@ async def upsert_api_key(
 
 async def delete_api_key(user_id, provider: LLMProvider, db: AsyncSession) -> bool:
     """Delete an API key for a user."""
-    dao = UserDAO.get_instance(db)
+    dao = UserDAO(db)
     deleted = await dao.delete_api_key(user_id, provider)
     await db.commit()
     return deleted

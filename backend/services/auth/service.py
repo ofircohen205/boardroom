@@ -30,7 +30,7 @@ async def register_user(
     Raises:
         UserAlreadyExistsError: If email is already registered
     """
-    user_dao = UserDAO.get_instance(db)
+    user_dao = UserDAO(db)
 
     # Check if user exists
     existing = await user_dao.find_by_email(email)
@@ -47,8 +47,8 @@ async def register_user(
     )
 
     # Create default watchlist and portfolio
-    watchlist_dao = WatchlistDAO.get_instance(db)
-    portfolio_dao = PortfolioDAO.get_instance(db)
+    watchlist_dao = WatchlistDAO(db)
+    portfolio_dao = PortfolioDAO(db)
 
     await watchlist_dao.create(user_id=user.id, name="My Watchlist")
     await portfolio_dao.create(user_id=user.id, name="My Portfolio")
@@ -71,7 +71,7 @@ async def login_user(email: str, password: str, db: AsyncSession) -> tuple[User,
     Raises:
         InvalidCredentialsError: If email or password is incorrect
     """
-    user_dao = UserDAO.get_instance(db)
+    user_dao = UserDAO(db)
 
     user = await user_dao.find_by_email(email)
     if not user or not verify_password(password, user.password_hash):
@@ -88,7 +88,7 @@ async def authenticate_user(email: str, db: AsyncSession) -> Optional[User]:
 
     Returns None if user not found.
     """
-    user_dao = UserDAO.get_instance(db)
+    user_dao = UserDAO(db)
     return await user_dao.find_by_email(email)
 
 
