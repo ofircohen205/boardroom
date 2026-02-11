@@ -74,7 +74,7 @@ class TestNotificationGrouping:
         alert_service = AlertService(mock_price_alert_dao, mock_notification_dao)
 
         with patch("backend.api.websocket.connection_manager.connection_manager"):
-            notification = await alert_service.trigger_alert(mock_db, mock_alert, 205.0)
+            await alert_service.trigger_alert(mock_db, mock_alert, 205.0)
 
             # Should create new notification
             mock_notification_dao.create.assert_called_once()
@@ -95,7 +95,7 @@ class TestNotificationGrouping:
         alert_service = AlertService(mock_price_alert_dao, mock_notification_dao)
 
         with patch("backend.api.websocket.connection_manager.connection_manager"):
-            notification = await alert_service.trigger_alert(mock_db, mock_alert, 210.0)
+            await alert_service.trigger_alert(mock_db, mock_alert, 210.0)
 
             # Should update existing notification
             mock_notification_dao.update.assert_called_once()

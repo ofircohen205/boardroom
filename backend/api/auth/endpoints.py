@@ -29,7 +29,7 @@ async def register(
 ) -> Token:
     """Register a new user account."""
     try:
-        user, access_token = await service.register_user(
+        _user, access_token = await service.register_user(
             user_data.email,
             user_data.password,
             user_data.first_name,
@@ -49,7 +49,7 @@ async def login(
 ) -> Token:
     """Login and receive access token."""
     try:
-        user, access_token = await service.login_user(
+        _user, access_token = await service.login_user(
             form_data.username, form_data.password, db
         )
         return Token(access_token=access_token, token_type="bearer")

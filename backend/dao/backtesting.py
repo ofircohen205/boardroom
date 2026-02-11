@@ -197,7 +197,7 @@ class StrategyDAO(BaseDAO[Strategy]):
         stmt = select(Strategy).where(Strategy.user_id == user_id)
 
         if active_only:
-            stmt = stmt.where(Strategy.is_active == True)
+            stmt = stmt.where(Strategy.is_active)
 
         stmt = stmt.order_by(Strategy.created_at.desc())
 
@@ -244,7 +244,7 @@ class PaperAccountDAO(BaseDAO[PaperAccount]):
         stmt = select(PaperAccount).where(PaperAccount.user_id == user_id)
 
         if active_only:
-            stmt = stmt.where(PaperAccount.is_active == True)
+            stmt = stmt.where(PaperAccount.is_active)
 
         stmt = stmt.order_by(PaperAccount.created_at.desc())
 

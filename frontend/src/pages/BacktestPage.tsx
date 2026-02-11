@@ -27,7 +27,6 @@ export function BacktestPage() {
     status: "idle",
   });
   const [error, setError] = useState<string | null>(null);
-  const [ws, setWs] = useState<WebSocket | null>(null);
 
   useEffect(() => {
     fetchStrategies();
@@ -112,8 +111,6 @@ export function BacktestPage() {
     websocket.onclose = () => {
       console.log("WebSocket closed");
     };
-
-    setWs(websocket);
   };
 
   return (

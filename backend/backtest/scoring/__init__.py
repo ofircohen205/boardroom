@@ -11,8 +11,8 @@ from .sentiment_scorer import calculate_sentiment_score
 from .technical_scorer import calculate_technical_score
 
 __all__ = [
-    "calculate_technical_score",
     "calculate_fundamental_score",
     "calculate_sentiment_score",
+    "calculate_technical_score",
     "calculate_weighted_decision",
 ]

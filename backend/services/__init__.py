@@ -13,17 +13,17 @@ from .settings.service import SettingsService
 from .watchlist.service import WatchlistService
 
 __all__ = [
-    # Base classes
-    "BaseService",
-    "ServiceError",
     # Service classes
     "AlertService",
     "AnalysisService",
     "AuthService",
+    # Base classes
+    "BaseService",
     "EmailService",
     "PerformanceService",
     "PortfolioService",
     "ScheduleService",
+    "ServiceError",
     "SettingsService",
     "WatchlistService",
 ]

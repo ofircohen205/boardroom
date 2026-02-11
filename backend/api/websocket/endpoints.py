@@ -279,7 +279,7 @@ async def websocket_endpoint(
             connection_manager.disconnect(user.id, websocket)
         try:
             await websocket.close(code=status.WS_1011_INTERNAL_ERROR)
-        except:
+        except Exception:
             pass
 
 

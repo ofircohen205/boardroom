@@ -37,7 +37,7 @@ async def test_cache_ttl_expiry():
     await cache.set("key1", "value1", ttl=0)
     # TTL of 0 means it expires immediately
     await asyncio.sleep(0.01)
-    hit, value = await cache.get("key1")
+    hit, _value = await cache.get("key1")
     assert hit is False
 
 

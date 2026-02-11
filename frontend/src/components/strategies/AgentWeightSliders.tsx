@@ -19,14 +19,12 @@ export function AgentWeightSliders({
   onChange,
 }: AgentWeightSlidersProps) {
   const [localWeights, setLocalWeights] = useState(weights);
-  const [isAdjusting, setIsAdjusting] = useState<string | null>(null);
 
   useEffect(() => {
     setLocalWeights(weights);
   }, [weights]);
 
   const handleWeightChange = (agent: keyof StrategyWeights, value: number) => {
-    setIsAdjusting(agent);
     const newWeight = value / 100; // Convert from 0-100 to 0-1
 
     // Calculate remaining weight to distribute

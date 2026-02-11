@@ -38,7 +38,7 @@ import {
 import type { PaperAccount, PaperAccountCreate, PaperTradeRequest } from "@/types/paper";
 import type { Strategy } from "@/types/strategy";
 import { ArrowDownIcon, ArrowUpIcon, Plus, TrendingUp, Wallet } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 export function PaperTradingPage() {
   const [accounts, setAccounts] = useState<PaperAccount[]>([]);
@@ -51,35 +51,9 @@ export function PaperTradingPage() {
   useEffect(() => {
     fetchAccounts();
     fetchStrategies();
-  }, []);
+  }, [fetchAccounts]);
 
-  useEffect(() => {
-    if (selectedAccount) {
-      fetchAccountDetails(selectedAccount.id);
-    }
-  }, [selectedAccount?.id]);
-
-  const fetchAccounts = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:8000/api/paper/accounts", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setAccounts(data);
-        if (data.length > 0 && !selectedAccount) {
-          setSelectedAccount(data[0]);
-        }
-      }
-    } catch (error) {
-      console.error("Failed to fetch accounts:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const fetchAccountDetails = async (accountId: string) => {
+  const fetchAccountDetails = useCallback(async (accountId: string) => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
@@ -99,7 +73,33 @@ export function PaperTradingPage() {
     } catch (error) {
       console.error("Failed to fetch account details:", error);
     }
-  };
+  }, []);
+
+  const fetchAccounts = useCallback(async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch("http://localhost:8000/api/paper/accounts", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setAccounts(data);
+        if (data.length > 0 && !selectedAccount) {
+          setSelectedAccount(data[0]);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch accounts:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [selectedAccount]);
+
+  useEffect(() => {
+    if (selectedAccount) {
+      fetchAccountDetails(selectedAccount.id);
+    }
+  }, [selectedAccount?.id, fetchAccountDetails]);
 
   const fetchStrategies = async () => {
     try {

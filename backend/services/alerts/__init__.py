@@ -8,8 +8,8 @@ from .service import (
 )
 
 __all__ = [
+    "ALERT_COOLDOWN_MINUTES",
+    "MAX_ALERTS_PER_USER",
     "AlertService",
     "AlertValidationError",
-    "MAX_ALERTS_PER_USER",
-    "ALERT_COOLDOWN_MINUTES",
 ]

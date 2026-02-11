@@ -4,12 +4,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { BacktestResult } from "@/types/backtest";
-import {
-  ArrowDownIcon,
-  ArrowUpIcon,
-  TrendingDown,
-  TrendingUp,
-} from "lucide-react";
+import { TrendingDown, TrendingUp } from "lucide-react";
 
 interface BacktestSummaryProps {
   result: BacktestResult;

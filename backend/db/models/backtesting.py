@@ -11,7 +11,7 @@ This module contains all models related to:
 import enum
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from uuid import UUID, uuid4
 
 from sqlalchemy import (
@@ -28,6 +28,10 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.db.models.base import Base
+
+if TYPE_CHECKING:
+    from backend.db.models.analysis import AnalysisSession
+    from backend.db.models.user import User
 
 
 class TradeType(str, enum.Enum):
