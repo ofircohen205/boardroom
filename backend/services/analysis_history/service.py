@@ -19,7 +19,7 @@ async def create_analysis_session(
     ticker: str, market: Market, user_id: Optional[UUID], db: AsyncSession
 ) -> AnalysisSession:
     """Create a new analysis session."""
-    dao = AnalysisDAO.get_instance(db)
+    dao = AnalysisDAO(db)
     session = await dao.create_session(ticker, market, user_id)
     await db.commit()
     await db.refresh(session)
@@ -30,7 +30,7 @@ async def save_agent_report(
     session_id: UUID, agent_type: AgentType, report_data: dict, db: AsyncSession
 ) -> AgentReport:
     """Save an agent's report to a session."""
-    dao = AnalysisDAO.get_instance(db)
+    dao = AnalysisDAO(db)
     report = await dao.add_report(session_id, agent_type, report_data)
     await db.commit()
     await db.refresh(report)
@@ -47,7 +47,7 @@ async def save_final_decision(
     db: AsyncSession,
 ) -> FinalDecision:
     """Save the final trading decision for a session."""
-    dao = AnalysisDAO.get_instance(db)
+    dao = AnalysisDAO(db)
     decision = await dao.add_decision(
         session_id=session_id,
         action=action,
@@ -65,5 +65,5 @@ async def get_user_analysis_history(
     user_id: UUID, limit: int, db: AsyncSession
 ) -> List[AnalysisSession]:
     """Get analysis history for a user."""
-    dao = AnalysisDAO.get_instance(db)
+    dao = AnalysisDAO(db)
     return await dao.get_user_sessions(user_id, limit)

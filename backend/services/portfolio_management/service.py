@@ -13,13 +13,13 @@ from backend.db.models import Portfolio, Position, Watchlist, WatchlistItem
 
 async def get_user_watchlists(user_id: UUID, db: AsyncSession) -> List[Watchlist]:
     """Get all watchlists for a user."""
-    dao = WatchlistDAO.get_instance(db)
+    dao = WatchlistDAO(db)
     return await dao.get_user_watchlists(user_id)
 
 
 async def create_watchlist(user_id: UUID, name: str, db: AsyncSession) -> Watchlist:
     """Create a new watchlist for a user."""
-    dao = WatchlistDAO.get_instance(db)
+    dao = WatchlistDAO(db)
     watchlist = await dao.create(user_id=user_id, name=name)
     await db.commit()
     await db.refresh(watchlist)
@@ -30,7 +30,7 @@ async def add_to_watchlist(
     watchlist_id: UUID, ticker: str, market: Market, db: AsyncSession
 ) -> WatchlistItem:
     """Add a stock to a watchlist."""
-    dao = WatchlistDAO.get_instance(db)
+    dao = WatchlistDAO(db)
     item = await dao.add_item(watchlist_id, ticker, market)
     await db.commit()
     await db.refresh(item)
@@ -41,7 +41,7 @@ async def remove_from_watchlist(
     watchlist_id: UUID, ticker: str, db: AsyncSession
 ) -> bool:
     """Remove a stock from a watchlist."""
-    dao = WatchlistDAO.get_instance(db)
+    dao = WatchlistDAO(db)
 
     # Find the item to remove
     result = await db.execute(
@@ -62,13 +62,13 @@ async def remove_from_watchlist(
 
 async def get_user_portfolios(user_id: UUID, db: AsyncSession) -> List[Portfolio]:
     """Get all portfolios for a user."""
-    dao = PortfolioDAO.get_instance(db)
+    dao = PortfolioDAO(db)
     return await dao.get_user_portfolios(user_id)
 
 
 async def create_portfolio(user_id: UUID, name: str, db: AsyncSession) -> Portfolio:
     """Create a new portfolio for a user."""
-    dao = PortfolioDAO.get_instance(db)
+    dao = PortfolioDAO(db)
     portfolio = await dao.create(user_id=user_id, name=name)
     await db.commit()
     await db.refresh(portfolio)
@@ -85,7 +85,7 @@ async def add_position(
     db: AsyncSession,
 ) -> Position:
     """Add a position to a portfolio."""
-    dao = PortfolioDAO.get_instance(db)
+    dao = PortfolioDAO(db)
     position = await dao.add_position(
         portfolio_id=portfolio_id,
         ticker=ticker,
