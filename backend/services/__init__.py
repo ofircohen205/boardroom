@@ -7,6 +7,8 @@ from .analysis_history.service import (
     save_final_decision,
 )
 from .auth.service import authenticate_user, login_user, register_user
+from .base import BaseService
+from .exceptions import ServiceError
 from .portfolio_management.service import (
     add_position,
     add_to_watchlist,
@@ -18,9 +20,14 @@ from .portfolio_management.service import (
 )
 
 __all__ = [
+    # Base classes
+    "BaseService",
+    "ServiceError",
+    # Auth service functions
     "register_user",
     "login_user",
     "authenticate_user",
+    # Portfolio/Watchlist service functions
     "create_watchlist",
     "add_to_watchlist",
     "remove_from_watchlist",
@@ -28,6 +35,7 @@ __all__ = [
     "create_portfolio",
     "add_position",
     "get_user_portfolios",
+    # Analysis service functions
     "create_analysis_session",
     "save_agent_report",
     "save_final_decision",
