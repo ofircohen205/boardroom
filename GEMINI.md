@@ -306,7 +306,14 @@ AgentState = {
    - All work should be done in feature branches
    - Use pull requests for code review before merging
 
-3. **Code Review:**
+3. **Plan Execution Branches:**
+   - **ALWAYS create a new git worktree + branch before executing any implementation plan**
+   - Branch naming: `feature/<plan-topic>` (e.g., `feature/test-coverage-80pct`)
+   - Worktrees live in `.worktrees/<branch-name>/` (already gitignored)
+   - Create with: `git worktree add .worktrees/<branch> -b feature/<branch>`
+   - Never execute plan tasks directly on `main` or the current working branch
+
+4. **Code Review:**
    - All code changes are subject to automated code review (via hooks)
    - Code review runs twice:
      - After completing major code changes
