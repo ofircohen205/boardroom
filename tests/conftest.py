@@ -4,6 +4,7 @@
 import os
 
 import pytest_asyncio
+from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from backend.shared.db.models import Base, User
@@ -80,3 +81,17 @@ async def test_user(test_db_session: AsyncSession) -> User:
     await test_db_session.commit()
     await test_db_session.refresh(user)
     return user
+
+
+@pytest_asyncio.fixture
+async def api_client(test_user):
+    """AsyncClient with auth dependency overridden to test_user."""
+    from backend.main import app as fastapi_app
+    from backend.shared.auth.dependencies import get_current_user
+
+    fastapi_app.dependency_overrides[get_current_user] = lambda: test_user
+    async with AsyncClient(
+        transport=ASGITransport(app=fastapi_app), base_url="http://test"
+    ) as client:
+        yield client
+    fastapi_app.dependency_overrides.clear()
