@@ -7,8 +7,15 @@ from backend.main import app
 
 
 @pytest.mark.asyncio
-async def test_db_health_check_success():
+async def test_db_health_check_success(test_db_session):
     """Test /health/db returns 200 and healthy status."""
+    from backend.shared.db import get_db
+
+    async def override_get_db():
+        yield test_db_session
+
+    app.dependency_overrides[get_db] = override_get_db
+
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         response = await client.get("/health/db")
@@ -16,6 +23,8 @@ async def test_db_health_check_success():
         data = response.json()
         assert data["status"] == "healthy"
         assert data["service"] == "postgres"
+
+    app.dependency_overrides = {}
 
 
 @pytest.mark.asyncio
