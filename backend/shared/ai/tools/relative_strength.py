@@ -16,7 +16,7 @@ def calculate_correlation_matrix(
         return {}
 
     # Extract close prices for each ticker
-    price_arrays = {}
+    price_arrays: dict[str, np.ndarray] = {}
     min_length = float("inf")
 
     for ticker, history in price_histories.items():
@@ -29,12 +29,12 @@ def calculate_correlation_matrix(
         price_arrays[ticker] = price_arrays[ticker][-int(min_length) :]
 
     # Calculate returns
-    returns = {}
-    for ticker, prices in price_arrays.items():
-        returns[ticker] = np.diff(prices) / prices[:-1]
+    returns: dict[str, np.ndarray] = {}
+    for ticker, ticker_prices in price_arrays.items():
+        returns[ticker] = np.diff(ticker_prices) / ticker_prices[:-1]
 
-    # Calculate correlation matrix
-    correlation_matrix = {}
+    # Calculate correlation_matrix
+    correlation_matrix: dict[str, dict[str, float]] = {}
     tickers = list(returns.keys())
 
     for ticker1 in tickers:

@@ -52,6 +52,8 @@ dev = [
     "ruff>=0.2.0",
     "mypy>=1.8.0",
     "black>=24.0.0",
+    "types-python-jose",
+    "types-passlib",
 ]
 
 [tool.black]

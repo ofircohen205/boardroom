@@ -1,13 +1,18 @@
 import asyncio
 import uuid
-from typing import AsyncGenerator
+from typing import Any, AsyncGenerator, Optional, cast
 
 from backend.shared.ai.agents.chairperson import ChairpersonAgent
 from backend.shared.ai.agents.fundamental import FundamentalAgent
 from backend.shared.ai.agents.risk_manager import RiskManagerAgent
 from backend.shared.ai.agents.sentiment import SentimentAgent
 from backend.shared.ai.agents.technical import TechnicalAgent
-from backend.shared.ai.state.agent_state import AgentState
+from backend.shared.ai.state.agent_state import (
+    AgentState,
+    FundamentalReport,
+    SentimentReport,
+    TechnicalReport,
+)
 from backend.shared.ai.state.enums import (
     Action,
     AgentType,
@@ -65,7 +70,8 @@ class BoardroomGraph:
         )
 
         # If vetoed, stop here
-        if state["risk_assessment"]["veto"]:
+        # If vetoed, stop here
+        if state["risk_assessment"] and state["risk_assessment"]["veto"]:
             return state
 
         # Chairperson decision
@@ -156,7 +162,7 @@ class BoardroomGraph:
                 )
             )
 
-        results: dict[AgentType, dict | None] = {}
+        results: dict[AgentType, Any] = {}
         errors: dict[AgentType, str] = {}
 
         # Collect results for agents that were run
@@ -189,9 +195,11 @@ class BoardroomGraph:
         if AgentType.TECHNICAL not in agents_to_run:
             results[AgentType.TECHNICAL] = None
 
-        fundamental = results.get(AgentType.FUNDAMENTAL)
-        sentiment = results.get(AgentType.SENTIMENT)
-        technical = results.get(AgentType.TECHNICAL)
+        fundamental = cast(
+            Optional[FundamentalReport], results.get(AgentType.FUNDAMENTAL)
+        )
+        sentiment = cast(Optional[SentimentReport], results.get(AgentType.SENTIMENT))
+        technical = cast(Optional[TechnicalReport], results.get(AgentType.TECHNICAL))
 
         # Check if we have enough data to continue
         successful_agents = sum(
@@ -215,7 +223,7 @@ class BoardroomGraph:
         try:
             risk = await self.risk_manager.assess(
                 ticker=ticker,
-                sector=sector,
+                sector=sector,  # type: ignore
                 portfolio_tech_weight=portfolio_sector_weight,
                 fundamental=fundamental,
                 sentiment=sentiment,
@@ -371,7 +379,7 @@ class BoardroomGraph:
                 yield {
                     "type": WSMessageType.AGENT_COMPLETED,
                     "agent": agent_type,
-                    "data": {"ticker": ticker, **result},
+                    "data": {"ticker": ticker, **(result or {})},
                 }
 
         await asyncio.gather(*tasks)
@@ -477,7 +485,7 @@ class BoardroomGraph:
             summary = parsed.get("summary", "Comparison analysis completed")
 
             # Build rankings from structured output
-            rankings = []
+            rankings: list[StockRanking] = []
             for ranking_data in parsed.get("rankings", []):
                 ticker = ranking_data.get("ticker")
                 if ticker and ticker in all_results:

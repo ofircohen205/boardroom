@@ -76,8 +76,14 @@ class StrategyConfig(BaseModel):
     """Complete strategy configuration."""
 
     weights: StrategyWeights
-    thresholds: StrategyThresholds = Field(default_factory=StrategyThresholds)
-    risk_params: StrategyRiskParams = Field(default_factory=StrategyRiskParams)
+    thresholds: StrategyThresholds = Field(
+        default_factory=lambda: StrategyThresholds(buy=70.0, sell=30.0)
+    )
+    risk_params: StrategyRiskParams = Field(
+        default_factory=lambda: StrategyRiskParams(
+            max_position_size=0.5, stop_loss=None, take_profit=None
+        )
+    )
 
 
 class StrategyCreate(BaseModel):

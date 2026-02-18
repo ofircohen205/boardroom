@@ -83,7 +83,7 @@ async def get_agent_accuracy(db: AsyncSession = Depends(get_db)):
         records = result.scalars().all()
 
         # Organize by agent type and period
-        agent_metrics = {}
+        agent_metrics: dict[str, dict] = {}
         for record in records:
             agent_name = record.agent_type.value
             if agent_name not in agent_metrics:

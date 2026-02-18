@@ -29,9 +29,11 @@ async def get_current_user_ws(token: str, db: AsyncSession) -> User | None:
         return None
     try:
         payload = jwt.decode(
-            token, settings.jwt_secret, algorithms=[settings.algorithm]
+            token,
+            settings.jwt_secret.get_secret_value(),
+            algorithms=[settings.algorithm],
         )
-        email: str = payload.get("sub")
+        email: str = str(payload.get("sub"))
         if email is None:
             return None
     except JWTError:
@@ -251,7 +253,7 @@ async def backtest_websocket(
         )
 
         result_dao = BacktestResultDAO(db)
-        saved_result = await result_dao.create(backtest_result)
+        saved_result = await result_dao.save(backtest_result)
         await db.commit()
         await db.refresh(saved_result)
 

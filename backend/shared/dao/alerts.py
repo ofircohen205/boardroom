@@ -42,7 +42,7 @@ class PriceAlertDAO(BaseDAO[PriceAlert]):
         query = select(PriceAlert).where(PriceAlert.user_id == user_id)
 
         if active_only:
-            query = query.where(PriceAlert.active)
+            query = query.where(PriceAlert.active.is_(True))
 
         query = query.order_by(PriceAlert.created_at.desc())
 
@@ -69,8 +69,8 @@ class PriceAlertDAO(BaseDAO[PriceAlert]):
             and_(
                 PriceAlert.ticker == ticker,
                 PriceAlert.market == market,
-                PriceAlert.active,
-                ~PriceAlert.triggered,
+                PriceAlert.active.is_(True),
+                PriceAlert.triggered.is_(False),
                 or_(
                     PriceAlert.cooldown_until.is_(None),
                     PriceAlert.cooldown_until <= now,
@@ -95,8 +95,8 @@ class PriceAlertDAO(BaseDAO[PriceAlert]):
             select(PriceAlert.ticker, PriceAlert.market)
             .where(
                 and_(
-                    PriceAlert.active,
-                    ~PriceAlert.triggered,
+                    PriceAlert.active.is_(True),
+                    PriceAlert.triggered.is_(False),
                     or_(
                         PriceAlert.cooldown_until.is_(None),
                         PriceAlert.cooldown_until <= now,
@@ -107,7 +107,8 @@ class PriceAlertDAO(BaseDAO[PriceAlert]):
         )
 
         result = await self.session.execute(query)
-        return list(result.all())
+        # result.all() returns Sequence[Row]. Convert to list of tuples.
+        return [tuple(row) for row in result.all()]
 
     async def reset_alert(self, alert_id: UUID) -> Optional[PriceAlert]:
         """
@@ -170,7 +171,7 @@ class NotificationDAO(BaseDAO[Notification]):
         query = select(Notification).where(Notification.user_id == user_id)
 
         if unread_only:
-            query = query.where(not Notification.read)
+            query = query.where(Notification.read.is_(False))
 
         query = query.order_by(Notification.created_at.desc()).limit(limit)
 
@@ -190,7 +191,7 @@ class NotificationDAO(BaseDAO[Notification]):
         result = await self.session.execute(
             select(func.count())
             .select_from(Notification)
-            .where(and_(Notification.user_id == user_id, not Notification.read))
+            .where(and_(Notification.user_id == user_id, Notification.read.is_(False)))
         )
         return result.scalar() or 0
 
@@ -224,11 +225,11 @@ class NotificationDAO(BaseDAO[Notification]):
 
         result = await self.session.execute(
             update(Notification)
-            .where(and_(Notification.user_id == user_id, not Notification.read))
+            .where(and_(Notification.user_id == user_id, Notification.read.is_(False)))
             .values(read=True)
         )
         await self.session.flush()
-        return result.rowcount or 0
+        return result.rowcount or 0  # type: ignore
 
     async def find_recent_by_ticker(
         self,
@@ -309,8 +310,8 @@ class ScheduledAnalysisDAO(BaseDAO[ScheduledAnalysis]):
 
         query = select(ScheduledAnalysis).where(
             and_(
-                ScheduledAnalysis.active,
-                ScheduledAnalysis.next_run is not None,
+                ScheduledAnalysis.active.is_(True),
+                ScheduledAnalysis.next_run.is_not(None),
                 ScheduledAnalysis.next_run <= now,
             )
         )

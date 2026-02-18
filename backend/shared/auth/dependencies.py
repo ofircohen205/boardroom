@@ -27,7 +27,7 @@ async def get_current_user(
             settings.jwt_secret.get_secret_value(),
             algorithms=[settings.algorithm],
         )
-        email: str = payload.get("sub")
+        email: str = str(payload.get("sub"))
         if email is None:
             raise credentials_exception
     except JWTError:

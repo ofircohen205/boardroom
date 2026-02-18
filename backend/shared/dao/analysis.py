@@ -85,3 +85,12 @@ class AnalysisDAO(BaseDAO[AnalysisSession]):
             .limit(limit)
         )
         return list(result.scalars().all())
+
+    async def get_recent_sessions(self, limit: int = 50) -> List[AnalysisSession]:
+        """Get recent analysis sessions."""
+        result = await self.session.execute(
+            select(AnalysisSession)
+            .order_by(desc(AnalysisSession.created_at))
+            .limit(limit)
+        )
+        return list(result.scalars().all())

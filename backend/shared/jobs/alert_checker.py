@@ -2,6 +2,7 @@
 """Background job to check price alerts and trigger notifications."""
 
 from datetime import datetime
+from typing import Any
 from zoneinfo import ZoneInfo
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -203,7 +204,7 @@ async def check_price_alerts(db: AsyncSession) -> dict:
 
         # Batch fetch prices for tickers in open markets
         market_data_client = get_market_data_client()
-        prices = {}
+        prices: dict[tuple[str, Any], float | None] = {}
 
         for ticker, market in open_tickers:
             try:

@@ -34,7 +34,7 @@ async def list_portfolios(
                     ticker=pos.ticker,
                     quantity=pos.quantity,
                     avg_entry_price=pos.avg_entry_price,
-                    sector=pos.sector,
+                    sector=pos.sector or "Unknown",
                 )
                 for pos in p.positions
                 if pos.closed_at is None
@@ -84,5 +84,5 @@ async def add_new_position(
         ticker=position.ticker,
         quantity=position.quantity,
         avg_entry_price=position.avg_entry_price,
-        sector=position.sector,
+        sector=position.sector or "Unknown",
     )

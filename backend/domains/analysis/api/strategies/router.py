@@ -62,7 +62,7 @@ async def create_strategy(
         is_active=True,
     )
 
-    created = await dao.create(strategy)
+    created = await dao.save(strategy)
     await db.commit()
     await db.refresh(created)
 

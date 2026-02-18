@@ -79,7 +79,7 @@ async def create_paper_account(
         is_active=True,
     )
 
-    created = await account_dao.create(account)
+    created = await account_dao.save(account)
     await db.commit()
     await db.refresh(created)
 
@@ -380,7 +380,7 @@ async def execute_paper_trade(
         executed_at=datetime.utcnow(),
     )
 
-    created_trade = await trade_dao.create(trade)
+    created_trade = await trade_dao.save(trade)
 
     # Update account balance and position
     if trade_type == TradeType.BUY:

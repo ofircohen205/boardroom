@@ -8,7 +8,12 @@ from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.shared.ai.state.enums import Action, AgentType
-from backend.shared.db.models import AgentAccuracy, AnalysisOutcome
+from backend.shared.db.models import (
+    AgentAccuracy,
+    AnalysisOutcome,
+    AnalysisSession,
+    FinalDecision,
+)
 
 from .base import BaseDAO
 
@@ -45,14 +50,24 @@ class PerformanceDAO(BaseDAO[AnalysisOutcome]):
     async def get_recent_outcomes(
         self,
         limit: int = 50,
-    ) -> List[AnalysisOutcome]:
-        """Get recent outcomes."""
-        result = await self.session.execute(
-            select(AnalysisOutcome)
+        ticker: Optional[str] = None,
+    ) -> List[tuple[AnalysisOutcome, FinalDecision, AnalysisSession]]:
+        """Get recent outcomes with decision and session details."""
+        from backend.shared.db.models import AnalysisSession, FinalDecision
+
+        query = (
+            select(AnalysisOutcome, FinalDecision, AnalysisSession)
+            .join(AnalysisSession, AnalysisOutcome.session_id == AnalysisSession.id)
+            .join(FinalDecision, AnalysisOutcome.session_id == FinalDecision.session_id)
             .order_by(desc(AnalysisOutcome.created_at))
             .limit(limit)
         )
-        return list(result.scalars().all())
+
+        if ticker:
+            query = query.where(AnalysisOutcome.ticker == ticker)
+
+        result = await self.session.execute(query)
+        return [tuple(row) for row in result.all()]
 
     async def get_agent_accuracy(
         self,

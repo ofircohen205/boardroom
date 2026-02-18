@@ -30,7 +30,7 @@ class WatchlistDAO(BaseDAO[Watchlist]):
         )
         return list(result.scalars().all())
 
-    async def get_default_watchlist(self, user_id: UUID) -> Optional[Watchlist]:
+    async def get_default_watchlist(self, user_id: UUID) -> Watchlist:
         """Get or create the default watchlist for a user."""
         result = await self.session.execute(
             select(Watchlist)

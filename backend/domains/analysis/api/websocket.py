@@ -42,9 +42,11 @@ async def get_current_user_ws(token: str, db: AsyncSession) -> User | None:
         return None
     try:
         payload = jwt.decode(
-            token, settings.jwt_secret, algorithms=[settings.algorithm]
+            token,
+            settings.jwt_secret.get_secret_value(),
+            algorithms=[settings.algorithm],
         )
-        email: str = payload.get("sub")
+        email: str = str(payload.get("sub"))
         if email is None:
             return None
     except JWTError:

@@ -1,8 +1,9 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.api import api_router, websocket_router_root
 from backend.shared.core.cache import get_cache
@@ -50,13 +51,12 @@ async def health_check():
 
 
 @app.get("/health/db")
-async def postgres_health():
+async def postgres_health(session: AsyncSession = Depends(get_db)):
     """Check PostgreSQL connection health."""
     try:
-        # Get a session and execute a simple query
-        async for session in get_db():
-            await session.execute(text("SELECT 1"))
-            return {"status": "healthy", "service": "postgres"}
+        # Execute a simple query
+        await session.execute(text("SELECT 1"))
+        return {"status": "healthy", "service": "postgres"}
     except Exception as e:
         return {"status": "unhealthy", "service": "postgres", "error": str(e)}
 

@@ -9,7 +9,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.shared.auth.dependencies import get_current_user
 from backend.shared.dao.backtesting import BacktestResultDAO
 from backend.shared.db.database import get_db
-from backend.shared.db.models.backtesting import BacktestResult
 from backend.shared.db.models.user import User
 
 from .schemas import BacktestResultResponse, EquityPointResponse, TradeResponse
@@ -29,7 +28,7 @@ async def list_backtest_results(
     strategy_id: UUID | None = None,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-) -> list[BacktestResult]:
+) -> list[BacktestResultResponse]:
     """List backtest results for the current user.
 
     Args:
@@ -107,7 +106,7 @@ async def get_backtest_result(
         HTTPException: 404 if result not found or doesn't belong to user
     """
     dao = BacktestResultDAO(db)
-    result = await dao.get(result_id)
+    result = await dao.get_by_id(result_id)
 
     if not result or result.user_id != current_user.id:
         raise HTTPException(
@@ -158,7 +157,7 @@ async def delete_backtest_result(
         HTTPException: 404 if result not found or doesn't belong to user
     """
     dao = BacktestResultDAO(db)
-    result = await dao.get(result_id)
+    result = await dao.get_by_id(result_id)
 
     if not result or result.user_id != current_user.id:
         raise HTTPException(

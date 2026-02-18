@@ -143,7 +143,7 @@ async def run_scheduled_analyses(db: AsyncSession) -> dict:
 
                 # Run the analysis
                 graph = BoardroomGraph()
-                result = await graph.run_sync(
+                result = await graph.run(
                     ticker=schedule.ticker,
                     market=schedule.market,
                     portfolio_sector_weight=0.0,  # Scheduled analyses don't have portfolio context
@@ -161,8 +161,8 @@ async def run_scheduled_analyses(db: AsyncSession) -> dict:
                     risk_assessment = result.get("risk_assessment")
                     if risk_assessment and risk_assessment.get("veto", False):
                         vetoed = True
-                        veto_reason = risk_assessment.get(
-                            "reason", "Risk assessment veto"
+                        veto_reason = str(
+                            risk_assessment.get("reason", "Risk assessment veto")
                         )
 
                     # Create notification

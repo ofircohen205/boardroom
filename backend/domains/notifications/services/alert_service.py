@@ -229,7 +229,9 @@ class AlertService(BaseService):
         # Send WebSocket notification to all user's connections
         try:
             # Lazy import to avoid circular dependency
-            from backend.domains.websocket.connection_manager import connection_manager
+            from backend.domains.analysis.api.connection_manager import (
+                connection_manager,
+            )
 
             await connection_manager.send_notification(
                 user_id=alert.user_id,
@@ -303,7 +305,9 @@ class AlertService(BaseService):
         # Send WebSocket notification
         try:
             # Lazy import to avoid circular dependency
-            from backend.domains.websocket.connection_manager import connection_manager
+            from backend.domains.analysis.api.connection_manager import (
+                connection_manager,
+            )
 
             await connection_manager.send_notification(
                 user_id=user_id,

@@ -8,7 +8,7 @@ import bcrypt
 from jose import jwt
 
 # Monkeypatch bcrypt for passlib compatibility
-bcrypt.__about__ = type("about", (object,), {"__version__": bcrypt.__version__})
+bcrypt.__about__ = type("about", (object,), {"__version__": bcrypt.__version__})  # type: ignore
 from passlib.context import CryptContext
 
 from .settings import settings

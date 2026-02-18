@@ -8,8 +8,7 @@ and agent accuracy metrics.
 import asyncio
 from typing import Optional
 
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from backend.shared.core.logging import get_logger
 from backend.shared.core.settings import settings
@@ -25,7 +24,7 @@ class JobScheduler:
 
     def __init__(self):
         self.engine = create_async_engine(settings.database_url, echo=False)
-        self.async_session_maker = sessionmaker(
+        self.async_session_maker = async_sessionmaker(
             self.engine, class_=AsyncSession, expire_on_commit=False
         )
         self.running = False

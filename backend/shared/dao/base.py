@@ -2,7 +2,7 @@
 """Base DAO with common CRUD operations."""
 
 from functools import lru_cache
-from typing import ClassVar, Generic, List, Optional, Type, TypeVar
+from typing import Any, ClassVar, Generic, List, Optional, Type, TypeVar, cast
 from uuid import UUID
 
 from sqlalchemy import delete, select
@@ -39,8 +39,11 @@ class BaseDAO(Generic[T]):
 
     async def get_by_id(self, id: UUID) -> Optional[T]:
         """Get a single record by ID."""
+        # mypy complains that T (bound to Base) has no 'id' attribute
+        # We assume all models used with BaseDAO have an id
+        model_with_id = cast(Any, self.model)
         result = await self.session.execute(
-            select(self.model).where(self.model.id == id)
+            select(self.model).where(model_with_id.id == id)
         )
         return result.scalars().first()
 
@@ -60,6 +63,14 @@ class BaseDAO(Generic[T]):
         await self.session.refresh(instance)
         return instance
 
+    async def save(self, instance: T) -> T:
+        """Save an instance (create or update)."""
+        self.session.add(instance)
+        await self.session.commit()
+        await self.session.flush()
+        await self.session.refresh(instance)
+        return instance
+
     async def update(self, instance: T) -> T:
         """Update an existing record."""
         self.session.add(instance)
@@ -70,17 +81,11 @@ class BaseDAO(Generic[T]):
 
     async def delete(self, id: UUID) -> bool:
         """Delete a record by ID. Returns True if deleted, False if not found."""
+        model_with_id = cast(Any, self.model)
         result = await self.session.execute(
-            delete(self.model).where(self.model.id == id)
+            delete(self.model).where(model_with_id.id == id)
         )
         await self.session.flush()
-        return result.rowcount > 0
-
-    async def count(self) -> int:
-        """Count total records."""
-        from sqlalchemy import func
-
-        result = await self.session.execute(
-            select(func.count()).select_from(self.model)
-        )
-        return result.scalar() or 0
+        # rowcount is present on CursorResult (which is what execute returns for delete)
+        # but mypy sees it as Result[Any] which doesn't have it
+        return result.rowcount > 0  # type: ignore

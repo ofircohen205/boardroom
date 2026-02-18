@@ -48,7 +48,7 @@ class RedisCache:
                 max_connections=10,
             )
             self._redis = Redis(connection_pool=self._pool)
-            await self._redis.ping()
+            await self._redis.ping()  # type: ignore
             self._connected = True
             logger.info("✅ Redis cache connected")
         except (RedisError, Exception) as e:

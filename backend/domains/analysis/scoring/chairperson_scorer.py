@@ -64,6 +64,7 @@ def calculate_weighted_decision(
     weighted_score = sum(scores[agent] * weights[agent] for agent in scores.keys())
 
     # Apply decision thresholds
+    decision: Decision
     if weighted_score >= buy_threshold:
         decision = "BUY"
     elif weighted_score <= sell_threshold:

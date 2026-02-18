@@ -312,7 +312,7 @@ class PaperAccountDAO(BaseDAO[PaperAccount]):
         Returns:
             Updated PaperAccount record
         """
-        account = await self.get(account_id)
+        account = await self.get_by_id(account_id)
         if not account:
             raise ValueError(f"Paper account {account_id} not found")
 

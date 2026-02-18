@@ -227,6 +227,6 @@ class AnalysisService(BaseService):
             AnalysisError: If operation fails
         """
         try:
-            return await self.analysis_dao.get_recent_outcomes(limit)
+            return await self.analysis_dao.get_recent_sessions(limit)
         except Exception as e:
             raise AnalysisError(f"Failed to fetch recent outcomes: {e!s}")

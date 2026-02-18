@@ -244,11 +244,11 @@ async def _calculate_agent_accuracy(
     # Update or create accuracy record
     accuracy_value = (correct_signals / total_signals) if total_signals > 0 else 0.0
 
-    query = select(AgentAccuracy).where(
+    accuracy_query = select(AgentAccuracy).where(
         AgentAccuracy.agent_type == agent_type,
         AgentAccuracy.period == period,
     )
-    result = await db.execute(query)
+    result = await db.execute(accuracy_query)
     accuracy_record = result.scalar_one_or_none()
 
     if accuracy_record:
