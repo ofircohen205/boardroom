@@ -20,7 +20,7 @@ class TestCalculateNextRun:
         # Patch datetime.now to return our mock time
         from unittest.mock import patch
 
-        with patch("backend.jobs.scheduled_analyzer.datetime") as mock_datetime:
+        with patch("backend.shared.jobs.scheduled_analyzer.datetime") as mock_datetime:
             mock_datetime.now.return_value = now
 
             next_run = calculate_next_run(AlertFrequency.DAILY)
@@ -37,7 +37,7 @@ class TestCalculateNextRun:
 
         from unittest.mock import patch
 
-        with patch("backend.jobs.scheduled_analyzer.datetime") as mock_datetime:
+        with patch("backend.shared.jobs.scheduled_analyzer.datetime") as mock_datetime:
             mock_datetime.now.return_value = now
 
             next_run = calculate_next_run(AlertFrequency.DAILY)
@@ -54,7 +54,7 @@ class TestCalculateNextRun:
 
         from unittest.mock import patch
 
-        with patch("backend.jobs.scheduled_analyzer.datetime") as mock_datetime:
+        with patch("backend.shared.jobs.scheduled_analyzer.datetime") as mock_datetime:
             mock_datetime.now.return_value = now
 
             next_run = calculate_next_run(AlertFrequency.DAILY)
@@ -70,7 +70,7 @@ class TestCalculateNextRun:
 
         from unittest.mock import patch
 
-        with patch("backend.jobs.scheduled_analyzer.datetime") as mock_datetime:
+        with patch("backend.shared.jobs.scheduled_analyzer.datetime") as mock_datetime:
             mock_datetime.now.return_value = now
 
             next_run = calculate_next_run(AlertFrequency.WEEKLY)
@@ -87,7 +87,7 @@ class TestCalculateNextRun:
 
         from unittest.mock import patch
 
-        with patch("backend.jobs.scheduled_analyzer.datetime") as mock_datetime:
+        with patch("backend.shared.jobs.scheduled_analyzer.datetime") as mock_datetime:
             mock_datetime.now.return_value = now
 
             next_run = calculate_next_run(AlertFrequency.WEEKLY)
@@ -103,7 +103,7 @@ class TestCalculateNextRun:
 
         from unittest.mock import patch
 
-        with patch("backend.jobs.scheduled_analyzer.datetime") as mock_datetime:
+        with patch("backend.shared.jobs.scheduled_analyzer.datetime") as mock_datetime:
             mock_datetime.now.return_value = now
 
             next_run = calculate_next_run(AlertFrequency.WEEKLY)
@@ -120,7 +120,7 @@ class TestCalculateNextRun:
 
         from unittest.mock import patch
 
-        with patch("backend.jobs.scheduled_analyzer.datetime") as mock_datetime:
+        with patch("backend.shared.jobs.scheduled_analyzer.datetime") as mock_datetime:
             mock_datetime.now.return_value = now
 
             next_run = calculate_next_run(AlertFrequency.ON_CHANGE)
@@ -137,7 +137,7 @@ class TestCalculateNextRun:
 
         from unittest.mock import patch
 
-        with patch("backend.jobs.scheduled_analyzer.datetime") as mock_datetime:
+        with patch("backend.shared.jobs.scheduled_analyzer.datetime") as mock_datetime:
             mock_datetime.now.return_value = now
 
             next_run = calculate_next_run(AlertFrequency.ON_CHANGE)
@@ -154,7 +154,7 @@ class TestCalculateNextRun:
 
         from unittest.mock import patch
 
-        with patch("backend.jobs.scheduled_analyzer.datetime") as mock_datetime:
+        with patch("backend.shared.jobs.scheduled_analyzer.datetime") as mock_datetime:
             mock_datetime.now.return_value = now
 
             next_run = calculate_next_run(AlertFrequency.ON_CHANGE)
@@ -171,7 +171,7 @@ class TestCalculateNextRun:
 
         from unittest.mock import patch
 
-        with patch("backend.jobs.scheduled_analyzer.datetime") as mock_datetime:
+        with patch("backend.shared.jobs.scheduled_analyzer.datetime") as mock_datetime:
             mock_datetime.now.return_value = now
 
             next_run = calculate_next_run(AlertFrequency.ON_CHANGE)

@@ -60,10 +60,12 @@ def calculate_technical_score(
     current_price = price_floats[-1]
 
     # Calculate moving averages
-    ma_20 = calculate_ma(price_floats, window=20)
-    ma_50 = calculate_ma(price_floats, window=50)
+    # calculate_ma returns a single float, not a list
+    ma_20_val = calculate_ma(price_floats, period=20)
+    ma_50_val = calculate_ma(price_floats, period=50)
 
-    if not ma_20 or not ma_50:
+    if ma_20_val == 0.0 or ma_50_val == 0.0:
+        # 0.0 is returned if not enough data or other error in calculate_ma
         logger.warning("Failed to calculate moving averages. Returning neutral score.")
         return 50.0
 
@@ -77,15 +79,18 @@ def calculate_technical_score(
     score = 50.0
 
     # 1. Trend analysis (MA crossover and position)
-    if ma_50[-1] > ma_20[-1]:
-        # Bullish: long-term MA above short-term
+    # 1. Trend analysis (MA crossover and position)
+    # 1. Trend analysis (MA crossover and position)
+    if ma_20_val > ma_50_val:
+        # Bullish: short-term MA above long-term
         score += 20
-    elif ma_50[-1] < ma_20[-1]:
-        # Bearish: long-term MA below short-term
+    elif ma_20_val < ma_50_val:
+        # Bearish: short-term MA below long-term
         score -= 20
 
     # 2. Price position relative to MA50
-    if current_price > ma_50[-1]:
+    # 2. Price position relative to MA50
+    if current_price > ma_50_val:
         # Above long-term trend
         score += 20
     else:
@@ -121,7 +126,7 @@ def calculate_technical_score(
     score = max(0.0, min(100.0, score))
 
     logger.debug(
-        f"Technical score: {score:.1f} (MA20={ma_20[-1]:.2f}, MA50={ma_50[-1]:.2f}, "
+        f"Technical score: {score:.1f} (MA20={ma_20_val:.2f}, MA50={ma_50_val:.2f}, "
         f"RSI={rsi:.1f}, price={current_price:.2f})"
     )
 

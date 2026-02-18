@@ -98,7 +98,7 @@ def test_performance_dao_initialization():
 
 def test_dao_imports():
     """Test all DAOs can be imported from backend.shared.dao."""
-    from backend.dao import (
+    from backend.shared.dao import (
         AnalysisDAO,
         BaseDAO,
         PerformanceDAO,

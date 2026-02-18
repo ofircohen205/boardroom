@@ -70,9 +70,10 @@ class PriceAlertDAO(BaseDAO[PriceAlert]):
                 PriceAlert.ticker == ticker,
                 PriceAlert.market == market,
                 PriceAlert.active,
-                not PriceAlert.triggered,
+                ~PriceAlert.triggered,
                 or_(
-                    PriceAlert.cooldown_until is None, PriceAlert.cooldown_until <= now
+                    PriceAlert.cooldown_until.is_(None),
+                    PriceAlert.cooldown_until <= now,
                 ),
             )
         )
@@ -95,9 +96,9 @@ class PriceAlertDAO(BaseDAO[PriceAlert]):
             .where(
                 and_(
                     PriceAlert.active,
-                    not PriceAlert.triggered,
+                    ~PriceAlert.triggered,
                     or_(
-                        PriceAlert.cooldown_until is None,
+                        PriceAlert.cooldown_until.is_(None),
                         PriceAlert.cooldown_until <= now,
                     ),
                 )

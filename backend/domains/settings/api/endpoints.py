@@ -3,14 +3,14 @@
 
 from typing import Annotated
 
-from backend.domains.settings.schemas import (
+from fastapi import APIRouter, Depends, HTTPException
+
+from backend.dependencies import get_settings_service
+from backend.domains.settings.api.schemas import (
     PasswordChange,
     ProfileResponse,
     ProfileUpdate,
 )
-from fastapi import APIRouter, Depends, HTTPException
-
-from backend.dependencies import get_settings_service
 from backend.domains.settings.services.exceptions import (
     EmailAlreadyTakenError,
     InvalidPasswordError,

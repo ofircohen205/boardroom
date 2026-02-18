@@ -41,7 +41,7 @@ def bullish_reports():
 
 @pytest.mark.asyncio
 async def test_chairperson_buy_decision(bullish_reports):
-    with patch("backend.ai.agents.chairperson.get_llm_client") as mock_llm:
+    with patch("backend.shared.ai.agents.chairperson.get_llm_client") as mock_llm:
         mock_llm.return_value.complete = AsyncMock(
             return_value="ACTION: BUY\nCONFIDENCE: 0.85\nRATIONALE: Strong fundamentals and positive sentiment."
         )

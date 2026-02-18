@@ -42,7 +42,7 @@ def sample_reports():
 
 @pytest.mark.asyncio
 async def test_risk_manager_no_veto(sample_reports):
-    with patch("backend.ai.agents.risk_manager.get_llm_client") as mock_llm:
+    with patch("backend.shared.ai.agents.risk_manager.get_llm_client") as mock_llm:
         mock_llm.return_value.complete = AsyncMock(
             return_value="VETO: NO\nRisk acceptable."
         )
@@ -62,7 +62,7 @@ async def test_risk_manager_no_veto(sample_reports):
 
 @pytest.mark.asyncio
 async def test_risk_manager_veto_overweight():
-    with patch("backend.ai.agents.risk_manager.get_llm_client") as mock_llm:
+    with patch("backend.shared.ai.agents.risk_manager.get_llm_client") as mock_llm:
         mock_llm.return_value.complete = AsyncMock(
             return_value="VETO: YES\nREASON: Portfolio already 45% Tech."
         )
@@ -130,7 +130,7 @@ async def test_risk_manager_uses_var(sample_reports):
         summary="Bullish trend",
     )
 
-    with patch("backend.ai.agents.risk_manager.get_llm_client") as mock_llm:
+    with patch("backend.shared.ai.agents.risk_manager.get_llm_client") as mock_llm:
         mock_llm.return_value.complete = AsyncMock(
             return_value="VETO: NO\nRisk acceptable."
         )

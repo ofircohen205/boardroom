@@ -6,7 +6,6 @@ from datetime import date, timedelta
 from decimal import Decimal
 
 import pytest
-from backend.data.historical import fetch_and_store_historical_prices, get_price_range
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -19,6 +18,10 @@ from backend.domains.analysis.api.strategies.schemas import (
 )
 from backend.domains.analysis.engine import BacktestConfig, run_backtest
 from backend.shared.dao.backtesting import PaperAccountDAO, StrategyDAO
+from backend.shared.data.historical import (
+    fetch_and_store_historical_prices,
+    get_price_range,
+)
 from backend.shared.db.models.backtesting import (
     HistoricalPrice,
 )

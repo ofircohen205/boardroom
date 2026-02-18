@@ -21,8 +21,8 @@ def mock_search_results():
 
 @pytest.mark.asyncio
 async def test_sentiment_agent_analyze(mock_search_results):
-    with patch("backend.ai.agents.sentiment.get_search_client") as mock_search:
-        with patch("backend.ai.agents.sentiment.get_llm_client") as mock_llm:
+    with patch("backend.shared.ai.agents.sentiment.get_search_client") as mock_search:
+        with patch("backend.shared.ai.agents.sentiment.get_llm_client") as mock_llm:
             mock_search.return_value.search_news = AsyncMock(
                 return_value=mock_search_results
             )
