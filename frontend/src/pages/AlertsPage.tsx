@@ -1,34 +1,19 @@
-import { useState, useEffect, useCallback } from 'react';
-// import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { useAuth } from '@/contexts/AuthContext';
-import { API_BASE_URL } from '@/lib/api';
+import { useAPIClient } from '@/hooks/useAPIClient';
+import { useFetch } from '@/hooks/useFetch';
+import { useMutation } from '@/hooks/useMutation';
+import { AsyncDataDisplay, StatusBadge } from '@/components/common';
 import { Plus, Trash2, Power, RotateCcw, Bell } from 'lucide-react';
 import PageContainer from '@/components/layout/PageContainer';
-
-interface Alert {
-  id: string;
-  ticker: string;
-  market: string;
-  condition: string;
-  target_value: number;
-  triggered: boolean;
-  triggered_at: string | null;
-  active: boolean;
-  created_at: string;
-}
+import type { CreateAlertInput } from '@/lib/api/types';
 
 export default function AlertsPage() {
-  const { token } = useAuth();
-  // const navigate = useNavigate();
-  const [alerts, setAlerts] = useState<Alert[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const apiClient = useAPIClient();
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   // Form state
   const [ticker, setTicker] = useState('');
@@ -36,132 +21,58 @@ export default function AlertsPage() {
   const [condition, setCondition] = useState('above');
   const [targetValue, setTargetValue] = useState('');
 
-  const fetchAlerts = useCallback(async () => {
-    if (!token) return;
+  // Fetch alerts
+  const { data: alerts, isLoading, error, refetch } = useFetch(
+    () => apiClient.alerts.list(false),
+    { dependencies: [apiClient] }
+  );
 
-    setIsLoading(true);
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/alerts?active_only=false`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setAlerts(data);
-      } else {
-        setError('Failed to load alerts');
-      }
-    } catch (err) {
-      console.error('Failed to fetch alerts:', err);
-      setError('Failed to load alerts');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [token]);
-
-  useEffect(() => {
-    fetchAlerts();
-  }, [fetchAlerts]);
-
-  const createAlert = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!token) return;
-
-    setError(null);
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/alerts`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          ticker: ticker.toUpperCase(),
-          market,
-          condition,
-          target_value: parseFloat(targetValue),
-        }),
-      });
-
-      if (response.ok) {
+  // Create alert mutation
+  const { mutate: createAlert, isLoading: isCreating, error: createError } = useMutation(
+    (data: CreateAlertInput) => apiClient.alerts.create(data),
+    {
+      onSuccess: () => {
         // Reset form
         setTicker('');
         setTargetValue('');
         setShowCreateForm(false);
-        // Refresh alerts
-        fetchAlerts();
-      } else {
-        const errorData = await response.json();
-        setError(errorData.detail || 'Failed to create alert');
-      }
-    } catch (err) {
-      console.error('Failed to create alert:', err);
-      setError('Failed to create alert');
+        refetch();
+      },
     }
-  };
+  );
 
-  const deleteAlert = async (alertId: string) => {
-    if (!token) return;
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/alerts/${alertId}`, {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        setAlerts((prev) => prev.filter((a) => a.id !== alertId));
-      }
-    } catch (err) {
-      console.error('Failed to delete alert:', err);
+  // Delete alert mutation
+  const { mutate: deleteAlert } = useMutation(
+    (id: string) => apiClient.alerts.delete(id),
+    {
+      onSuccess: () => refetch(),
     }
-  };
+  );
 
-  const toggleAlert = async (alertId: string, currentActive: boolean) => {
-    if (!token) return;
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/alerts/${alertId}/toggle`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ active: !currentActive }),
-      });
-
-      if (response.ok) {
-        const updatedAlert = await response.json();
-        setAlerts((prev) => prev.map((a) => (a.id === alertId ? updatedAlert : a)));
-      }
-    } catch (err) {
-      console.error('Failed to toggle alert:', err);
+  // Toggle alert mutation
+  const { mutate: toggleAlert } = useMutation(
+    ({ id, active }: { id: string; active: boolean }) => apiClient.alerts.toggle(id, active),
+    {
+      onSuccess: () => refetch(),
     }
-  };
+  );
 
-  const resetAlert = async (alertId: string) => {
-    if (!token) return;
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/alerts/${alertId}/reset`, {
-        method: 'PATCH',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const updatedAlert = await response.json();
-        setAlerts((prev) => prev.map((a) => (a.id === alertId ? updatedAlert : a)));
-      }
-    } catch (err) {
-      console.error('Failed to reset alert:', err);
+  // Reset alert mutation
+  const { mutate: resetAlert } = useMutation(
+    (id: string) => apiClient.alerts.reset(id),
+    {
+      onSuccess: () => refetch(),
     }
+  );
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    createAlert({
+      ticker: ticker.toUpperCase(),
+      market,
+      condition,
+      target_value: parseFloat(targetValue),
+    });
   };
 
   const getConditionLabel = (condition: string) => {
@@ -193,7 +104,7 @@ export default function AlertsPage() {
         {showCreateForm && (
           <Card className="p-6">
             <h2 className="text-lg font-semibold mb-4">Create New Alert</h2>
-            <form onSubmit={createAlert} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="ticker">Ticker Symbol</Label>
@@ -249,9 +160,9 @@ export default function AlertsPage() {
                 </div>
               </div>
 
-              {error && (
+              {createError && (
                 <div className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded p-3">
-                  {error}
+                  {createError}
                 </div>
               )}
 
@@ -259,89 +170,95 @@ export default function AlertsPage() {
                 <Button type="button" variant="outline" onClick={() => setShowCreateForm(false)}>
                   Cancel
                 </Button>
-                <Button type="submit">Create Alert</Button>
+                <Button type="submit" disabled={isCreating}>
+                  {isCreating ? 'Creating...' : 'Create Alert'}
+                </Button>
               </div>
             </form>
           </Card>
         )}
 
         {/* Alerts List */}
-        {isLoading ? (
-          <div className="text-center py-12 text-muted-foreground">Loading alerts...</div>
-        ) : alerts.length === 0 ? (
-          <div className="text-center py-12">
-            <Bell className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">No alerts yet. Create your first alert to get started!</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {alerts.map((alert) => (
-              <Card key={alert.id} className="p-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 space-y-2">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-semibold text-lg">
-                        {alert.ticker} ({alert.market})
-                      </h3>
-                      {alert.triggered && (
-                        <Badge variant="default" className="bg-yellow-500">
-                          Triggered
-                        </Badge>
+        <AsyncDataDisplay
+          isLoading={isLoading}
+          error={error}
+          data={alerts}
+          emptyMessage="No alerts yet. Create your first alert to get started!"
+          emptyIcon={Bell}
+          onRetry={refetch}
+        >
+          {(alerts) => (
+            <div className="space-y-3">
+              {alerts.map((alert) => (
+                <Card key={alert.id} className="p-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-lg">
+                          {alert.ticker} ({alert.market})
+                        </h3>
+                        {alert.triggered && (
+                          <StatusBadge type="alert" status="triggered" size="sm" />
+                        )}
+                        {!alert.active && (
+                          <StatusBadge type="alert" status="paused" size="sm" />
+                        )}
+                      </div>
+
+                      <p className="text-sm text-muted-foreground">
+                        {getConditionLabel(alert.condition)}:{' '}
+                        <span className="font-medium text-foreground">
+                          {alert.condition === 'change_pct'
+                            ? `${alert.target_value}%`
+                            : `$${alert.target_value}`}
+                        </span>
+                      </p>
+
+                      {alert.triggered_at && (
+                        <p className="text-xs text-muted-foreground">
+                          Triggered at: {new Date(alert.triggered_at).toLocaleString()}
+                        </p>
                       )}
-                      {!alert.active && <Badge variant="secondary">Paused</Badge>}
                     </div>
 
-                    <p className="text-sm text-muted-foreground">
-                      {getConditionLabel(alert.condition)}:{' '}
-                      <span className="font-medium text-foreground">
-                        {alert.condition === 'change_pct' ? `${alert.target_value}%` : `$${alert.target_value}`}
-                      </span>
-                    </p>
+                    <div className="flex items-center gap-2">
+                      {alert.triggered && (
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => resetAlert(alert.id)}
+                          title="Reset Alert"
+                        >
+                          <RotateCcw className="w-4 h-4" />
+                        </Button>
+                      )}
 
-                    {alert.triggered_at && (
-                      <p className="text-xs text-muted-foreground">
-                        Triggered at: {new Date(alert.triggered_at).toLocaleString()}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    {alert.triggered && (
                       <Button
                         variant="outline"
                         size="icon"
-                        onClick={() => resetAlert(alert.id)}
-                        title="Reset Alert"
-                        >
-                        <RotateCcw className="w-4 h-4" />
+                        onClick={() => toggleAlert({ id: alert.id, active: !alert.active })}
+                        title={alert.active ? 'Pause Alert' : 'Activate Alert'}
+                        className={alert.active ? '' : 'opacity-50'}
+                      >
+                        <Power className="w-4 h-4" />
                       </Button>
-                    )}
 
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => toggleAlert(alert.id, alert.active)}
-                      title={alert.active ? 'Pause Alert' : 'Activate Alert'}
-                      className={alert.active ? '' : 'opacity-50'}
-                    >
-                      <Power className="w-4 h-4" />
-                    </Button>
-
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => deleteAlert(alert.id)}
-                      title="Delete Alert"
-                      className="text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => deleteAlert(alert.id)}
+                        title="Delete Alert"
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-        )}
+                </Card>
+              ))}
+            </div>
+          )}
+        </AsyncDataDisplay>
 
         {/* Info Card */}
         <Card className="p-4 bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">

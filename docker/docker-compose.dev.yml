@@ -17,11 +17,35 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      langfuse-server:
+        condition: service_healthy
     volumes:
       - ../backend:/app/backend
       - ../alembic:/app/alembic
       - ../alembic.ini:/app/alembic.ini
     command: uv run uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
+
+  litellm:
+    image: ghcr.io/berriai/litellm:main-latest
+    ports:
+      - "4000:4000"
+    volumes:
+      - ../backend/litellm_config.yaml:/app/config.yaml
+    command:
+      ["--config", "/app/config.yaml", "--port", "4000", "--detailed_debug"]
+    env_file:
+      - ../.env
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-boardroom}:${POSTGRES_PASSWORD:-boardroom}@postgres-db:5432/${POSTGRES_DB:-boardroom}
+      - STORE_MODEL_IN_DB=True
+      - LANGFUSE_HOST=http://langfuse-server:3000
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      langfuse-server:
+        condition: service_healthy
 
   frontend:
     build:
@@ -42,10 +66,14 @@ services:
       - POSTGRES_USER=boardroom
       - POSTGRES_PASSWORD=${DB_PASSWORD:-boardroom}
       - POSTGRES_DB=boardroom
+      - POSTGRES_MULTIPLE_DATABASES=langfuse
     ports:
       - "5432:5432"
+    env_file:
+      - ../.env
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ../docker/postgres/init-multiple-dbs.sh:/docker-entrypoint-initdb.d/init-multiple-dbs.sh
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U boardroom"]
       interval: 5s
@@ -65,6 +93,132 @@ services:
       retries: 5
     command: redis-server --appendonly yes
 
+  langfuse-server:
+    image: langfuse/langfuse:3
+    restart: always
+    depends_on:
+      - postgres-db
+      - clickhouse
+      - minio
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - HOSTNAME=0.0.0.0
+      - DATABASE_URL=postgresql://langfuse:langfuse@boardroom-postgres-db-1:5432/langfuse
+      - NEXTAUTH_SECRET=${LANGFUSE_SECRET:-mysecret}
+      - SALT=${LANGFUSE_SALT:-mysalt}
+      - NEXTAUTH_URL=http://localhost:3000
+      - TELEMETRY_ENABLED=${TELEMETRY_ENABLED:-true}
+      - LANGFUSE_ENABLE_EXPERIMENTAL_FEATURES=${LANGFUSE_ENABLE_EXPERIMENTAL_FEATURES:-false}
+      - CLICKHOUSE_HOST=clickhouse
+      - CLICKHOUSE_USER=default
+      - CLICKHOUSE_PASSWORD=boardroom
+      - CLICKHOUSE_DB=default
+      - CLICKHOUSE_CLUSTER_ENABLED=false
+      - CLICKHOUSE_URL=http://clickhouse:8123
+      - CLICKHOUSE_MIGRATION_URL=clickhouse://clickhouse:9000
+      - LANGFUSE_S3_EVENT_UPLOAD_BUCKET=langfuse
+      - LANGFUSE_S3_EVENT_UPLOAD_REGION=us-east-1
+      - LANGFUSE_S3_EVENT_UPLOAD_ACCESS_KEY_ID=${MINIO_ROOT_USER:-minio}
+      - LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY=${MINIO_ROOT_PASSWORD:-minio123}
+      - LANGFUSE_S3_EVENT_UPLOAD_ENDPOINT=http://minio:9000
+      - LANGFUSE_S3_EVENT_UPLOAD_FORCE_PATH_STYLE=true
+    env_file:
+      - ../.env
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--spider",
+          "-q",
+          "http://127.0.0.1:3000/api/public/health",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  langfuse-worker:
+    image: langfuse/langfuse-worker:3
+    restart: always
+    depends_on:
+      - postgres-db
+      - clickhouse
+      - minio
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://langfuse:langfuse@boardroom-postgres-db-1:5432/langfuse
+      - NEXTAUTH_SECRET=${LANGFUSE_SECRET:-mysecret}
+      - SALT=${LANGFUSE_SALT:-mysalt}
+      - TELEMETRY_ENABLED=${TELEMETRY_ENABLED:-true}
+      - CLICKHOUSE_HOST=clickhouse
+      - CLICKHOUSE_USER=default
+      - CLICKHOUSE_PASSWORD=boardroom
+      - CLICKHOUSE_DB=default
+      - CLICKHOUSE_CLUSTER_ENABLED=false
+      - CLICKHOUSE_URL=http://clickhouse:8123
+      - CLICKHOUSE_MIGRATION_URL=clickhouse://clickhouse:9000
+      - LANGFUSE_S3_EVENT_UPLOAD_BUCKET=langfuse
+      - LANGFUSE_S3_EVENT_UPLOAD_REGION=us-east-1
+      - LANGFUSE_S3_EVENT_UPLOAD_ACCESS_KEY_ID=${MINIO_ROOT_USER:-minio}
+      - LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY=${MINIO_ROOT_PASSWORD:-minio123}
+      - LANGFUSE_S3_EVENT_UPLOAD_ENDPOINT=http://minio:9000
+      - LANGFUSE_S3_EVENT_UPLOAD_FORCE_PATH_STYLE=true
+    env_file:
+      - ../.env
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:24
+    restart: always
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    env_file:
+      - ../.env
+    environment:
+      - CLICKHOUSE_DB=default
+      - CLICKHOUSE_USER=default
+      - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
+      - CLICKHOUSE_PASSWORD=boardroom
+    volumes:
+      - langfuse_clickhouse_data:/var/lib/clickhouse
+      - langfuse_clickhouse_logs:/var/log/clickhouse-server
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+
+  minio:
+    image: minio/minio
+    restart: always
+    command: server /data --console-address ":9001"
+    ports:
+      - "9002:9000"
+      - "9003:9001"
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER:-minio}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-minio123}
+    volumes:
+      - minio_data:/data
+
+  minio-create-bucket:
+    image: minio/mc
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc alias set myminio http://minio:9000 ${MINIO_ROOT_USER:-minio} ${MINIO_ROOT_PASSWORD:-minio123};
+      /usr/bin/mc mb myminio/langfuse;
+      /usr/bin/mc anonymous set public myminio/langfuse;
+      exit 0;
+      "
+
 volumes:
   postgres_data:
   redis_data:
+
+  langfuse_clickhouse_data:
+  langfuse_clickhouse_logs:
+  minio_data:

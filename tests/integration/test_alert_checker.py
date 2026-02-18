@@ -7,10 +7,10 @@ from unittest.mock import AsyncMock, patch
 import pytest
 import pytest_asyncio
 
-from backend.ai.state.enums import Market
-from backend.dao.alerts import NotificationDAO, PriceAlertDAO
-from backend.db.models import AlertCondition, NotificationType, User
-from backend.jobs.alert_checker import check_price_alerts
+from backend.shared.ai.state.enums import Market
+from backend.shared.dao.alerts import NotificationDAO, PriceAlertDAO
+from backend.shared.db.models import AlertCondition, NotificationType, User
+from backend.shared.jobs.alert_checker import check_price_alerts
 
 
 @pytest.mark.asyncio
@@ -35,9 +35,12 @@ class TestAlertCheckerJob:
 
     async def test_alert_checker_skips_when_market_closed(self, test_db_session):
         """Test that alert checker skips execution when market is closed."""
-        with patch("backend.jobs.alert_checker.is_us_market_hours", return_value=False):
+        with patch(
+            "backend.shared.jobs.alert_checker.is_us_market_hours", return_value=False
+        ):
             with patch(
-                "backend.jobs.alert_checker.is_tase_market_hours", return_value=False
+                "backend.shared.jobs.alert_checker.is_tase_market_hours",
+                return_value=False,
             ):
                 result = await check_price_alerts(test_db_session)
 
@@ -48,9 +51,12 @@ class TestAlertCheckerJob:
 
     async def test_alert_checker_no_active_alerts(self, test_db_session):
         """Test alert checker with no active alerts."""
-        with patch("backend.jobs.alert_checker.is_us_market_hours", return_value=True):
+        with patch(
+            "backend.shared.jobs.alert_checker.is_us_market_hours", return_value=True
+        ):
             with patch(
-                "backend.jobs.alert_checker.is_tase_market_hours", return_value=False
+                "backend.shared.jobs.alert_checker.is_tase_market_hours",
+                return_value=False,
             ):
                 result = await check_price_alerts(test_db_session)
 
@@ -74,12 +80,15 @@ class TestAlertCheckerJob:
         )
 
         # Mock market hours and price data
-        with patch("backend.jobs.alert_checker.is_us_market_hours", return_value=True):
+        with patch(
+            "backend.shared.jobs.alert_checker.is_us_market_hours", return_value=True
+        ):
             with patch(
-                "backend.jobs.alert_checker.is_tase_market_hours", return_value=False
+                "backend.shared.jobs.alert_checker.is_tase_market_hours",
+                return_value=False,
             ):
                 with patch(
-                    "backend.jobs.alert_checker.get_market_data_client"
+                    "backend.shared.jobs.alert_checker.get_market_data_client"
                 ) as mock_client:
                     # Mock the market data client to return a price above the target
                     mock_instance = AsyncMock()
@@ -125,12 +134,15 @@ class TestAlertCheckerJob:
             active=True,
         )
 
-        with patch("backend.jobs.alert_checker.is_us_market_hours", return_value=True):
+        with patch(
+            "backend.shared.jobs.alert_checker.is_us_market_hours", return_value=True
+        ):
             with patch(
-                "backend.jobs.alert_checker.is_tase_market_hours", return_value=False
+                "backend.shared.jobs.alert_checker.is_tase_market_hours",
+                return_value=False,
             ):
                 with patch(
-                    "backend.jobs.alert_checker.get_market_data_client"
+                    "backend.shared.jobs.alert_checker.get_market_data_client"
                 ) as mock_client:
                     mock_instance = AsyncMock()
                     mock_instance.get_stock_data.return_value = {"current_price": 140.0}
@@ -162,9 +174,11 @@ class TestAlertCheckerJob:
             active=True,
         )
 
-        with patch("backend.jobs.alert_checker.is_us_market_hours", return_value=True):
+        with patch(
+            "backend.shared.jobs.alert_checker.is_us_market_hours", return_value=True
+        ):
             with patch(
-                "backend.jobs.alert_checker.get_market_data_client"
+                "backend.shared.jobs.alert_checker.get_market_data_client"
             ) as mock_client:
                 mock_instance = AsyncMock()
                 mock_instance.get_stock_data.return_value = {"current_price": 160.0}

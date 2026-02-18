@@ -6,6 +6,7 @@ import { BacktestForm } from "@/components/backtest/BacktestForm";
 import { BacktestSummary } from "@/components/backtest/BacktestSummary";
 import { TradeLog } from "@/components/backtest/TradeLog";
 import PageContainer from "@/components/layout/PageContainer";
+import { API_BASE_URL } from "@/lib/api";
 import {
   Card,
   CardContent,
@@ -36,7 +37,7 @@ export function BacktestPage() {
     try {
       setIsLoadingStrategies(true);
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:8000/api/strategies", {
+      const response = await fetch(`${API_BASE_URL}/api/strategies`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

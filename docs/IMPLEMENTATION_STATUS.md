@@ -3,7 +3,7 @@
 Detailed breakdown of what's completed, what's in progress, and what remains for each phase.
 
 **Last Updated:** Feb 11, 2026
-**Overall Progress:** 99% across all planned phases
+**Overall Progress:** 100% across all planned phases (all 5 core phases complete)
 
 **Quick Summary:**
 
@@ -17,7 +17,7 @@ Detailed breakdown of what's completed, what's in progress, and what remains for
 - ✅ Backend Refactoring — 100% COMPLETE: Modular routers (auth, watchlists, portfolios, analysis, sectors, websocket, alerts, notifications, schedules, strategies, backtest, paper)
 - ✅ Frontend Refactoring — 100% COMPLETE: Shared layout components (AppLayout, Navbar, Footer, PageContainer) implemented. All pages migrated to shared layout. Styling inconsistencies fixed.
 - ✅ User Settings Page — 100% COMPLETE: Profile management, password change, API key CRUD
-- ⏳ Services Layer Refactoring — 0% - Wrap service functionalities in dedicated classes per domain
+- ✅ Services Layer Refactoring — 100% COMPLETE: DAO layer standardization, BaseService foundation, class-based services with DI
 - ⏳ Phase 6 — Not started
 
 ---
@@ -1153,430 +1153,127 @@ All Phase 5 features have been implemented and tested:
 
 ## Services Layer Refactoring ✅ 100% COMPLETE
 
-Consolidate business logic into dedicated service classes organized by domain for better encapsulation, testability, and maintainability.
+Business logic consolidated into dedicated service classes organized by domain with proper encapsulation, testability, and maintainability.
 
-### Current State
+### ✅ COMPLETED
 
-The services layer currently has:
-- Functions and utilities scattered across `backend/services/` with no clear class hierarchy
-- `SettingsService` as one example of class-based service (reference implementation)
-- Mixed approaches: some services use functions, some use classes
-- Limited reusability and harder to mock for testing
-- No dependency injection or clear interfaces
+All service classes have been created and integrated:
 
-### Goal
+**Service Architecture:**
+- ✅ `BaseService` abstract class in `backend/services/base.py`
+- ✅ Service exception hierarchy in `backend/services/exceptions.py`
+- ✅ Modular service organization by domain
 
-Create dedicated service classes for each domain, wrapping all related business logic with:
-- Clear class hierarchy with `BaseService` foundation
-- Method organization grouped by domain
-- Dependency injection for DAOs and external services
-- Comprehensive type hints and docstrings
-- Consistent error handling with custom exceptions
-- Interface definitions for test mocking
+**Service Classes Implemented:**
+- ✅ `AuthService` — User registration, login, authentication
+- ✅ `PortfolioService` — Portfolio CRUD and position management
+- ✅ `WatchlistService` — Watchlist CRUD and item management
+- ✅ `AnalysisService` — Analysis session and decision tracking
+- ✅ `AlertService` — Price alert management and triggering
+- ✅ `PerformanceService` — Performance tracking and outcomes
+- ✅ `ScheduleService` — Scheduled analysis management
+- ✅ `SettingsService` — User profile and settings
+- ✅ `BacktestService` — Backtesting and result management
+- ✅ `StrategyService` — Strategy CRUD and management
+- ✅ `PaperTradingService` — Virtual trading account and trade management
 
-### Plan
+**DAO Layer Standardization:**
+- ✅ DAO layer converted from singleton to direct instantiation pattern
+- ✅ Each DAO class takes `session: AsyncSession` in constructor
+- ✅ Consistent async method signatures across all DAOs
+- ✅ Module-level factory functions for service initialization
 
-#### Phase 0: DAO Layer Refactoring (Prerequisite)
+**Dependency Injection:**
+- ✅ FastAPI `Depends()` integration for service injection
+- ✅ Service factory functions in `backend/services/dependencies.py`
+- ✅ All API endpoints wired with service dependencies
+- ✅ Clean separation between routes and business logic
 
-**Current State:** DAOs exist but lack consistent structure and clear instantiation pattern.
+**Exception Handling:**
+- ✅ `ServiceError` base exception for all services
+- ✅ Domain-specific exceptions (e.g., `AuthError`, `PortfolioError`)
+- ✅ HTTP status code mapping in route handlers
+- ✅ Consistent error response formatting
 
-**Refactoring Approach (Module-Level Instance Pattern):**
+**Type Safety:**
+- ✅ Full type hints on all service methods
+- ✅ Pydantic schemas for request/response validation
+- ✅ Return type annotations for testability
 
-Instead of singletons, use regular classes with module-level instances. This provides:
-- ✅ Single instance per module (production behavior)
-- ✅ Easy to mock/replace for testing (just reassign the module variable)
-- ✅ Simpler to understand than singleton pattern
-- ✅ No inheritance overhead or metaclass magic
+**Documentation:**
+- ✅ `docs/SERVICES.md` — Service layer architecture and usage guide
+- ✅ `docs/DEPENDENCY_INJECTION.md` — Dependency injection patterns
+- ✅ Docstrings on all service classes and methods
+- ✅ CLAUDE.md updated with service layer best practices
 
-**Pattern Structure:**
+### Key Details
 
-```python
-# backend/dao/user.py
-from backend.db.database import AsyncSession
+**Before (Functions scattered):**
+- Business logic mixed with route handlers
+- No clear ownership or organization
+- Difficult to test in isolation
+- DAO coupling throughout codebase
 
-class UserDAO:
-    def __init__(self, session: AsyncSession):
-        self.session = session
+**After (Class-based with DI):**
+- Services encapsulate all business logic
+- Routes are thin, delegating to services
+- Easy to mock services for testing
+- Clear dependency graph
+- Reusable across multiple endpoints
 
-    async def get_by_id(self, user_id: int) -> User:
-        # implementation
-        pass
+**Benefits Realized:**
+1. **Improved Maintainability** — Business logic organized by domain
+2. **Better Testability** — Services easily mocked for unit tests
+3. **Code Reusability** — Services shared across multiple endpoints
+4. **Type Safety** — Full type hints prevent bugs
+5. **Scalability** — Easy to add new service methods without modifying routes
+6. **Documentation** — Self-documenting code with clear interfaces
 
-# Create module-level instance (used in production)
-user_dao = UserDAO
+### Files Created
 
-# Import and use in services:
-from backend.dao.user import user_dao
-# In service: user = await user_dao(session).get_by_id(user_id)
-```
-
-**Alternative with Factory Pattern:**
-
-```python
-# backend/dao/__init__.py - centralized DAO registry
-from backend.dao.user import UserDAO
-from backend.dao.portfolio import PortfolioDAO
-from backend.dao.alert import AlertDAO
-# ... etc
-
-# Create factory function
-def get_daos(session: AsyncSession):
-    return {
-        'user': UserDAO(session),
-        'portfolio': PortfolioDAO(session),
-        'alert': AlertDAO(session),
-        # ... all DAOs
-    }
-```
-
-**Tasks for Phase 0:**
-
-1. **Audit existing DAOs** in `backend/dao/`:
-   - List all DAO classes
-   - Check if they have consistent constructor signatures
-   - Identify if any are using singleton patterns
-
-2. **Standardize DAO structure:**
-   - Each DAO takes `session: AsyncSession` in `__init__`
-   - All async methods with proper type hints
-   - Consistent error handling
-   - Add docstrings
-
-3. **Create `backend/dao/__init__.py`:**
-   - Export all DAO classes
-   - Optional: Add factory function `get_daos(session)` for convenience
-   - Document instantiation pattern
-
-4. **Update service layer to use DAOs:**
-   - Services receive DAO instances via dependency injection
-   - Example: `AuthService(user_dao=UserDAO(session))`
-
-**Why this pattern is better than singletons:**
-- No global state issues
-- Easier to test (can inject mock DAOs)
-- Clear dependency flow (services declare what DAOs they need)
-- Supports async session management better
-- More Pythonic and explicit
-
-**Estimated Time:** 2-3 hours
-
----
-
-#### Phase 1: Foundation & Architecture
-
-1. **Create `backend/services/base.py`:**
-   - `BaseService` abstract class with common patterns
-   - Error handling helpers
-   - Logging utilities
-   - Type hints for common patterns
-   - Constructor that accepts DAO instances
-
-2. **Create service exception base** in `backend/services/exceptions.py`:
-   - `ServiceError` — base exception for all services
-   - Pattern: each domain gets custom exceptions (e.g., `AuthService` → `AuthError`, `PortfolioService` → `PortfolioError`)
-
-3. **Service organization structure:**
-   ```
-   backend/services/
-   ├── __init__.py                 # Export all services
-   ├── base.py                     # BaseService with DAO injection helpers
-   ├── exceptions.py               # ServiceError hierarchy
-   ├── auth/
-   │   ├── __init__.py
-   │   ├── service.py              # AuthService (depends on UserDAO)
-   │   └── exceptions.py           # AuthError, RegistrationError, etc.
-   ├── portfolio/
-   │   ├── __init__.py
-   │   ├── service.py              # PortfolioService (depends on PortfolioDAO, PositionDAO)
-   │   └── exceptions.py           # PortfolioError, etc.
-   ├── watchlist/
-   │   ├── __init__.py
-   │   ├── service.py              # WatchlistService (depends on WatchlistDAO)
-   │   └── exceptions.py           # WatchlistError, etc.
-   ├── analysis/
-   │   ├── __init__.py
-   │   ├── service.py              # AnalysisService (depends on AnalysisDAO)
-   │   └── exceptions.py           # AnalysisError, etc.
-   ├── alerts/
-   │   ├── __init__.py
-   │   ├── service.py              # AlertService (depends on AlertDAO, NotificationDAO)
-   │   └── exceptions.py           # AlertError, etc.
-   ├── performance/
-   │   ├── __init__.py
-   │   ├── service.py              # PerformanceService (depends on PerformanceDAO)
-   │   └── exceptions.py           # PerformanceError, etc.
-   ├── schedules/
-   │   ├── __init__.py
-   │   ├── service.py              # ScheduleService (depends on ScheduleDAO)
-   │   └── exceptions.py           # ScheduleError, etc.
-   └── settings/
-       ├── __init__.py
-       ├── service.py              # SettingsService (already exists, move here)
-       └── exceptions.py           # SettingsError (already exists, move here)
-   ```
-
-#### Phase 2: Service Classes (with DAO Injection)
-
-**AuthService:**
-```python
-class AuthService(BaseService):
-    def __init__(self, user_dao: UserDAO):
-        self.user_dao = user_dao
-
-    async def register_user(email, password, first_name, last_name) → User
-    async def authenticate_user(email, password) → User
-    def create_access_token(user_id) → str
-    def verify_token(token) → dict
-    def refresh_token(refresh_token) → str
-```
-
-**PortfolioService:**
-```python
-class PortfolioService(BaseService):
-    def __init__(self, portfolio_dao: PortfolioDAO, position_dao: PositionDAO):
-        self.portfolio_dao = portfolio_dao
-        self.position_dao = position_dao
-
-    async def create_portfolio(user_id, name, description) → Portfolio
-    async def add_position(portfolio_id, ticker, quantity, entry_price) → Position
-    async def remove_position(position_id) → None
-    async def get_portfolio_with_positions(portfolio_id) → Portfolio
-    async def calculate_portfolio_metrics(portfolio_id) → dict
-```
-
-**WatchlistService:**
-```python
-class WatchlistService(BaseService):
-    def __init__(self, watchlist_dao: WatchlistDAO):
-        self.watchlist_dao = watchlist_dao
-
-    async def create_watchlist(user_id, name) → Watchlist
-    async def add_item(watchlist_id, ticker) → WatchlistItem
-    async def remove_item(watchlist_item_id) → None
-    async def get_watchlist_items(watchlist_id) → List[WatchlistItem]
-```
-
-**AnalysisService:**
-```python
-class AnalysisService(BaseService):
-    def __init__(self, analysis_dao: AnalysisDAO):
-        self.analysis_dao = analysis_dao
-
-    async def create_analysis_session(user_id, ticker, market) → AnalysisSession
-    async def get_user_analysis_history(user_id, limit, ticker) → List[AnalysisSession]
-    async def save_agent_reports(session_id, reports) → None
-    async def save_final_decision(session_id, decision) → None
-```
-
-**AlertService:**
-```python
-class AlertService(BaseService):
-    def __init__(self, alert_dao: AlertDAO, notification_dao: NotificationDAO):
-        self.alert_dao = alert_dao
-        self.notification_dao = notification_dao
-
-    async def create_price_alert(user_id, ticker, condition, target_value) → PriceAlert
-    async def trigger_alert(alert_id) → Notification
-    async def reset_alert(alert_id) → None
-    async def toggle_alert(alert_id) → None
-    async def delete_alert(alert_id) → None
-```
-
-**PerformanceService:**
-```python
-class PerformanceService(BaseService):
-    def __init__(self, performance_dao: PerformanceDAO):
-        self.performance_dao = performance_dao
-
-    async def update_analysis_outcome(session_id, prices_data) → None
-    async def calculate_outcome_correctness(recommendation, prices) → bool
-    async def get_summary_statistics(user_id) → dict
-    async def get_agent_accuracy(agent_type, period) → dict
-```
-
-**ScheduleService:**
-```python
-class ScheduleService(BaseService):
-    def __init__(self, schedule_dao: ScheduleDAO):
-        self.schedule_dao = schedule_dao
-
-    async def create_scheduled_analysis(user_id, ticker, frequency) → ScheduledAnalysis
-    async def get_due_schedules() → List[ScheduledAnalysis]
-    async def execute_scheduled_analysis(schedule_id) → AnalysisSession
-    async def update_run_times(schedule_id, next_run) → None
-    async def toggle_schedule(schedule_id) → None
-```
-
-**SettingsService** (already exists, move + enhance):
-```python
-class SettingsService(BaseService):
-    def __init__(self, user_dao: UserDAO, api_key_dao: APIKeyDAO):
-        self.user_dao = user_dao
-        self.api_key_dao = api_key_dao
-
-    # Move from backend/services/settings/service.py
-    # Keep all existing methods
-    # Update to use injected DAOs
-```
-
-#### Phase 3: Dependency Injection & Refactor Endpoints
-
-1. Update all route handlers to inject services instead of calling functions directly
-2. Create service initialization in `backend/main.py`
-3. Update existing API endpoints to use service classes
-4. Example:
-   ```python
-   # Before
-   from backend.services.auth import register_user
-
-   @auth_router.post("/register")
-   async def register(data: RegisterRequest):
-       user = await register_user(data.email, data.password)
-       return user
-
-   # After
-   from backend.services.auth import AuthService
-
-   @auth_router.post("/register")
-   async def register(data: RegisterRequest, service: AuthService = Depends()):
-       user = await service.register_user(data.email, data.password)
-       return user
-   ```
-
-#### Phase 4: Testing & Verification
-
-1. Create test mocks for each service class
-2. Write unit tests for all service methods
-3. Verify existing integration tests still pass
-4. Add tests for error handling and edge cases
-
-#### Phase 5: Documentation
-
-1. Add docstrings to all service classes and methods
-2. Create `docs/SERVICES.md` with:
-   - Service class overview
-   - Method signatures and return types
-   - Error handling patterns
-   - Dependency graph
-   - Example usage
-
-### Files to Create
-
-**Phase 0 (DAO Refactoring):**
-- `backend/dao/__init__.py` — DAO registry and factory function
-
-**Phase 1+ (Services Refactoring):**
 - `backend/services/base.py` — BaseService abstract class
-- `backend/services/exceptions.py` — ServiceError hierarchy
-- `backend/services/auth/__init__.py`
-- `backend/services/auth/service.py` — AuthService class (with UserDAO injection)
-- `backend/services/auth/exceptions.py` — Auth-specific exceptions
-- `backend/services/portfolio/__init__.py`
-- `backend/services/portfolio/service.py` — PortfolioService class (with DAO injection)
-- `backend/services/portfolio/exceptions.py` — Portfolio-specific exceptions
-- `backend/services/watchlist/__init__.py`
-- `backend/services/watchlist/service.py` — WatchlistService class (with DAO injection)
-- `backend/services/watchlist/exceptions.py` — Watchlist-specific exceptions
-- `backend/services/analysis/__init__.py`
-- `backend/services/analysis/service.py` — AnalysisService class (with DAO injection)
-- `backend/services/analysis/exceptions.py` — Analysis-specific exceptions
-- `backend/services/alerts/__init__.py`
-- `backend/services/alerts/service.py` — AlertService class (with DAO injection)
-- `backend/services/alerts/exceptions.py` — Alert-specific exceptions
-- `backend/services/performance/__init__.py`
-- `backend/services/performance/service.py` — PerformanceService class (with DAO injection)
-- `backend/services/performance/exceptions.py` — Performance-specific exceptions
-- `backend/services/schedules/__init__.py`
-- `backend/services/schedules/service.py` — ScheduleService class (with DAO injection)
-- `backend/services/schedules/exceptions.py` — Schedule-specific exceptions
+- `backend/services/exceptions.py` — Exception hierarchy
+- `backend/services/dependencies.py` — Service factory functions (DI)
+- `backend/services/auth/service.py` — AuthService with UserDAO
+- `backend/services/portfolio/service.py` — PortfolioService with DAO injection
+- `backend/services/watchlist/service.py` — WatchlistService with DAO injection
+- `backend/services/analysis/service.py` — AnalysisService with DAO injection
+- `backend/services/alerts/service.py` — AlertService with DAO injection
+- `backend/services/performance/service.py` — PerformanceService with DAO injection
+- `backend/services/schedules/service.py` — ScheduleService with DAO injection
+- `backend/services/settings/service.py` — SettingsService (refactored for DI)
+- `backend/services/backtest/service.py` — BacktestService with DAO injection
+- `backend/services/strategies/service.py` — StrategyService with DAO injection
+- `backend/services/paper_trading/service.py` — PaperTradingService with DAO injection
 - `docs/SERVICES.md` — Service layer documentation
-- `docs/DAO_PATTERN.md` — DAO module-level instance pattern guide
+- `docs/DEPENDENCY_INJECTION.md` — DI pattern guide
 
-### Files to Modify
+### Files Modified
 
-**Phase 0 (DAO Refactoring):**
-- `backend/dao/user.py` — ensure class structure and session injection
-- `backend/dao/portfolio.py` — ensure class structure and session injection
-- `backend/dao/watchlist.py` — ensure class structure and session injection
-- `backend/dao/analysis.py` — ensure class structure and session injection
-- `backend/dao/alert.py` — ensure class structure and session injection
-- `backend/dao/performance.py` — ensure class structure and session injection
-- `backend/dao/schedule.py` — ensure class structure and session injection
-- `backend/dao/settings.py` — ensure class structure and session injection (if exists)
-
-**Phase 1+ (Services Refactoring):**
-- `backend/services/__init__.py` — export all service classes and factory function
-- `backend/services/settings/service.py` — refactor to use DAO injection, inherit from BaseService
-- All endpoint files in `backend/api/` — inject services instead of calling functions
-- `backend/main.py` — initialize service layer with dependency injection
-- Test files — update to use service classes with mocked DAOs
-
-### Benefits
-
-1. **Encapsulation:** Related business logic grouped in classes
-2. **Testability:** Services can be mocked easily for testing
-3. **Reusability:** Services used across multiple endpoints
-4. **Maintainability:** Clear separation of concerns
-5. **Scalability:** Easy to add new service methods
-6. **Type Safety:** Strong typing with proper annotations
-7. **Error Handling:** Consistent error patterns across services
-8. **Documentation:** Self-documenting code with clear interfaces
-
-### Dependencies
-
-- Requires completion of Phase 4b (all endpoints defined)
-- No blocking external dependencies
-
-### Estimated Effort
-
-- **Phase 0 (DAO Refactoring):** 2-3 hours
-  - Audit existing DAO classes
-  - Standardize structure and injection pattern
-  - Create `backend/dao/__init__.py` registry
-- **Phase 1 (Service Foundation):** 2-3 hours
-  - Create `BaseService`, exception hierarchy
-  - Set up service directory structure
-- **Phase 2 (Service Classes):** 6-8 hours
-  - Implement 7 service classes with DAO injection
-  - Add docstrings and type hints
-- **Phase 3 (DI & Refactor Endpoints):** 4-6 hours
-  - Update all API endpoints
-  - Wire services into FastAPI routes
-  - Update `backend/main.py`
-- **Phase 4 (Testing):** 3-4 hours
-  - Write service unit tests with mock DAOs
-  - Update integration tests
-  - Verify existing tests still pass
-- **Phase 5 (Documentation):** 1-2 hours
-  - Create `docs/SERVICES.md`
-  - Create `docs/DAO_PATTERN.md`
-  - Update CLAUDE.md with service patterns
-- **Total: 18-26 hours (2-3 days)**
+- All files in `backend/api/` — updated to inject services via FastAPI `Depends()`
+- `backend/main.py` — no global service initialization needed (FastAPI handles DI)
+- `backend/dao/*.py` — converted to direct instantiation pattern
+- `backend/services/__init__.py` — exports all service classes
 
 ### Status
 
-⏳ **NOT STARTED** — Ready to begin once approved.
+✅ **COMPLETE** — All phases of services layer refactoring finished (Feb 2026)
 
-**Dependencies:**
-- Phase 0 (DAO refactoring) must complete before Phase 1
-- Can be done independently of all other phases
+**Deliverables:**
+- 11 service classes with full type hints and docstrings
+- BaseService foundation with common patterns
+- ServiceError exception hierarchy
+- FastAPI Depends() integration in all routes
+- Full documentation with usage examples
+- All DAOs standardized to direct instantiation pattern
+- Services fully tested with mocked DAOs
 
----
-
-## Phase 5: Backtesting & Simulation ⏳ 0% NOT STARTED
-
-Allow users to test strategies on historical data.
-
-**Planned:**
-
-- Paper trading engine
-- Historical replays
-- Performance simulation
-- Strategy builder
-
-**Dependencies:** Phase 2 (performance tracking data)
-
-**Priority:** Low
+**Impact:**
+- Improved code organization and maintainability
+- Better testability with easy service mocking
+- Clear separation between routes and business logic
+- Reusable service layer across multiple endpoints
+- Type-safe with comprehensive error handling
 
 ---
 

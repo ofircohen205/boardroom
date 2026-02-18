@@ -1,7 +1,7 @@
 import pytest
 
-from backend.ai.state.enums import Trend
-from backend.ai.tools.technical_indicators import (
+from backend.shared.ai.state.enums import Trend
+from backend.shared.ai.tools.technical_indicators import (
     calculate_ma,
     calculate_rsi,
     calculate_trend,

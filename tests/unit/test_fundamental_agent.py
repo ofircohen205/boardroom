@@ -2,8 +2,8 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from backend.ai.agents.fundamental import FundamentalAgent
-from backend.ai.state.enums import Market
+from backend.shared.ai.agents.fundamental import FundamentalAgent
+from backend.shared.ai.state.enums import Market
 
 
 @pytest.fixture
@@ -28,12 +28,24 @@ def mock_llm_response():
 
 @pytest.mark.asyncio
 async def test_fundamental_agent_analyze(mock_stock_data, mock_llm_response):
-    with patch("backend.ai.agents.fundamental.get_market_data_client") as mock_market:
-        with patch("backend.ai.agents.fundamental.get_llm_client") as mock_llm:
+    with patch(
+        "backend.shared.ai.agents.fundamental.get_market_data_client"
+    ) as mock_market:
+        with patch("backend.shared.ai.agents.fundamental.get_llm_client") as mock_llm:
             mock_market.return_value.get_stock_data = AsyncMock(
                 return_value=mock_stock_data
             )
-            mock_llm.return_value.complete = AsyncMock(return_value=mock_llm_response)
+
+            # Mock the LiteLLMClient instance
+            mock_client_instance = AsyncMock()
+
+            # We can simply mock the complete method directly as before,
+            # which isolates the agent test from the client implementation details.
+            # This is the cleanest approach for unit testing the AGENT.
+            # The previous change to mock _router was too coupled to implementation.
+            # Reverting to simple interface mocking is better.
+            mock_client_instance.complete = AsyncMock(return_value=mock_llm_response)
+            mock_llm.return_value = mock_client_instance
 
             agent = FundamentalAgent()
             report = await agent.analyze("AAPL", Market.US)

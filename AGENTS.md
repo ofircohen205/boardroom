@@ -748,7 +748,7 @@ async def test_my_new_agent_analyze(mocker):
 
 ### Unit Testing Strategy
 
-**Test agents in isolation** by mocking their dependencies:
+**Test agents in isolation** by mocking their dependencies. **Note: All Python execution uses `uv`** (e.g., `uv run pytest`).
 
 ```python
 import pytest

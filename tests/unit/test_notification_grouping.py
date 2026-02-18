@@ -8,9 +8,9 @@ from uuid import uuid4
 
 import pytest
 
-from backend.ai.state.enums import Market
-from backend.db.models import AlertCondition, NotificationType
-from backend.services.alerts.service import AlertService
+from backend.domains.notifications.services.alert_service import AlertService
+from backend.shared.ai.state.enums import Market
+from backend.shared.db.models import AlertCondition, NotificationType
 
 
 @pytest.fixture
@@ -74,7 +74,9 @@ class TestNotificationGrouping:
 
         alert_service = AlertService(mock_price_alert_dao, mock_notification_dao)
 
-        with patch("backend.api.websocket.connection_manager.connection_manager"):
+        with patch(
+            "backend.domains.analysis.api.connection_manager.connection_manager"
+        ):
             await alert_service.trigger_alert(mock_db, mock_alert, 205.0)
 
             # Should create new notification
@@ -95,7 +97,9 @@ class TestNotificationGrouping:
 
         alert_service = AlertService(mock_price_alert_dao, mock_notification_dao)
 
-        with patch("backend.api.websocket.connection_manager.connection_manager"):
+        with patch(
+            "backend.domains.analysis.api.connection_manager.connection_manager"
+        ):
             await alert_service.trigger_alert(mock_db, mock_alert, 210.0)
 
             # Should update existing notification
@@ -121,7 +125,9 @@ class TestNotificationGrouping:
 
         alert_service = AlertService(mock_price_alert_dao, mock_notification_dao)
 
-        with patch("backend.api.websocket.connection_manager.connection_manager"):
+        with patch(
+            "backend.domains.analysis.api.connection_manager.connection_manager"
+        ):
             await alert_service.trigger_alert(mock_db, mock_alert, 210.0)
 
             updated_notification = mock_notification_dao.update.call_args[0][0]
@@ -144,7 +150,9 @@ class TestNotificationGrouping:
 
         alert_service = AlertService(mock_price_alert_dao, mock_notification_dao)
 
-        with patch("backend.api.websocket.connection_manager.connection_manager"):
+        with patch(
+            "backend.domains.analysis.api.connection_manager.connection_manager"
+        ):
             await alert_service.trigger_alert(mock_db, mock_alert, 350.0)
 
             # Should create new notification (different ticker)
@@ -166,7 +174,9 @@ class TestNotificationGrouping:
 
         alert_service = AlertService(mock_price_alert_dao, mock_notification_dao)
 
-        with patch("backend.api.websocket.connection_manager.connection_manager"):
+        with patch(
+            "backend.domains.analysis.api.connection_manager.connection_manager"
+        ):
             await alert_service.trigger_alert(mock_db, mock_alert, 210.0)
 
             # Should create new notification (old one expired)
@@ -189,7 +199,9 @@ class TestNotificationGrouping:
 
         alert_service = AlertService(mock_price_alert_dao, mock_notification_dao)
 
-        with patch("backend.api.websocket.connection_manager.connection_manager"):
+        with patch(
+            "backend.domains.analysis.api.connection_manager.connection_manager"
+        ):
             await alert_service.trigger_alert(mock_db, mock_alert, 210.0)
 
             updated_notification = mock_notification_dao.update.call_args[0][0]
@@ -213,7 +225,9 @@ class TestNotificationGrouping:
 
         alert_service = AlertService(mock_price_alert_dao, mock_notification_dao)
 
-        with patch("backend.api.websocket.connection_manager.connection_manager"):
+        with patch(
+            "backend.domains.analysis.api.connection_manager.connection_manager"
+        ):
             await alert_service.trigger_alert(mock_db, mock_alert, 210.0)
 
             updated_notification = mock_notification_dao.update.call_args[0][0]

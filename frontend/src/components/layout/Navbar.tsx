@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/hooks/useTheme';
 import { NotificationBell } from '@/components/NotificationBell';
 import {
   GitCompare,
@@ -16,6 +17,8 @@ import {
   Target,
   Activity,
   Wallet,
+  Moon,
+  Sun,
 } from 'lucide-react';
 
 const navLinks = [
@@ -34,6 +37,7 @@ const navLinks = [
 export default function Navbar() {
   const location = useLocation();
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const isActive = (path: string) => {
@@ -54,7 +58,7 @@ export default function Navbar() {
           </Link>
 
           {/* Center: Desktop Navigation Links */}
-          <div className="hidden md:flex items-center space-x-1">
+          <div className="hidden md:flex items-center space-x-2">
             {navLinks.map((link) => {
               const Icon = link.icon;
               const active = isActive(link.to);
@@ -63,7 +67,7 @@ export default function Navbar() {
                   key={link.to}
                   to={link.to}
                   className={`
-                    flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors
+                    flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors whitespace-nowrap
                     ${
                       active
                         ? 'bg-primary/10 text-primary'
@@ -78,10 +82,21 @@ export default function Navbar() {
             })}
           </div>
 
-          {/* Right: NotificationBell, User, Logout */}
+          {/* Right: NotificationBell, Theme Toggle, User, Logout */}
           <div className="flex items-center space-x-3">
             {/* Notification Bell */}
             <NotificationBell />
+
+            {/* Theme Toggle */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+              className="hidden sm:flex"
+            >
+              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </Button>
 
             {/* User Email (hidden on mobile) */}
             {/* <span className="hidden lg:inline text-sm text-muted-foreground">
@@ -139,9 +154,27 @@ export default function Navbar() {
               );
             })}
 
-            {/* Mobile User Info & Logout */}
+            {/* Mobile User Info, Theme Toggle & Logout */}
             <div className="pt-4 border-t border-white/10 space-y-2">
               <div className="px-3 text-sm text-muted-foreground">{user?.email}</div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={toggleTheme}
+                className="w-full justify-start"
+              >
+                {theme === 'dark' ? (
+                  <>
+                    <Sun className="w-4 h-4 mr-2" />
+                    Light Mode
+                  </>
+                ) : (
+                  <>
+                    <Moon className="w-4 h-4 mr-2" />
+                    Dark Mode
+                  </>
+                )}
+              </Button>
               <Button
                 variant="ghost"
                 size="sm"

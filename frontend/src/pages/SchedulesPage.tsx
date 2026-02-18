@@ -1,143 +1,67 @@
-import { useState, useEffect, useCallback } from 'react';
-// import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { useAuth } from '@/contexts/AuthContext';
-import { API_BASE_URL } from '@/lib/api';
+import { useAPIClient } from '@/hooks/useAPIClient';
+import { useFetch } from '@/hooks/useFetch';
+import { useMutation } from '@/hooks/useMutation';
+import { AsyncDataDisplay, StatusBadge } from '@/components/common';
 import { Plus, Trash2, Power, Calendar, Clock } from 'lucide-react';
 import PageContainer from '@/components/layout/PageContainer';
-
-interface Schedule {
-  id: string;
-  ticker: string;
-  market: string;
-  frequency: string;
-  last_run: string | null;
-  next_run: string | null;
-  active: boolean;
-  created_at: string;
-}
+import type { CreateScheduleInput } from '@/lib/api/types';
 
 export default function SchedulesPage() {
-  const { token } = useAuth();
-  // const navigate = useNavigate();
-  const [schedules, setSchedules] = useState<Schedule[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const apiClient = useAPIClient();
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   // Form state
   const [ticker, setTicker] = useState('');
   const [market, setMarket] = useState('US');
   const [frequency, setFrequency] = useState('daily');
 
-  const fetchSchedules = useCallback(async () => {
-    if (!token) return;
+  // Fetch schedules
+  const { data: schedules, isLoading, error, refetch } = useFetch(
+    () => apiClient.schedules.list(),
+    { dependencies: [apiClient] }
+  );
 
-    setIsLoading(true);
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/schedules`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setSchedules(data);
-      } else {
-        setError('Failed to load schedules');
-      }
-    } catch (err) {
-      console.error('Failed to fetch schedules:', err);
-      setError('Failed to load schedules');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [token]);
-
-  useEffect(() => {
-    fetchSchedules();
-  }, [fetchSchedules]);
-
-  const createSchedule = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!token) return;
-
-    setError(null);
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/schedules`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          ticker: ticker.toUpperCase(),
-          market,
-          frequency,
-        }),
-      });
-
-      if (response.ok) {
-        // Reset form
+  // Create schedule mutation
+  const { mutate: createSchedule, isLoading: isCreating, error: createError } = useMutation(
+    (data: CreateScheduleInput) => apiClient.schedules.create(data),
+    {
+      onSuccess: () => {
         setTicker('');
         setShowCreateForm(false);
-        // Refresh schedules
-        fetchSchedules();
-      } else {
-        const errorData = await response.json();
-        setError(errorData.detail || 'Failed to create schedule');
-      }
-    } catch (err) {
-      console.error('Failed to create schedule:', err);
-      setError('Failed to create schedule');
+        refetch();
+      },
     }
-  };
+  );
 
-  const deleteSchedule = async (scheduleId: string) => {
-    if (!token) return;
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/schedules/${scheduleId}`, {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        setSchedules((prev) => prev.filter((s) => s.id !== scheduleId));
-      }
-    } catch (err) {
-      console.error('Failed to delete schedule:', err);
+  // Delete schedule mutation
+  const { mutate: deleteSchedule } = useMutation(
+    (id: string) => apiClient.schedules.delete(id),
+    {
+      onSuccess: () => refetch(),
     }
-  };
+  );
 
-  const toggleSchedule = async (scheduleId: string, currentActive: boolean) => {
-    if (!token) return;
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/schedules/${scheduleId}/toggle`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ active: !currentActive }),
-      });
-
-      if (response.ok) {
-        const updatedSchedule = await response.json();
-        setSchedules((prev) => prev.map((s) => (s.id === scheduleId ? updatedSchedule : s)));
-      }
-    } catch (err) {
-      console.error('Failed to toggle schedule:', err);
+  // Toggle schedule mutation
+  const { mutate: toggleSchedule } = useMutation(
+    ({ id, active }: { id: string; active: boolean }) => apiClient.schedules.toggle(id, active),
+    {
+      onSuccess: () => refetch(),
     }
+  );
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    createSchedule({
+      ticker: ticker.toUpperCase(),
+      market,
+      frequency,
+      time: '08:00', // Default time (8 AM ET)
+    });
   };
 
   const getFrequencyLabel = (frequency: string) => {
@@ -172,7 +96,7 @@ export default function SchedulesPage() {
       month: 'short',
       day: 'numeric',
       hour: 'numeric',
-      minute: '2-digit'
+      minute: '2-digit',
     });
   };
 
@@ -209,7 +133,7 @@ export default function SchedulesPage() {
         {showCreateForm && (
           <Card className="p-6">
             <h2 className="text-lg font-semibold mb-4">Create New Schedule</h2>
-            <form onSubmit={createSchedule} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="ticker">Ticker Symbol</Label>
@@ -250,9 +174,9 @@ export default function SchedulesPage() {
                 </div>
               </div>
 
-              {error && (
+              {createError && (
                 <div className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded p-3">
-                  {error}
+                  {createError}
                 </div>
               )}
 
@@ -260,85 +184,98 @@ export default function SchedulesPage() {
                 <Button type="button" variant="outline" onClick={() => setShowCreateForm(false)}>
                   Cancel
                 </Button>
-                <Button type="submit">Create Schedule</Button>
+                <Button type="submit" disabled={isCreating}>
+                  {isCreating ? 'Creating...' : 'Create Schedule'}
+                </Button>
               </div>
             </form>
           </Card>
         )}
 
         {/* Schedules List */}
-        {isLoading ? (
-          <div className="text-center py-12 text-muted-foreground">Loading schedules...</div>
-        ) : schedules.length === 0 ? (
-          <div className="text-center py-12">
-            <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">No scheduled analyses yet. Create your first schedule to automate stock analysis!</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {schedules.map((schedule) => (
-              <Card key={schedule.id} className="p-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 space-y-2">
+        <AsyncDataDisplay
+          isLoading={isLoading}
+          error={error}
+          data={schedules}
+          emptyMessage="No scheduled analyses yet. Create your first schedule to automate stock analysis!"
+          emptyIcon={Calendar}
+          onRetry={refetch}
+        >
+          {(schedules) => (
+            <div className="space-y-3">
+              {schedules.map((schedule) => (
+                <Card key={schedule.id} className="p-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-lg">
+                          {schedule.ticker} ({schedule.market})
+                        </h3>
+                        <StatusBadge
+                          type="schedule"
+                          status={schedule.active ? 'active' : 'paused'}
+                          size="sm"
+                        />
+                      </div>
+
+                      <p className="text-sm text-muted-foreground">
+                        Frequency:{' '}
+                        <span className="font-medium text-foreground">
+                          {getFrequencyLabel(schedule.frequency)}
+                        </span>
+                      </p>
+
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          <span>
+                            Next run:{' '}
+                            <span className="font-medium text-foreground">
+                              {formatNextRun(schedule.next_run)}
+                            </span>
+                          </span>
+                        </div>
+                        <div>
+                          Last run: <span className="font-medium">{formatLastRun(schedule.last_run)}</span>
+                        </div>
+                      </div>
+                    </div>
+
                     <div className="flex items-center gap-2">
-                      <h3 className="font-semibold text-lg">
-                        {schedule.ticker} ({schedule.market})
-                      </h3>
-                      {schedule.active ? (
-                        <Badge variant="default" className="bg-green-600">
-                          Active
-                        </Badge>
-                      ) : (
-                        <Badge variant="secondary">Paused</Badge>
-                      )}
-                    </div>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => toggleSchedule({ id: schedule.id, active: !schedule.active })}
+                        title={schedule.active ? 'Pause Schedule' : 'Activate Schedule'}
+                        className={schedule.active ? '' : 'opacity-50'}
+                      >
+                        <Power className="w-4 h-4" />
+                      </Button>
 
-                    <p className="text-sm text-muted-foreground">
-                      Frequency: <span className="font-medium text-foreground">{getFrequencyLabel(schedule.frequency)}</span>
-                    </p>
-
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        <span>Next run: <span className="font-medium text-foreground">{formatNextRun(schedule.next_run)}</span></span>
-                      </div>
-                      <div>
-                        Last run: <span className="font-medium">{formatLastRun(schedule.last_run)}</span>
-                      </div>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => deleteSchedule(schedule.id)}
+                        title="Delete Schedule"
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </div>
                   </div>
-
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => toggleSchedule(schedule.id, schedule.active)}
-                      title={schedule.active ? 'Pause Schedule' : 'Activate Schedule'}
-                      className={schedule.active ? '' : 'opacity-50'}
-                    >
-                      <Power className="w-4 h-4" />
-                    </Button>
-
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => deleteSchedule(schedule.id)}
-                      title="Delete Schedule"
-                      className="text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-        )}
+                </Card>
+              ))}
+            </div>
+          )}
+        </AsyncDataDisplay>
 
         {/* Info Card */}
         <Card className="p-4 bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
           <p className="text-sm text-blue-900 dark:text-blue-100">
-            <strong>Note:</strong> Scheduled analyses run automatically at your chosen frequency. Daily schedules run at 8 AM ET before market open (Mon-Fri). Weekly schedules run on Monday at 8 AM ET. Hourly schedules run every hour during market hours (10 AM - 4 PM ET). You'll receive notifications when analyses complete. You can have up to 50 active schedules.
+            <strong>Note:</strong> Scheduled analyses run automatically at your chosen frequency. Daily schedules run
+            at 8 AM ET before market open (Mon-Fri). Weekly schedules run on Monday at 8 AM ET. Hourly schedules run
+            every hour during market hours (10 AM - 4 PM ET). You'll receive notifications when analyses complete. You
+            can have up to 50 active schedules.
           </p>
         </Card>
       </div>

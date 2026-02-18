@@ -5,7 +5,7 @@ from datetime import datetime
 from unittest.mock import patch
 from zoneinfo import ZoneInfo
 
-from backend.jobs.alert_checker import (
+from backend.shared.jobs.alert_checker import (
     is_market_hours,
     is_tase_market_hours,
     is_us_market_hours,
@@ -20,7 +20,7 @@ class TestUSMarketHours:
         et_tz = ZoneInfo("America/New_York")
         monday_10am = datetime(2026, 2, 9, 10, 0, 0, tzinfo=et_tz)
 
-        with patch("backend.jobs.alert_checker.datetime") as mock_datetime:
+        with patch("backend.shared.jobs.alert_checker.datetime") as mock_datetime:
             mock_datetime.now.return_value = monday_10am
 
             assert is_us_market_hours() is True
@@ -30,7 +30,7 @@ class TestUSMarketHours:
         et_tz = ZoneInfo("America/New_York")
         monday_9am = datetime(2026, 2, 9, 9, 0, 0, tzinfo=et_tz)
 
-        with patch("backend.jobs.alert_checker.datetime") as mock_datetime:
+        with patch("backend.shared.jobs.alert_checker.datetime") as mock_datetime:
             mock_datetime.now.return_value = monday_9am
 
             assert is_us_market_hours() is False
@@ -40,7 +40,7 @@ class TestUSMarketHours:
         et_tz = ZoneInfo("America/New_York")
         monday_930am = datetime(2026, 2, 9, 9, 30, 0, tzinfo=et_tz)
 
-        with patch("backend.jobs.alert_checker.datetime") as mock_datetime:
+        with patch("backend.shared.jobs.alert_checker.datetime") as mock_datetime:
             mock_datetime.now.return_value = monday_930am
 
             assert is_us_market_hours() is True
@@ -50,7 +50,7 @@ class TestUSMarketHours:
         et_tz = ZoneInfo("America/New_York")
         monday_4pm = datetime(2026, 2, 9, 16, 0, 0, tzinfo=et_tz)
 
-        with patch("backend.jobs.alert_checker.datetime") as mock_datetime:
+        with patch("backend.shared.jobs.alert_checker.datetime") as mock_datetime:
             mock_datetime.now.return_value = monday_4pm
 
             assert is_us_market_hours() is False
@@ -60,7 +60,7 @@ class TestUSMarketHours:
         et_tz = ZoneInfo("America/New_York")
         monday_5pm = datetime(2026, 2, 9, 17, 0, 0, tzinfo=et_tz)
 
-        with patch("backend.jobs.alert_checker.datetime") as mock_datetime:
+        with patch("backend.shared.jobs.alert_checker.datetime") as mock_datetime:
             mock_datetime.now.return_value = monday_5pm
 
             assert is_us_market_hours() is False
@@ -70,7 +70,7 @@ class TestUSMarketHours:
         et_tz = ZoneInfo("America/New_York")
         saturday_10am = datetime(2026, 2, 14, 10, 0, 0, tzinfo=et_tz)
 
-        with patch("backend.jobs.alert_checker.datetime") as mock_datetime:
+        with patch("backend.shared.jobs.alert_checker.datetime") as mock_datetime:
             mock_datetime.now.return_value = saturday_10am
 
             assert is_us_market_hours() is False
@@ -80,7 +80,7 @@ class TestUSMarketHours:
         et_tz = ZoneInfo("America/New_York")
         sunday_10am = datetime(2026, 2, 15, 10, 0, 0, tzinfo=et_tz)
 
-        with patch("backend.jobs.alert_checker.datetime") as mock_datetime:
+        with patch("backend.shared.jobs.alert_checker.datetime") as mock_datetime:
             mock_datetime.now.return_value = sunday_10am
 
             assert is_us_market_hours() is False
@@ -94,7 +94,7 @@ class TestTASEMarketHours:
         ist_tz = ZoneInfo("Asia/Jerusalem")
         monday_11am = datetime(2026, 2, 9, 11, 0, 0, tzinfo=ist_tz)
 
-        with patch("backend.jobs.alert_checker.datetime") as mock_datetime:
+        with patch("backend.shared.jobs.alert_checker.datetime") as mock_datetime:
             mock_datetime.now.return_value = monday_11am
 
             assert is_tase_market_hours() is True
@@ -104,7 +104,7 @@ class TestTASEMarketHours:
         ist_tz = ZoneInfo("Asia/Jerusalem")
         sunday_11am = datetime(2026, 2, 15, 11, 0, 0, tzinfo=ist_tz)
 
-        with patch("backend.jobs.alert_checker.datetime") as mock_datetime:
+        with patch("backend.shared.jobs.alert_checker.datetime") as mock_datetime:
             mock_datetime.now.return_value = sunday_11am
 
             assert is_tase_market_hours() is True
@@ -114,7 +114,7 @@ class TestTASEMarketHours:
         ist_tz = ZoneInfo("Asia/Jerusalem")
         thursday_11am = datetime(2026, 2, 12, 11, 0, 0, tzinfo=ist_tz)
 
-        with patch("backend.jobs.alert_checker.datetime") as mock_datetime:
+        with patch("backend.shared.jobs.alert_checker.datetime") as mock_datetime:
             mock_datetime.now.return_value = thursday_11am
 
             assert is_tase_market_hours() is True
@@ -124,7 +124,7 @@ class TestTASEMarketHours:
         ist_tz = ZoneInfo("Asia/Jerusalem")
         friday_11am = datetime(2026, 2, 13, 11, 0, 0, tzinfo=ist_tz)
 
-        with patch("backend.jobs.alert_checker.datetime") as mock_datetime:
+        with patch("backend.shared.jobs.alert_checker.datetime") as mock_datetime:
             mock_datetime.now.return_value = friday_11am
 
             assert is_tase_market_hours() is False
@@ -134,7 +134,7 @@ class TestTASEMarketHours:
         ist_tz = ZoneInfo("Asia/Jerusalem")
         saturday_11am = datetime(2026, 2, 14, 11, 0, 0, tzinfo=ist_tz)
 
-        with patch("backend.jobs.alert_checker.datetime") as mock_datetime:
+        with patch("backend.shared.jobs.alert_checker.datetime") as mock_datetime:
             mock_datetime.now.return_value = saturday_11am
 
             assert is_tase_market_hours() is False
@@ -144,7 +144,7 @@ class TestTASEMarketHours:
         ist_tz = ZoneInfo("Asia/Jerusalem")
         monday_930am = datetime(2026, 2, 9, 9, 30, 0, tzinfo=ist_tz)
 
-        with patch("backend.jobs.alert_checker.datetime") as mock_datetime:
+        with patch("backend.shared.jobs.alert_checker.datetime") as mock_datetime:
             mock_datetime.now.return_value = monday_930am
 
             assert is_tase_market_hours() is False
@@ -154,7 +154,7 @@ class TestTASEMarketHours:
         ist_tz = ZoneInfo("Asia/Jerusalem")
         monday_10am = datetime(2026, 2, 9, 10, 0, 0, tzinfo=ist_tz)
 
-        with patch("backend.jobs.alert_checker.datetime") as mock_datetime:
+        with patch("backend.shared.jobs.alert_checker.datetime") as mock_datetime:
             mock_datetime.now.return_value = monday_10am
 
             assert is_tase_market_hours() is True
@@ -164,7 +164,7 @@ class TestTASEMarketHours:
         ist_tz = ZoneInfo("Asia/Jerusalem")
         monday_445pm = datetime(2026, 2, 9, 16, 45, 0, tzinfo=ist_tz)
 
-        with patch("backend.jobs.alert_checker.datetime") as mock_datetime:
+        with patch("backend.shared.jobs.alert_checker.datetime") as mock_datetime:
             mock_datetime.now.return_value = monday_445pm
 
             assert is_tase_market_hours() is False
@@ -174,7 +174,7 @@ class TestTASEMarketHours:
         ist_tz = ZoneInfo("Asia/Jerusalem")
         monday_5pm = datetime(2026, 2, 9, 17, 0, 0, tzinfo=ist_tz)
 
-        with patch("backend.jobs.alert_checker.datetime") as mock_datetime:
+        with patch("backend.shared.jobs.alert_checker.datetime") as mock_datetime:
             mock_datetime.now.return_value = monday_5pm
 
             assert is_tase_market_hours() is False
@@ -188,7 +188,7 @@ class TestMarketHoursDispatch:
         et_tz = ZoneInfo("America/New_York")
         monday_10am = datetime(2026, 2, 9, 10, 0, 0, tzinfo=et_tz)
 
-        with patch("backend.jobs.alert_checker.datetime") as mock_datetime:
+        with patch("backend.shared.jobs.alert_checker.datetime") as mock_datetime:
             mock_datetime.now.return_value = monday_10am
 
             assert is_market_hours("US") is True
@@ -198,7 +198,7 @@ class TestMarketHoursDispatch:
         ist_tz = ZoneInfo("Asia/Jerusalem")
         monday_11am = datetime(2026, 2, 9, 11, 0, 0, tzinfo=ist_tz)
 
-        with patch("backend.jobs.alert_checker.datetime") as mock_datetime:
+        with patch("backend.shared.jobs.alert_checker.datetime") as mock_datetime:
             mock_datetime.now.return_value = monday_11am
 
             assert is_market_hours("TASE") is True
@@ -208,7 +208,7 @@ class TestMarketHoursDispatch:
         et_tz = ZoneInfo("America/New_York")
         monday_10am = datetime(2026, 2, 9, 10, 0, 0, tzinfo=et_tz)
 
-        with patch("backend.jobs.alert_checker.datetime") as mock_datetime:
+        with patch("backend.shared.jobs.alert_checker.datetime") as mock_datetime:
             mock_datetime.now.return_value = monday_10am
 
             assert is_market_hours("UNKNOWN") is True

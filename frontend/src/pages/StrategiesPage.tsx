@@ -5,6 +5,7 @@
 import PageContainer from "@/components/layout/PageContainer";
 import { StrategyForm } from "@/components/strategies/StrategyForm";
 import { Button } from "@/components/ui/button";
+import { API_BASE_URL } from "@/lib/api";
 import {
   Card,
   CardContent,
@@ -37,7 +38,7 @@ export function StrategiesPage() {
     try {
       setIsLoading(true);
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:8000/api/strategies", {
+      const response = await fetch(`${API_BASE_URL}/api/strategies`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -57,7 +58,7 @@ export function StrategiesPage() {
   const handleCreate = async (data: StrategyCreate) => {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:8000/api/strategies", {
+      const response = await fetch(`${API_BASE_URL}/api/strategies`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -79,7 +80,7 @@ export function StrategiesPage() {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:8000/api/strategies/${strategyId}`,
+        `${API_BASE_URL}/api/strategies/${strategyId}`,
         {
           method: "PUT",
           headers: {
@@ -108,7 +109,7 @@ export function StrategiesPage() {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:8000/api/strategies/${strategyId}`,
+        `${API_BASE_URL}/api/strategies/${strategyId}`,
         {
           method: "DELETE",
           headers: {

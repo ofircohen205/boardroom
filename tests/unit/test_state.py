@@ -1,4 +1,4 @@
-from backend.ai.state.enums import (
+from backend.shared.ai.state.enums import (
     Action,
     AgentType,
     Market,

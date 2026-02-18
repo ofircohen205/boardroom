@@ -48,3 +48,7 @@ Thumbs.db
 
 # Secrets
 .secrets.baseline
+
+
+# Tmp
+tmp/

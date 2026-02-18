@@ -6,7 +6,7 @@ import os
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from backend.db.models import Base
+from backend.shared.db.models import Base, User
 
 # Test database URL for integration tests (PostgreSQL)
 TEST_DATABASE_URL = os.getenv(
@@ -61,3 +61,22 @@ async def test_db_session(request):
         await conn.run_sync(Base.metadata.drop_all)
 
     await engine.dispose()
+
+
+@pytest_asyncio.fixture
+async def test_user(test_db_session: AsyncSession) -> User:
+    """Create a test user."""
+    from backend.shared.core.security import get_password_hash
+    from backend.shared.db.models import User
+
+    user = User(
+        email="test@example.com",
+        first_name="Test",
+        last_name="User",
+        password_hash=get_password_hash("password"),
+        is_active=True,
+    )
+    test_db_session.add(user)
+    await test_db_session.commit()
+    await test_db_session.refresh(user)
+    return user

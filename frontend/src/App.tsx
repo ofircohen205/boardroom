@@ -1,6 +1,8 @@
 import type { ReactElement } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+import { APIProvider } from '@/contexts/APIContext';
+import { ThemeProvider } from '@/contexts/ThemeContext';
 import { Dashboard } from "@/components/Dashboard";
 import AuthPage from '@/pages/AuthPage';
 import PortfolioPage from '@/pages/PortfolioPage';
@@ -36,11 +38,13 @@ const ProtectedRoute = ({ children }: { children: ReactElement }) => {
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <Routes>
-          {/* Auth page - no layout */}
-          <Route path="/auth" element={<AuthPage />} />
+    <ThemeProvider>
+      <AuthProvider>
+        <APIProvider>
+          <Router>
+            <Routes>
+              {/* Auth page - no layout */}
+              <Route path="/auth" element={<AuthPage />} />
 
           {/* Authenticated routes - use AppLayout */}
           <Route element={<AppLayout />}>
@@ -97,7 +101,9 @@ function App() {
           </Route>
         </Routes>
       </Router>
+      </APIProvider>
     </AuthProvider>
+    </ThemeProvider>
   );
 }
 

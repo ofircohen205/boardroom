@@ -17,7 +17,7 @@ repos:
 
   # Python formatting & linting
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.0
+    rev: v0.15.1
     hooks:
       - id: ruff-format
       - id: ruff
@@ -38,8 +38,13 @@ repos:
   # This is because frontend has its own package.json and dependencies
   # ESLint is called separately: cd frontend && npm run lint
 
-  # Secrets detection (using built-in private key detection instead)
-  # Note: Full detect-secrets integration can be added in CI/CD phase
+  # Secrets detection
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        args: ['--baseline', '.secrets.baseline']
+        exclude: package.lock.json
 
 default_language_version:
   python: python3.13
