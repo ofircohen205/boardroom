@@ -1,27 +1,24 @@
-from unittest.mock import patch
 
-from backend.ai.agents.base import (
-    AnthropicClient,
-    GeminiClient,
-    OpenAIClient,
+from backend.shared.ai.agents.base import (
+    LiteLLMClient,
     get_llm_client,
 )
-from backend.core.enums import LLMProvider
+from backend.shared.core.enums import LLMProvider
 
 
 def test_get_llm_client_anthropic():
-    with patch("backend.ai.agents.base.anthropic"):
-        client = get_llm_client(LLMProvider.ANTHROPIC)
-        assert isinstance(client, AnthropicClient)
+    client = get_llm_client(LLMProvider.ANTHROPIC)
+    assert isinstance(client, LiteLLMClient)
+    assert client.model_name == "sonnet"
 
 
 def test_get_llm_client_openai():
-    with patch("backend.ai.agents.base.openai"):
-        client = get_llm_client(LLMProvider.OPENAI)
-        assert isinstance(client, OpenAIClient)
+    client = get_llm_client(LLMProvider.OPENAI)
+    assert isinstance(client, LiteLLMClient)
+    assert client.model_name == "gpt-4o"
 
 
 def test_get_llm_client_gemini():
-    with patch("backend.ai.agents.base.genai"):
-        client = get_llm_client(LLMProvider.GEMINI)
-        assert isinstance(client, GeminiClient)
+    client = get_llm_client(LLMProvider.GEMINI)
+    assert isinstance(client, LiteLLMClient)
+    assert client.model_name == "gemini-flash"

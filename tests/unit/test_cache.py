@@ -3,7 +3,7 @@ import asyncio
 import pytest
 import pytest_asyncio
 
-from backend.core.cache import RedisCache, cached, get_cache
+from backend.shared.core.cache import RedisCache, cached, get_cache
 
 
 @pytest_asyncio.fixture(autouse=True)

@@ -8,9 +8,9 @@ from uuid import uuid4
 
 import pytest
 
-from backend.ai.state.enums import Market
-from backend.db.models import AlertCondition, NotificationType
-from backend.services.alerts.service import AlertService
+from backend.domains.notifications.services.alert_service import AlertService
+from backend.shared.ai.state.enums import Market
+from backend.shared.db.models import AlertCondition, NotificationType
 
 
 @pytest.fixture

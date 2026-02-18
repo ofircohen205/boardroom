@@ -30,6 +30,14 @@ This document covers security considerations and features for the **Boardroom** 
 - **Context**: `AuthContext` manages the token lifecycle.
 - **Future Improvement**: Move to `HttpOnly` cookies to mitigate XSS risks.
 
+## Secret Management
+
+### Backend Configuration
+
+- **Type Safety**: All sensitive configuration variables in `backend/core/settings.py` use Pydantic's `SecretStr`.
+- **Usage**: Secrets must be accessed via `.get_secret_value()` to prevent accidental exposure in logs or print statements.
+- **Prevention**: Pre-commit hooks include `detect-secrets` to scan for high-entropy strings and prevent committing secrets to the repository.
+
 ## Data Protection
 
 ### Database

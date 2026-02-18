@@ -7,10 +7,10 @@ from unittest.mock import AsyncMock, patch
 import pytest
 import pytest_asyncio
 
-from backend.ai.state.enums import Market
-from backend.dao.alerts import NotificationDAO, PriceAlertDAO
-from backend.db.models import AlertCondition, NotificationType, User
-from backend.jobs.alert_checker import check_price_alerts
+from backend.shared.ai.state.enums import Market
+from backend.shared.dao.alerts import NotificationDAO, PriceAlertDAO
+from backend.shared.db.models import AlertCondition, NotificationType, User
+from backend.shared.jobs.alert_checker import check_price_alerts
 
 
 @pytest.mark.asyncio

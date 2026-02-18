@@ -1,11 +1,11 @@
 import pytest
 
-from backend.ai.state.enums import Market
-from backend.ai.tools.market_data import (
+from backend.shared.ai.state.enums import Market
+from backend.shared.ai.tools.market_data import (
     YahooFinanceClient,
     get_market_data_client,
 )
-from backend.core.enums import MarketDataProvider
+from backend.shared.core.enums import MarketDataProvider
 
 
 def test_get_market_data_client_yahoo():

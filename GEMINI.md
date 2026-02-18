@@ -306,6 +306,13 @@ AgentState = {
    - All work should be done in feature branches
    - Use pull requests for code review before merging
 
+3. **Code Review:**
+   - All code changes are subject to automated code review (via hooks)
+   - Code review runs twice:
+     - After completing major code changes
+     - Before every Git commit (blocks commits that fail review)
+   - Address code review feedback before committing
+
 ### AI/Data Project Specific Guidelines
 
 > **Critical for Data Analysis, Model Training, and Simulations:**
@@ -499,6 +506,7 @@ uv run pytest tests/unit/test_agents.py::test_fundamental_agent -v
 
 **Testing Philosophy:**
 
+- **All Python execution uses `uv`** (not bare `pytest` or `python`)
 - Unit test each agent independently with mocked tools
 - Integration test the full workflow with real database queries
 - Mock external APIs (Yahoo Finance, Exa, LLM providers)
@@ -522,7 +530,7 @@ uv run pytest tests/unit/test_agents.py::test_fundamental_agent -v
 
 - Ensure test database is separate from dev: use `TEST_DATABASE_URL`
 - Check that mocks are set up correctly
-- Run individual test to isolate: `pytest tests/test_file.py::test_name -v`
+- Run individual test to isolate: `uv run pytest tests/test_file.py::test_name -v`
 
 ### WebSocket connection issues
 

@@ -12,3 +12,21 @@ export async function fetchAPI(endpoint: string, options?: RequestInit) {
 
   return response.json();
 }
+
+// Helper to build API URLs (for cases where fetch isn't used directly)
+export function apiUrl(endpoint: string): string {
+  // Ensure endpoint starts with /
+  const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  return `${API_BASE_URL}${normalizedEndpoint}`;
+}
+
+// Helper for authenticated requests
+export async function fetchAPIAuthenticated(endpoint: string, token: string, options?: RequestInit) {
+  return fetchAPI(endpoint, {
+    ...options,
+    headers: {
+      ...options?.headers,
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+}

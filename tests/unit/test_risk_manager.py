@@ -2,13 +2,13 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from backend.ai.agents.risk_manager import RiskManagerAgent, calculate_var_95
-from backend.ai.state.agent_state import (
+from backend.shared.ai.agents.risk_manager import RiskManagerAgent, calculate_var_95
+from backend.shared.ai.state.agent_state import (
     FundamentalReport,
     SentimentReport,
     TechnicalReport,
 )
-from backend.ai.state.enums import Trend
+from backend.shared.ai.state.enums import Trend
 
 
 @pytest.fixture

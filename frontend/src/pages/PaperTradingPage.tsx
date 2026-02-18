@@ -4,6 +4,7 @@
 
 import PageContainer from "@/components/layout/PageContainer";
 import { Button } from "@/components/ui/button";
+import { API_BASE_URL } from "@/lib/api";
 import {
   Card,
   CardContent,
@@ -51,7 +52,7 @@ export function PaperTradingPage() {
   const fetchAccounts = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:8000/api/paper/accounts", {
+      const response = await fetch(`${API_BASE_URL}/api/paper/accounts`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (response.ok) {
@@ -71,7 +72,7 @@ export function PaperTradingPage() {
   const fetchStrategies = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:8000/api/strategies", {
+      const response = await fetch(`${API_BASE_URL}/api/strategies`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (response.ok) {
@@ -92,7 +93,7 @@ export function PaperTradingPage() {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:8000/api/paper/accounts/${accountId}?include_positions=true`,
+        `${API_BASE_URL}/api/paper/accounts/${accountId}?include_positions=true`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -119,7 +120,7 @@ export function PaperTradingPage() {
   const handleCreateAccount = async (data: PaperAccountCreate) => {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:8000/api/paper/accounts", {
+      const response = await fetch(`${API_BASE_URL}/api/paper/accounts`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -142,7 +143,7 @@ export function PaperTradingPage() {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:8000/api/paper/accounts/${selectedAccount.id}/trades`,
+        `${API_BASE_URL}/api/paper/accounts/${selectedAccount.id}/trades`,
         {
           method: "POST",
           headers: {

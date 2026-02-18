@@ -1,40 +1,54 @@
-import { useState, useEffect } from "react";
-// import { useNavigate, useSearchParams } from "react-router-dom";
-import { useSearchParams } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { useAPIClient } from '@/contexts/APIContext';
+import { useFetch } from '@/hooks/useFetch';
+import { useMutation } from '@/hooks/useMutation';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import {
-  Loader2,
-  Trophy,
-  BarChart3,
-  X,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import type { ComparisonResult, Sector } from "@/types/comparison";
-import { RelativePerformanceChart } from "@/components/RelativePerformanceChart";
-import { ComparisonTable } from "@/components/ComparisonTable";
-import { fetchAPI } from "@/lib/api";
-import PageContainer from "@/components/layout/PageContainer";
+} from '@/components/ui/select';
+import { Loader2, Trophy, BarChart3, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import type { ComparisonResult } from '@/lib/api/comparison';
+import { RelativePerformanceChart } from '@/components/RelativePerformanceChart';
+import { ComparisonTable } from '@/components/ComparisonTable';
+import PageContainer from '@/components/layout/PageContainer';
 
 export function ComparePage() {
-//   const navigate = useNavigate();
+  const apiClient = useAPIClient();
   const [searchParams] = useSearchParams();
-  const [mode, setMode] = useState<"manual" | "sector">("manual");
+  const [mode, setMode] = useState<'manual' | 'sector'>('manual');
   const [tickers, setTickers] = useState<string[]>([]);
-  const [currentTicker, setCurrentTicker] = useState("");
-  const [selectedSector, setSelectedSector] = useState<string>("");
-  const [sectors, setSectors] = useState<Sector[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [currentTicker, setCurrentTicker] = useState('');
+  const [selectedSector, setSelectedSector] = useState<string>('');
   const [comparison, setComparison] = useState<ComparisonResult | null>(null);
-  const [error, setError] = useState<string | null>(null);
+
+  // Fetch available sectors
+  const { data: sectors } = useFetch(() => apiClient.comparison.getSectors(), {
+    dependencies: [apiClient],
+  });
+
+  // Compare stocks mutation
+  const { mutate: compareStocks, isLoading, error } = useMutation(
+    async () => {
+      if (mode === 'manual') {
+        return apiClient.comparison.compareStocks(tickers, 'US');
+      } else {
+        return apiClient.comparison.analyzeSector(selectedSector, 5, 'US');
+      }
+    },
+    {
+      onSuccess: (result) => {
+        setComparison(result);
+      },
+    }
+  );
 
   // Pre-fill tickers from URL query parameters
   useEffect(() => {
@@ -42,7 +56,10 @@ export function ComparePage() {
     const multipleTickers = searchParams.get('tickers');
 
     if (multipleTickers) {
-      const tickerList = multipleTickers.split(',').map(t => t.trim().toUpperCase()).filter(Boolean);
+      const tickerList = multipleTickers
+        .split(',')
+        .map((t) => t.trim().toUpperCase())
+        .filter(Boolean);
       if (tickerList.length > 0) {
         setTickers(tickerList.slice(0, 4)); // Max 4 tickers
       }
@@ -57,18 +74,11 @@ export function ComparePage() {
     }
   }, [searchParams]);
 
-  // Fetch available sectors
-  useEffect(() => {
-    fetchAPI("/api/compare/sectors")
-      .then((data) => setSectors(data.sectors || []))
-      .catch(console.error);
-  }, []);
-
   const addTicker = () => {
     const ticker = currentTicker.trim().toUpperCase();
     if (ticker && !tickers.includes(ticker) && tickers.length < 4) {
       setTickers([...tickers, ticker]);
-      setCurrentTicker("");
+      setCurrentTicker('');
     }
   };
 
@@ -76,47 +86,10 @@ export function ComparePage() {
     setTickers(tickers.filter((t) => t !== ticker));
   };
 
-  const runComparison = async () => {
-    if (mode === "manual" && tickers.length < 2) {
-      setError("Please add at least 2 tickers to compare");
-      return;
-    }
-
-    if (mode === "sector" && !selectedSector) {
-      setError("Please select a sector");
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-    setComparison(null);
-
-    try {
-      const endpoint =
-        mode === "manual" ? "/api/compare/stocks" : "/api/compare/sector";
-
-      const body =
-        mode === "manual"
-          ? { tickers, market: "US" }
-          : { sector: selectedSector, limit: 5, market: "US" };
-
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-
-      if (!response.ok) {
-        throw new Error("Comparison failed");
-      }
-
-      const result = await response.json();
-      setComparison(result);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Comparison failed");
-    } finally {
-      setIsLoading(false);
-    }
+  const runComparison = () => {
+    if (mode === 'manual' && tickers.length < 2) return;
+    if (mode === 'sector' && !selectedSector) return;
+    compareStocks();
   };
 
   return (
@@ -136,22 +109,22 @@ export function ComparePage() {
               {/* Mode Toggle */}
               <div className="flex gap-2">
                 <Button
-                  variant={mode === "manual" ? "default" : "outline"}
-                  onClick={() => setMode("manual")}
+                  variant={mode === 'manual' ? 'default' : 'outline'}
+                  onClick={() => setMode('manual')}
                   className="flex-1"
                 >
                   Manual Selection
                 </Button>
                 <Button
-                  variant={mode === "sector" ? "default" : "outline"}
-                  onClick={() => setMode("sector")}
+                  variant={mode === 'sector' ? 'default' : 'outline'}
+                  onClick={() => setMode('sector')}
                   className="flex-1"
                 >
                   Sector Analysis
                 </Button>
               </div>
 
-              {mode === "manual" ? (
+              {mode === 'manual' ? (
                 <div className="space-y-4">
                   {/* Ticker Input */}
                   <div className="flex gap-2">
@@ -159,15 +132,12 @@ export function ComparePage() {
                       type="text"
                       value={currentTicker}
                       onChange={(e) => setCurrentTicker(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && addTicker()}
+                      onKeyDown={(e) => e.key === 'Enter' && addTicker()}
                       placeholder="Enter ticker (e.g., AAPL)"
                       className="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
                       maxLength={10}
                     />
-                    <Button
-                      onClick={addTicker}
-                      disabled={!currentTicker.trim() || tickers.length >= 4}
-                    >
+                    <Button onClick={addTicker} disabled={!currentTicker.trim() || tickers.length >= 4}>
                       Add
                     </Button>
                   </div>
@@ -176,16 +146,9 @@ export function ComparePage() {
                   {tickers.length > 0 && (
                     <div className="flex flex-wrap gap-2">
                       {tickers.map((ticker) => (
-                        <Badge
-                          key={ticker}
-                          variant="outline"
-                          className="gap-2 px-3 py-1 text-sm"
-                        >
+                        <Badge key={ticker} variant="outline" className="gap-2 px-3 py-1 text-sm">
                           {ticker}
-                          <button
-                            onClick={() => removeTicker(ticker)}
-                            className="hover:text-destructive"
-                          >
+                          <button onClick={() => removeTicker(ticker)} className="hover:text-destructive">
                             <X className="h-3 w-3" />
                           </button>
                         </Badge>
@@ -193,9 +156,7 @@ export function ComparePage() {
                     </div>
                   )}
 
-                  <p className="text-xs text-muted-foreground">
-                    Add 2-4 tickers to compare
-                  </p>
+                  <p className="text-xs text-muted-foreground">Add 2-4 tickers to compare</p>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -204,16 +165,14 @@ export function ComparePage() {
                       <SelectValue placeholder="Select a sector" />
                     </SelectTrigger>
                     <SelectContent>
-                      {sectors.map((sector) => (
+                      {sectors?.map((sector) => (
                         <SelectItem key={sector.key} value={sector.key}>
                           {sector.name} ({sector.ticker_count} stocks)
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  <p className="text-xs text-muted-foreground">
-                    Analyzes top 5 stocks in the selected sector
-                  </p>
+                  <p className="text-xs text-muted-foreground">Analyzes top 5 stocks in the selected sector</p>
                 </div>
               )}
 
@@ -226,9 +185,7 @@ export function ComparePage() {
               <Button
                 onClick={runComparison}
                 disabled={
-                  isLoading ||
-                  (mode === "manual" && tickers.length < 2) ||
-                  (mode === "sector" && !selectedSector)
+                  isLoading || (mode === 'manual' && tickers.length < 2) || (mode === 'sector' && !selectedSector)
                 }
                 className="w-full gap-2"
                 size="lg"
@@ -261,29 +218,22 @@ export function ComparePage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-primary mb-2">
-                  {comparison.best_pick}
-                </div>
-                <p className="text-muted-foreground">
-                  {comparison.comparison_summary}
-                </p>
+                <div className="text-3xl font-bold text-primary mb-2">{comparison.best_pick}</div>
+                <p className="text-muted-foreground">{comparison.comparison_summary}</p>
               </CardContent>
             </Card>
 
             {/* Price History Chart */}
-            {comparison.price_histories &&
-              Object.keys(comparison.price_histories).length > 0 && (
-                <Card className="glass">
-                  <CardHeader>
-                    <CardTitle>Price Performance Comparison</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <RelativePerformanceChart
-                      data={comparison.price_histories}
-                    />
-                  </CardContent>
-                </Card>
-              )}
+            {comparison.price_histories && Object.keys(comparison.price_histories).length > 0 && (
+              <Card className="glass">
+                <CardHeader>
+                  <CardTitle>Price Performance Comparison</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <RelativePerformanceChart data={comparison.price_histories} />
+                </CardContent>
+              </Card>
+            )}
 
             {/* Rankings */}
             <Card className="glass">
@@ -295,50 +245,37 @@ export function ComparePage() {
                   <div
                     key={ranking.ticker}
                     className={cn(
-                      "p-4 rounded-lg border transition-colors",
-                      ranking.rank === 1
-                        ? "bg-primary/10 border-primary/30"
-                        : "bg-white/5 border-white/10"
+                      'p-4 rounded-lg border transition-colors',
+                      ranking.rank === 1 ? 'bg-primary/10 border-primary/30' : 'bg-white/5 border-white/10'
                     )}
                   >
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex items-center gap-3">
                         <div
                           className={cn(
-                            "flex items-center justify-center w-8 h-8 rounded-full font-bold",
-                            ranking.rank === 1
-                              ? "bg-yellow-500/20 text-yellow-500"
-                              : "bg-white/10 text-muted-foreground"
+                            'flex items-center justify-center w-8 h-8 rounded-full font-bold',
+                            ranking.rank === 1 ? 'bg-yellow-500/20 text-yellow-500' : 'bg-white/10 text-muted-foreground'
                           )}
                         >
                           {ranking.rank}
                         </div>
                         <div>
-                          <div className="font-mono font-bold text-lg">
-                            {ranking.ticker}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            Score: {ranking.score.toFixed(1)}
-                          </div>
+                          <div className="font-mono font-bold text-lg">{ranking.ticker}</div>
+                          <div className="text-xs text-muted-foreground">Score: {ranking.score.toFixed(1)}</div>
                         </div>
                       </div>
                       <Badge
                         variant="outline"
                         className={cn(
-                          ranking.decision.action === "BUY" &&
-                            "bg-success/10 text-success border-success/20",
-                          ranking.decision.action === "SELL" &&
-                            "bg-destructive/10 text-destructive border-destructive/20",
-                          ranking.decision.action === "HOLD" &&
-                            "bg-warning/10 text-warning border-warning/20"
+                          ranking.decision.action === 'BUY' && 'bg-success/10 text-success border-success/20',
+                          ranking.decision.action === 'SELL' && 'bg-destructive/10 text-destructive border-destructive/20',
+                          ranking.decision.action === 'HOLD' && 'bg-warning/10 text-warning border-warning/20'
                         )}
                       >
                         {ranking.decision.action}
                       </Badge>
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      {ranking.rationale}
-                    </p>
+                    <p className="text-sm text-muted-foreground">{ranking.rationale}</p>
                   </div>
                 ))}
               </CardContent>
@@ -365,21 +302,13 @@ export function ComparePage() {
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {Object.entries(
-                      comparison.relative_strength.relative_performance
-                    ).map(([ticker, performance]) => (
-                      <div
-                        key={ticker}
-                        className="bg-white/5 rounded-lg p-4 border border-white/10"
-                      >
+                    {Object.entries(comparison.relative_strength.relative_performance).map(([ticker, performance]) => (
+                      <div key={ticker} className="bg-white/5 rounded-lg p-4 border border-white/10">
                         <div className="font-mono font-bold mb-1">{ticker}</div>
                         <div
-                          className={cn(
-                            "text-2xl font-bold",
-                            performance > 0 ? "text-success" : "text-destructive"
-                          )}
+                          className={cn('text-2xl font-bold', performance > 0 ? 'text-success' : 'text-destructive')}
                         >
-                          {performance > 0 ? "+" : ""}
+                          {performance > 0 ? '+' : ''}
                           {performance.toFixed(2)}%
                         </div>
                       </div>
@@ -393,7 +322,7 @@ export function ComparePage() {
               onClick={() => {
                 setComparison(null);
                 setTickers([]);
-                setSelectedSector("");
+                setSelectedSector('');
               }}
               variant="outline"
               className="w-full"

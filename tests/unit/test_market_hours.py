@@ -5,7 +5,7 @@ from datetime import datetime
 from unittest.mock import patch
 from zoneinfo import ZoneInfo
 
-from backend.jobs.alert_checker import (
+from backend.shared.jobs.alert_checker import (
     is_market_hours,
     is_tase_market_hours,
     is_us_market_hours,

@@ -4,8 +4,8 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from backend.ai.state.enums import Action, AgentType, Market, WSMessageType
-from backend.ai.workflow import BoardroomGraph, create_boardroom_graph
+from backend.shared.ai.state.enums import Action, AgentType, Market, WSMessageType
+from backend.shared.ai.workflow import BoardroomGraph, create_boardroom_graph
 
 
 @pytest.mark.asyncio

@@ -15,8 +15,14 @@ Boardroom is a multi-agent financial analysis system using LangGraph. Agents pas
 **Current Status:**
 
 - ✅ Phase 0 (Core System) complete - 5-agent pipeline, WebSocket streaming
-- ✅ Backend Refactoring (95% complete) - Full services layer with dependency injection
-- ⏳ Phases 1-6 (Features) remain to be implemented
+- ✅ Phase 1 (Auth/Watchlist) complete - User authentication, portfolio management
+- ✅ Phase 2 (Performance) complete - Accuracy tracking, agent leaderboards
+- ✅ Phase 3 (Comparison) complete - Multi-stock side-by-side analysis
+- ✅ Phase 4a (Alerts) complete - Price alerts, WebSocket notifications
+- ✅ Phase 4b (Scheduled Analysis) complete - Automated analysis, TASE support
+- ✅ Phase 5 (Backtesting) complete - Historical testing, paper trading, strategy builder
+- ✅ Services Layer Refactoring complete - Class-based services with dependency injection
+- ⏳ Phase 6 (Export & Reporting) - Not yet started
 
 **Recent Changes:**
 
@@ -339,6 +345,13 @@ AgentState = {
      - Before every Git commit (blocks commits that fail review)
    - Address code review feedback before committing
 
+4. **Code Review:**
+   - All code changes are subject to automated code review (via hooks)
+   - Code review runs twice:
+     - After completing major code changes
+     - Before every Git commit (blocks commits that fail review)
+   - Address code review feedback before committing
+
 ### AI/Data Project Specific Guidelines
 
 > **Critical for Data Analysis, Model Training, and Simulations:**
@@ -438,6 +451,7 @@ from backend.ai.tools.market_data import get_market_data_client
 **Architecture:** Services encapsulate business logic between API endpoints and DAOs.
 
 **Service Injection Pattern:**
+
 ```python
 # In backend/services/dependencies.py - define factory functions
 async def get_portfolio_service(db: AsyncSession) -> PortfolioService:
@@ -455,6 +469,7 @@ async def create_portfolio(
 ```
 
 **Best Practices:**
+
 - Each service has a corresponding factory function in `backend/services/dependencies.py`
 - Services receive DAOs through constructor (constructor injection)
 - Services don't manage their own database sessions - callers pass `db` parameter
@@ -463,6 +478,7 @@ async def create_portfolio(
 - Endpoints handle service exceptions and map to HTTP status codes
 
 **Exception Handling:**
+
 ```python
 try:
     schedule = await service.create_scheduled_analysis(...)
@@ -474,6 +490,7 @@ except ScheduleError as e:
 ```
 
 **Available Services:**
+
 - `AuthService` - User registration, login, authentication
 - `PortfolioService` - Portfolio CRUD and position management
 - `WatchlistService` - Watchlist CRUD and item management
@@ -605,6 +622,7 @@ uv run pytest tests/test_agents.py::test_fundamental_agent -v
 
 **Testing Philosophy:**
 
+- **All Python execution uses `uv`** (not bare `pytest` or `python`)
 - Unit test each agent independently with mocked tools
 - Integration test the full workflow
 - Mock external APIs (Yahoo Finance, Exa, LLM providers)
@@ -628,7 +646,7 @@ uv run pytest tests/test_agents.py::test_fundamental_agent -v
 
 - Ensure test database is separate from dev: use `TEST_DATABASE_URL`
 - Check that mocks are set up correctly
-- Run individual test to isolate: `pytest tests/test_file.py::test_name -v`
+- Run individual test to isolate: `uv run pytest tests/test_file.py::test_name -v`
 
 ### WebSocket connection issues
 

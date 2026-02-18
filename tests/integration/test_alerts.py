@@ -4,9 +4,9 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from backend.ai.state.enums import Market
-from backend.db.models import AlertCondition, PriceAlert
-from backend.jobs.alert_checker import check_alert_condition, is_market_hours
+from backend.shared.ai.state.enums import Market
+from backend.shared.db.models import AlertCondition, PriceAlert
+from backend.shared.jobs.alert_checker import check_alert_condition, is_market_hours
 
 
 class TestAlertConditions:

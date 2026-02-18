@@ -1,0 +1,67 @@
+model_list:
+  # Primary: Anthropic Claude Models
+  - model_name: "haiku"
+    litellm_params:
+      model: "anthropic/claude-haiku-4-5"
+      api_key: "os.environ/ANTHROPIC_API_KEY"
+      timeout: 60
+
+  - model_name: "sonnet"
+    litellm_params:
+      model: "claude-3-5-sonnet-20240620"
+      api_key: "os.environ/ANTHROPIC_API_KEY"
+      timeout: 120
+
+  # Fallback: OpenAI GPT-4o-mini
+  - model_name: "gpt-4o-mini"
+    litellm_params:
+      model: "gpt-4o-mini"
+      api_key: "os.environ/OPENAI_API_KEY"
+      timeout: 60
+
+  - model_name: "gpt-4o"
+    litellm_params:
+      model: "gpt-4o"
+      api_key: "os.environ/OPENAI_API_KEY"
+      timeout: 120
+
+  # Google Gemini
+  - model_name: "gemini-flash"
+    litellm_params:
+      model: "gemini/gemini-2.0-flash"
+      api_key: "os.environ/GOOGLE_API_KEY"
+      timeout: 60
+
+  # Embeddings (for behavioral event semantic search)
+  - model_name: "embeddings"
+    litellm_params:
+      model: "text-embedding-3-small"
+      api_key: "os.environ/OPENAI_API_KEY"
+      timeout: 30
+
+# Router settings
+router_settings:
+  routing_strategy: "latency-based-routing"  # Route to fastest available model
+  num_retries: 2
+  timeout: 60
+  fallback_models: ["gpt-4o-mini"]  # Global fallback
+
+# LiteLLM settings
+litellm_settings:
+  # Redis cache for LLM responses
+  cache: true
+  cache_params:
+    type: redis
+    host: redis
+    port: 6379
+    ttl: 3600  # Cache for 1 hour
+
+  # Logging
+  success_callback: ["langfuse"]
+  failure_callback: ["langfuse"]
+
+  # Rate limiting (requests per minute)
+  max_parallel_requests: 10
+
+  # Cost tracking
+  budget_manager: true

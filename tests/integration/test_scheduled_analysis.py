@@ -4,8 +4,8 @@
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
-from backend.db.models import AlertFrequency
-from backend.jobs.scheduled_analyzer import calculate_next_run
+from backend.shared.db.models import AlertFrequency
+from backend.shared.jobs.scheduled_analyzer import calculate_next_run
 
 
 class TestCalculateNextRun:

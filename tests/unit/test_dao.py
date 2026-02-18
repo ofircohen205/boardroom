@@ -2,8 +2,8 @@ from datetime import datetime
 from unittest.mock import MagicMock
 from uuid import uuid4
 
-from backend.ai.state.enums import Action, AgentType, Market
-from backend.db.models import AgentReport, AnalysisSession, FinalDecision
+from backend.shared.ai.state.enums import Action, AgentType, Market
+from backend.shared.db.models import AgentReport, AnalysisSession, FinalDecision
 
 
 def test_analysis_session_creation():
@@ -50,11 +50,11 @@ def test_final_decision_creation():
 
 def test_user_dao_initialization():
     """Test UserDAO can be initialized."""
-    from backend.dao.user import UserDAO
-    from backend.db.models import User
+    from backend.shared.dao.user import UserDAO
+    from backend.shared.db.models import User
 
     mock_session = MagicMock()
-    dao = UserDAO.get_instance(mock_session)
+    dao = UserDAO(mock_session)
 
     assert dao.session == mock_session
     assert dao.model == User
@@ -62,11 +62,11 @@ def test_user_dao_initialization():
 
 def test_watchlist_dao_initialization():
     """Test WatchlistDAO can be initialized."""
-    from backend.dao.portfolio import WatchlistDAO
-    from backend.db.models import Watchlist
+    from backend.shared.dao.portfolio import WatchlistDAO
+    from backend.shared.db.models import Watchlist
 
     mock_session = MagicMock()
-    dao = WatchlistDAO.get_instance(mock_session)
+    dao = WatchlistDAO(mock_session)
 
     assert dao.session == mock_session
     assert dao.model == Watchlist
@@ -74,8 +74,8 @@ def test_watchlist_dao_initialization():
 
 def test_analysis_dao_initialization():
     """Test AnalysisDAO can be initialized."""
-    from backend.dao.analysis import AnalysisDAO
-    from backend.db.models import AnalysisSession
+    from backend.shared.dao.analysis import AnalysisDAO
+    from backend.shared.db.models import AnalysisSession
 
     mock_session = MagicMock()
     dao = AnalysisDAO(mock_session)
@@ -86,18 +86,18 @@ def test_analysis_dao_initialization():
 
 def test_performance_dao_initialization():
     """Test PerformanceDAO can be initialized."""
-    from backend.dao.performance import PerformanceDAO
-    from backend.db.models import AnalysisOutcome
+    from backend.shared.dao.performance import PerformanceDAO
+    from backend.shared.db.models import AnalysisOutcome
 
     mock_session = MagicMock()
-    dao = PerformanceDAO.get_instance(mock_session)
+    dao = PerformanceDAO(mock_session)
 
     assert dao.session == mock_session
     assert dao.model == AnalysisOutcome
 
 
 def test_dao_imports():
-    """Test all DAOs can be imported from backend.dao."""
+    """Test all DAOs can be imported from backend.shared.dao."""
     from backend.dao import (
         AnalysisDAO,
         BaseDAO,

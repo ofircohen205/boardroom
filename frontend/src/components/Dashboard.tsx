@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { TickerInput } from "@/components/TickerInput";
 import { AgentPanel } from "@/components/AgentPanel";
 import { DecisionCard } from "@/components/DecisionCard";
@@ -6,6 +6,7 @@ import { NewsFeed } from "@/components/NewsFeed";
 import { StockChart } from "@/components/StockChart";
 import { AgentPipeline } from "@/components/AgentPipeline";
 import { useWebSocket } from "@/hooks/useWebSocket";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { WatchlistSidebar } from "@/components/WatchlistSidebar";
 import { AnalysisHistory } from "@/components/AnalysisHistory";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -31,6 +32,15 @@ export function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showHistory, setShowHistory] = useState(false);
   const [analysisMode, setAnalysisMode] = useState<AnalysisMode>("standard");
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Keyboard shortcuts
+  useKeyboardShortcuts({
+    'Ctrl+k': () => searchInputRef.current?.focus(),
+    'Ctrl+h': () => setShowHistory(!showHistory),
+    'Ctrl+b': () => setSidebarOpen(!sidebarOpen),
+    'Escape': () => setShowHistory(false),
+  });
 
   const isLoading = state.activeAgents.size > 0;
   const hasStarted = state.ticker !== null;

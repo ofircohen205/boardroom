@@ -38,8 +38,13 @@ repos:
   # This is because frontend has its own package.json and dependencies
   # ESLint is called separately: cd frontend && npm run lint
 
-  # Secrets detection (using built-in private key detection instead)
-  # Note: Full detect-secrets integration can be added in CI/CD phase
+  # Secrets detection
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.4.0
+    hooks:
+      - id: detect-secrets
+        args: ['--baseline', '.secrets.baseline']
+        exclude: package.lock.json
 
 default_language_version:
   python: python3.13
