@@ -37,6 +37,7 @@ export function useMutation<TData, TVariables = void>(
   mutationFn: (variables: TVariables) => Promise<TData>,
   options: UseMutationOptions<TData> = {}
 ) {
+  const { onSuccess, onError } = options;
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -47,18 +48,19 @@ export function useMutation<TData, TVariables = void>(
 
       try {
         const result = await mutationFn(variables);
-        options.onSuccess?.(result);
+        onSuccess?.(result);
         return result;
-      } catch (err: any) {
-        const errorMsg = err.message || 'Operation failed';
+      } catch (err: unknown) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const errorMsg = (err as any).message || 'Operation failed';
         setError(errorMsg);
-        options.onError?.(errorMsg);
+        onError?.(errorMsg);
         throw err;
       } finally {
         setIsLoading(false);
       }
     },
-    [mutationFn, options.onSuccess, options.onError]
+    [mutationFn, onSuccess, onError]
   );
 
   const reset = useCallback(() => {

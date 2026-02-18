@@ -115,7 +115,7 @@ export function PaperTradingPage() {
     if (selectedAccount) {
       fetchAccountDetails(selectedAccount.id);
     }
-  }, [selectedAccount?.id, fetchAccountDetails]);
+  }, [selectedAccount, fetchAccountDetails]);
 
   const handleCreateAccount = async (data: PaperAccountCreate) => {
     try {

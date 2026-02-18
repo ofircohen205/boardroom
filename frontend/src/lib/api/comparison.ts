@@ -19,7 +19,7 @@ export interface ComparisonResult {
     };
     rationale: string;
   }>;
-  stock_data?: Record<string, any>;
+  stock_data?: Record<string, unknown>;
   price_histories?: Record<string, Array<{ time: string; close: number }>>;
   relative_strength?: {
     relative_performance: Record<string, number>;

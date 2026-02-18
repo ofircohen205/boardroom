@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { createChart } from 'lightweight-charts';
 import type { IChartApi, ISeriesApi, Time, LineData } from 'lightweight-charts';
-import { useAPIClient } from '@/contexts/APIContext';
+import { useAPIClient } from '@/hooks/useAPIClient';
 import { useFetch } from '@/hooks/useFetch';
 import { AsyncDataDisplay } from '@/components/common';
 import { TrendingUp } from 'lucide-react';

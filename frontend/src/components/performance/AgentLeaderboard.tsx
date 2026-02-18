@@ -1,4 +1,4 @@
-import { useAPIClient } from '@/contexts/APIContext';
+import { useAPIClient } from '@/hooks/useAPIClient';
 import { useFetch } from '@/hooks/useFetch';
 import { AsyncDataDisplay } from '@/components/common';
 import { Trophy } from 'lucide-react';

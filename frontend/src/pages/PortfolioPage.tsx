@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useAPIClient } from '@/contexts/APIContext';
+import { useAPIClient } from '@/hooks/useAPIClient';
 import { useFetch } from '@/hooks/useFetch';
 import { useMutation } from '@/hooks/useMutation';
 import { AsyncDataDisplay } from '@/components/common';

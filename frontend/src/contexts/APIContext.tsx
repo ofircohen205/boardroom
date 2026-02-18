@@ -1,9 +1,8 @@
-import { createContext, useContext, useMemo, type ReactNode } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { APIClient } from '@/lib/apiClient';
 import { API_BASE_URL } from '@/lib/api';
 import { useAuth } from './AuthContext';
-
-const APIContext = createContext<APIClient | null>(null);
+import { APIContext } from './api-context';
 
 interface APIProviderProps {
   children: ReactNode;
@@ -27,17 +26,4 @@ export function APIProvider({ children }: APIProviderProps) {
   );
 
   return <APIContext.Provider value={client}>{children}</APIContext.Provider>;
-}
-
-/**
- * Hook to access the API client
- *
- * @throws Error if used outside of APIProvider
- */
-export function useAPIClient(): APIClient {
-  const client = useContext(APIContext);
-  if (!client) {
-    throw new Error('useAPIClient must be used within APIProvider');
-  }
-  return client;
 }

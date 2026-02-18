@@ -1,5 +1,5 @@
 import type { Decision } from '@/types';
-import { useAPIClient } from '@/contexts/APIContext';
+import { useAPIClient } from '@/hooks/useAPIClient';
 import { useFetch } from '@/hooks/useFetch';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { Card, CardContent } from '@/components/ui/card';

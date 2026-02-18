@@ -177,6 +177,6 @@ export interface FinalDecision {
 export interface AgentReport {
   agent_type: string;
   summary: string;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   completed_at: string;
 }

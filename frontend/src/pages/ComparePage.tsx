@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useAPIClient } from '@/contexts/APIContext';
+import { useAPIClient } from '@/hooks/useAPIClient';
 import { useFetch } from '@/hooks/useFetch';
 import { useMutation } from '@/hooks/useMutation';
 import { Button } from '@/components/ui/button';
@@ -61,7 +61,15 @@ export function ComparePage() {
         .map((t) => t.trim().toUpperCase())
         .filter(Boolean);
       if (tickerList.length > 0) {
-        setTickers(tickerList.slice(0, 4)); // Max 4 tickers
+        // Only update if different to avoid cascading renders
+        const newTickers = tickerList.slice(0, 4);
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setTickers((prev) => {
+          if (JSON.stringify(prev) !== JSON.stringify(newTickers)) {
+            return newTickers;
+          }
+          return prev;
+        });
       }
     } else if (singleTicker) {
       const upperTicker = singleTicker.toUpperCase();
@@ -72,6 +80,7 @@ export function ComparePage() {
         return prev;
       });
     }
+
   }, [searchParams]);
 
   const addTicker = () => {

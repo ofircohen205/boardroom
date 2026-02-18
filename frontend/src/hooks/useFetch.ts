@@ -7,7 +7,7 @@ export interface UseFetchOptions<T> {
   /** Auto-fetch on mount (default: true) */
   immediate?: boolean;
   /** Re-fetch when dependencies change */
-  dependencies?: any[];
+  dependencies?: unknown[];
   /** Success callback */
   onSuccess?: (data: T) => void;
   /** Error callback */
@@ -31,8 +31,9 @@ export function useFetch<T>(
   fetcher: () => Promise<T>,
   options: UseFetchOptions<T> = {}
 ) {
+  const { immediate = true, dependencies = [], onSuccess, onError } = options;
   const [data, setData] = useState<T | null>(null);
-  const [isLoading, setIsLoading] = useState(options.immediate !== false);
+  const [isLoading, setIsLoading] = useState(immediate);
   const [error, setError] = useState<string | null>(null);
 
   const execute = useCallback(async () => {
@@ -42,21 +43,23 @@ export function useFetch<T>(
     try {
       const result = await fetcher();
       setData(result);
-      options.onSuccess?.(result);
-    } catch (err: any) {
-      const errorMsg = err.message || 'An error occurred';
+      onSuccess?.(result);
+    } catch (err: unknown) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const errorMsg = (err as any).message || 'An error occurred';
       setError(errorMsg);
-      options.onError?.(errorMsg);
+      onError?.(errorMsg);
     } finally {
       setIsLoading(false);
     }
-  }, [fetcher, options.onSuccess, options.onError]);
+  }, [fetcher, onSuccess, onError]);
 
   useEffect(() => {
-    if (options.immediate !== false) {
+    if (immediate) {
       execute();
     }
-  }, options.dependencies || [execute]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [...dependencies, execute, immediate]);
 
   return {
     data,

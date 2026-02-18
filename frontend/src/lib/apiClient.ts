@@ -89,7 +89,7 @@ export class APIClient {
     }
 
     // Try to parse JSON response
-    let data: any;
+    let data: unknown;
     try {
       data = await response.json();
     } catch {
@@ -108,7 +108,7 @@ export class APIClient {
       throw error;
     }
 
-    return data;
+    return data as T;
   }
 
   /**
@@ -130,7 +130,7 @@ export class APIClient {
    */
   async post<T>(
     endpoint: string,
-    data?: any,
+    data?: unknown,
     options?: RequestOptions
   ): Promise<T> {
     const response = await fetch(this.buildURL(endpoint), {
@@ -149,7 +149,7 @@ export class APIClient {
    */
   async patch<T>(
     endpoint: string,
-    data?: any,
+    data?: unknown,
     options?: RequestOptions
   ): Promise<T> {
     const response = await fetch(this.buildURL(endpoint), {
@@ -182,7 +182,7 @@ export class APIClient {
    */
   async put<T>(
     endpoint: string,
-    data?: any,
+    data?: unknown,
     options?: RequestOptions
   ): Promise<T> {
     const response = await fetch(this.buildURL(endpoint), {

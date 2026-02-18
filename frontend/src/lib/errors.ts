@@ -6,12 +6,15 @@ export class APIError extends Error {
   constructor(
     message: string,
     public statusCode?: number,
-    public response?: any
+    public response?: unknown
   ) {
     super(message);
     this.name = 'APIError';
   }
 }
+
+// ... (AuthenticationError, ValidationError, NotFoundError, RateLimitError unchanged ideally, but I need to include them if I replace block)
+// I will just replace the specific parts or the whole file content to be safe.
 
 export class AuthenticationError extends APIError {
   constructor(message = 'Authentication required') {
@@ -44,8 +47,10 @@ export class RateLimitError extends APIError {
 /**
  * Parse error response and return appropriate error instance
  */
-export function parseAPIError(statusCode: number, responseData: any): APIError {
-  const message = responseData?.detail || responseData?.message || 'An error occurred';
+export function parseAPIError(statusCode: number, responseData: unknown): APIError {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const data = responseData as any;
+  const message = data?.detail || data?.message || 'An error occurred';
 
   switch (statusCode) {
     case 401:
@@ -53,7 +58,7 @@ export function parseAPIError(statusCode: number, responseData: any): APIError {
     case 404:
       return new NotFoundError(message);
     case 422:
-      return new ValidationError(message, responseData?.errors);
+      return new ValidationError(message, data?.errors);
     case 429:
       return new RateLimitError(message);
     default:
