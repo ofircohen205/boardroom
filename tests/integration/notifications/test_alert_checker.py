@@ -25,7 +25,7 @@ class TestAlertCheckerJob:
             email="test@example.com",
             first_name="Test",
             last_name="User",
-            password_hash="hashed",
+            password_hash="hashed",  # pragma: allowlist secret
             is_active=True,
         )
         test_db_session.add(user)
