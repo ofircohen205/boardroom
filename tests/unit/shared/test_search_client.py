@@ -140,6 +140,7 @@ class TestOpenAISearchClientSearch:
 class TestOpenAISearchClientSearchNews:
     @pytest.mark.asyncio
     async def test_search_news_us_market(self):
+        """search_news should build a US-focused query and pass it to _search."""
         client = OpenAISearchClient(api_key="key")  # pragma: allowlist secret
 
         with patch.object(client, "_search", new_callable=AsyncMock) as mock_search:
@@ -152,11 +153,16 @@ class TestOpenAISearchClientSearchNews:
                     "source": "news",
                 }
             ]
-            results = await client.search_news("AAPL", market="US")
+            # Bypass the @cached decorator by calling _search directly via the method
+            # that wraps it; we clear the in-memory cache first to avoid cross-test hits.
+            from backend.shared.core.cache import get_cache
+
+            await get_cache().clear()
+            results = await client.search_news("AAPL_US_TEST", market="US")
 
         call_query = mock_search.call_args[0][0]
         assert "TASE" not in call_query
-        assert "AAPL" in call_query
+        assert "AAPL_US_TEST" in call_query
         assert len(results) == 1
 
     @pytest.mark.asyncio
@@ -165,7 +171,10 @@ class TestOpenAISearchClientSearchNews:
 
         with patch.object(client, "_search", new_callable=AsyncMock) as mock_search:
             mock_search.return_value = []
-            await client.search_news("TEVA", market="TASE")
+            from backend.shared.core.cache import get_cache
+
+            await get_cache().clear()
+            await client.search_news("TEVA_TASE_TEST", market="TASE")
 
         call_query = mock_search.call_args[0][0]
         assert "Israeli" in call_query or "Globes" in call_query
@@ -186,7 +195,10 @@ class TestOpenAISearchClientSearchSocial:
                     "source": "news",
                 }
             ]
-            results = await client.search_social("AAPL")
+            from backend.shared.core.cache import get_cache
+
+            await get_cache().clear()
+            results = await client.search_social("AAPL_SOCIAL_RD")
 
         assert results[0]["source"] == "reddit"
 
@@ -204,7 +216,10 @@ class TestOpenAISearchClientSearchSocial:
                     "source": "news",
                 }
             ]
-            results = await client.search_social("AAPL")
+            from backend.shared.core.cache import get_cache
+
+            await get_cache().clear()
+            results = await client.search_social("TSLA_SOCIAL_TW")
 
         assert results[0]["source"] == "twitter"
 
@@ -214,7 +229,10 @@ class TestOpenAISearchClientSearchSocial:
 
         with patch.object(client, "_search", new_callable=AsyncMock) as mock_search:
             mock_search.return_value = []
-            await client.search_social("TEVA", market="TASE")
+            from backend.shared.core.cache import get_cache
+
+            await get_cache().clear()
+            await client.search_social("TEVA_SOCIAL_TASE", market="TASE")
 
         call_query = mock_search.call_args[0][0]
         assert "Israel" in call_query
