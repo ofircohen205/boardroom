@@ -2,6 +2,31 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
+## ✅ Status: ALL WAVES COMPLETE (as of 2026-02-19)
+
+| Wave                                     | Tasks       | Status                                   |
+| ---------------------------------------- | ----------- | ---------------------------------------- |
+| Wave 1: Service Unit Tests               | Tasks 1–7   | ✅ Complete                              |
+| Wave 2: API Endpoint Tests               | Tasks 8–11  | ✅ Complete                              |
+| Wave 3: Background Job Integration Tests | Tasks 12–13 | ✅ Complete                              |
+| Wave 4: WebSocket Mock Tests             | Task 14     | ✅ Complete                              |
+| Reorganization                           | Task 15     | ✅ Tests reorganized into domain subdirs |
+
+> **⚠️ Implementation deviation:** Tests were reorganized into domain-based subdirectories rather than flat `tests/unit/test_*.py` files as originally planned. The actual test locations are:
+>
+> - `tests/unit/analysis/` — agents, LLM, tools, paper trading, strategies, websocket
+> - `tests/unit/auth/` — user DAO, auth dependencies
+> - `tests/unit/notifications/` — alert/schedule services + API, email, market hours
+> - `tests/unit/performance/` — performance service + API
+> - `tests/unit/portfolio/` — portfolio DAO, watchlist service
+> - `tests/unit/sectors/` — sectors API
+> - `tests/unit/settings/` — settings service
+> - `tests/unit/shared/` — base DAO, cache, outcome tracker, scheduler, route utils
+>
+> Committed in: `e2e174` (Wave 1), `14213d2` (Waves 2–4), `3a6f70c` (reorganization)
+
+---
+
 **Goal:** Raise backend test coverage from 58.45% to ≥80% by adding unit tests for service classes, API endpoint tests with mocked deps, PostgreSQL integration tests for background jobs, and mocked WebSocket tests.
 
 **Architecture:** Approach A — layer-by-layer. Wave 1 adds service unit tests (SQLite + mocked DAOs), Wave 2 adds API endpoint tests (FastAPI TestClient with `app.dependency_overrides`), Wave 3 adds integration tests for background jobs (PostgreSQL), Wave 4 adds WebSocket mock tests and shared tool unit tests. Each wave reuses fixtures from the previous.
@@ -32,6 +57,7 @@ All unit tests use `test_db_session` from `tests/conftest.py` (SQLite in-memory)
 All integration tests use `test_db_session` configured for PostgreSQL (file path contains `integration/`).
 
 **Standard service test setup:**
+
 ```python
 import pytest
 from unittest.mock import AsyncMock, MagicMock
@@ -47,6 +73,7 @@ def mock_dao():
 ```
 
 **Standard API test setup (for all Wave 2 tasks):**
+
 ```python
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -64,13 +91,14 @@ async def client(test_user, mock_token):
 
 ---
 
-## Wave 1: Service Layer Unit Tests
+## ✅ Wave 1: Service Layer Unit Tests
 
-### Task 1: AnalysisService unit tests
+### ✅ Task 1: AnalysisService unit tests
 
 **Target:** `backend/domains/analysis/services/service.py` (54 missed stmts → aim to cover ~90%)
 
 **Files:**
+
 - Create: `tests/unit/test_services_analysis.py`
 
 **Step 1: Write the failing tests**
@@ -292,6 +320,7 @@ async def test_get_recent_outcomes_dao_error(analysis_service, mock_analysis_dao
 ```bash
 uv run pytest tests/unit/test_services_analysis.py -v
 ```
+
 Expected: Tests collected but may fail if any import path is wrong. Fix imports if needed.
 
 **Step 3: Verify tests pass**
@@ -299,6 +328,7 @@ Expected: Tests collected but may fail if any import path is wrong. Fix imports 
 ```bash
 uv run pytest tests/unit/test_services_analysis.py -v --cov=backend/domains/analysis/services/service
 ```
+
 Expected: All PASS. Coverage for `service.py` should jump to >85%.
 
 **Step 4: Commit**
@@ -310,11 +340,12 @@ git commit -m "test: add AnalysisService unit tests"
 
 ---
 
-### Task 2: WatchlistService unit tests
+### ✅ Task 2: WatchlistService unit tests
 
 **Target:** `backend/domains/portfolio/services/watchlist_service.py` (46 missed stmts)
 
 **Files:**
+
 - Create: `tests/unit/test_services_watchlist.py`
 
 **Step 1: Write the failing tests**
@@ -500,6 +531,7 @@ async def test_get_default_watchlist_dao_error(watchlist_service, mock_watchlist
 ```bash
 uv run pytest tests/unit/test_services_watchlist.py -v --cov=backend/domains/portfolio/services/watchlist_service
 ```
+
 Expected: All PASS. Coverage should reach >90%.
 
 **Step 3: Commit**
@@ -511,11 +543,12 @@ git commit -m "test: add WatchlistService unit tests"
 
 ---
 
-### Task 3: ScheduleService unit tests
+### ✅ Task 3: ScheduleService unit tests
 
 **Target:** `backend/domains/notifications/services/schedule_service.py` (53 missed stmts)
 
 **Files:**
+
 - Create: `tests/unit/test_services_schedule.py`
 
 **Step 1: Write the failing tests**
@@ -721,6 +754,7 @@ async def test_delete_schedule_dao_error(schedule_service, mock_schedule_dao, mo
 ```bash
 uv run pytest tests/unit/test_services_schedule.py -v --cov=backend/domains/notifications/services/schedule_service
 ```
+
 Expected: All PASS. Coverage >90%.
 
 **Step 3: Commit**
@@ -732,11 +766,12 @@ git commit -m "test: add ScheduleService unit tests"
 
 ---
 
-### Task 4: AlertService unit tests
+### ✅ Task 4: AlertService unit tests
 
 **Target:** `backend/domains/notifications/services/alert_service.py` (45 missed stmts)
 
 **Files:**
+
 - Create: `tests/unit/test_services_alert.py`
 
 **Step 1: Read the AlertService fully first**
@@ -909,6 +944,7 @@ async def test_get_user_notifications(alert_service, mock_notification_dao):
 ```bash
 uv run pytest tests/unit/test_services_alert.py -v --cov=backend/domains/notifications/services/alert_service
 ```
+
 Note: If some methods don't exist, check the full source and adjust method names accordingly. The file has ~93 statements; this covers the main paths.
 
 **Step 4: Commit**
@@ -920,11 +956,12 @@ git commit -m "test: add AlertService unit tests"
 
 ---
 
-### Task 5: PerformanceService unit tests
+### ✅ Task 5: PerformanceService unit tests
 
 **Target:** `backend/domains/performance/services/service.py` (62 missed stmts)
 
 **Files:**
+
 - Create: `tests/unit/test_services_performance.py`
 
 **Step 1: Write the failing tests**
@@ -1116,6 +1153,7 @@ async def test_get_recent_outcomes_empty(perf_service, mock_performance_dao, moc
 ```bash
 uv run pytest tests/unit/test_services_performance.py -v --cov=backend/domains/performance/services/service
 ```
+
 Expected: All PASS. Coverage >80%.
 
 **Step 3: Commit**
@@ -1127,11 +1165,12 @@ git commit -m "test: add PerformanceService unit tests"
 
 ---
 
-### Task 6: SettingsService unit tests
+### ✅ Task 6: SettingsService unit tests
 
 **Target:** `backend/domains/settings/services/service.py` (17 missed stmts)
 
 **Files:**
+
 - Create: `tests/unit/test_services_settings.py`
 
 **Step 1: Write the failing tests**
@@ -1260,6 +1299,7 @@ async def test_change_password_user_not_found(settings_service, mock_user_dao, m
 ```bash
 uv run pytest tests/unit/test_services_settings.py -v --cov=backend/domains/settings/services/service
 ```
+
 Expected: All PASS. Coverage >90%.
 
 **Step 3: Commit**
@@ -1271,13 +1311,15 @@ git commit -m "test: add SettingsService unit tests"
 
 ---
 
-### Task 7: Shared tools unit tests (relative_strength + stock_search)
+### ✅ Task 7: Shared tools unit tests (relative_strength + stock_search)
 
 **Targets:**
+
 - `backend/shared/ai/tools/relative_strength.py` (42 missed stmts, 16%)
 - `backend/shared/ai/tools/stock_search.py` (24 missed stmts, 33%)
 
 **Files:**
+
 - Create: `tests/unit/test_relative_strength.py`
 - Create: `tests/unit/test_stock_search.py`
 
@@ -1539,6 +1581,7 @@ uv run pytest tests/unit/test_relative_strength.py tests/unit/test_stock_search.
   --cov=backend/shared/ai/tools/relative_strength \
   --cov=backend/shared/ai/tools/stock_search
 ```
+
 Expected: All PASS. relative_strength coverage >85%, stock_search coverage >75%.
 
 **Step 4: Commit**
@@ -1550,7 +1593,7 @@ git commit -m "test: add relative_strength and stock_search unit tests"
 
 ---
 
-## Wave 2: API Endpoint Tests
+## ✅ Wave 2: API Endpoint Tests
 
 **Shared setup — add to `tests/conftest.py`:**
 
@@ -1577,11 +1620,12 @@ async def api_client(test_user):
 
 ---
 
-### Task 8: Performance API endpoint tests
+### ✅ Task 8: Performance API endpoint tests
 
 **Target:** `backend/domains/performance/api/endpoints.py` (71 missed stmts, 24%)
 
 **Files:**
+
 - Create: `tests/unit/test_api_performance.py`
 
 **Step 1: Write the tests**
@@ -1651,6 +1695,7 @@ async def test_get_recent_outcomes(api_client):
 ```
 
 **Important note:** The performance API endpoints (and other domain API endpoints in Wave 2) access their services via `Depends()`. The cleanest way to test them is by overriding `app.dependency_overrides`. Each test should:
+
 1. Set `app.dependency_overrides[get_<service>] = lambda: mock_service`
 2. Make the API call
 3. Assert response
@@ -1803,6 +1848,7 @@ async def test_get_outcomes_list(perf_client, test_db_session):
 ```bash
 uv run pytest tests/unit/test_api_performance.py -v --cov=backend/domains/performance/api/endpoints
 ```
+
 Expected: All PASS. Coverage jumps from 24% to >60%.
 
 **Step 4: Commit**
@@ -1814,14 +1860,16 @@ git commit -m "test: add performance API endpoint unit tests"
 
 ---
 
-### Task 9: Alerts and Schedules API endpoint tests
+### ✅ Task 9: Alerts and Schedules API endpoint tests
 
 **Targets:**
+
 - `backend/domains/notifications/api/alerts.py` (41 missed stmts, 34%)
 - `backend/domains/notifications/api/schedules.py` (28 missed stmts, 42%)
 - `backend/domains/notifications/api/endpoints.py` (28 missed stmts, 42%)
 
 **Files:**
+
 - Create: `tests/unit/test_api_notifications.py`
 
 **Step 1: Write the tests**
@@ -2023,6 +2071,7 @@ uv run pytest tests/unit/test_api_notifications.py -v \
   --cov=backend/domains/notifications/api/schedules \
   --cov=backend/domains/notifications/api/endpoints
 ```
+
 Expected: All PASS. Alert endpoint coverage >70%, schedule endpoint coverage >70%.
 
 Note: If endpoint URLs differ (check actual router prefix), adjust the paths. Alerts: `/api/alerts`, Schedules: `/api/schedules`, Notifications: `/api/notifications`.
@@ -2036,13 +2085,15 @@ git commit -m "test: add notifications/alerts/schedules API endpoint tests"
 
 ---
 
-### Task 10: Strategies and Paper Trading API tests
+### ✅ Task 10: Strategies and Paper Trading API tests
 
 **Targets:**
+
 - `backend/domains/analysis/api/strategies/router.py` (38 missed stmts, 37%)
 - `backend/domains/analysis/api/paper/router.py` (154 missed stmts, 17%)
 
 **Files:**
+
 - Create: `tests/unit/test_api_strategies.py`
 - Create: `tests/unit/test_api_paper_trading.py`
 
@@ -2273,6 +2324,7 @@ uv run pytest tests/unit/test_api_strategies.py tests/unit/test_api_paper_tradin
   --cov=backend/domains/analysis/api/strategies/router \
   --cov=backend/domains/analysis/api/paper/router
 ```
+
 Expected: All PASS. Strategies coverage >60%, paper router coverage >40% (large file).
 
 **Step 5: Commit**
@@ -2284,13 +2336,15 @@ git commit -m "test: add strategies and paper trading API endpoint tests"
 
 ---
 
-### Task 11: Sectors API tests + auth dependencies tests
+### ✅ Task 11: Sectors API tests + auth dependencies tests
 
 **Targets:**
+
 - `backend/domains/sectors/api/endpoints.py` (20 missed stmts, 35%)
 - `backend/shared/auth/dependencies.py` (19 missed stmts, 39%)
 
 **Files:**
+
 - Create: `tests/unit/test_api_sectors.py`
 - Create: `tests/unit/test_auth_dependencies.py`
 
@@ -2441,6 +2495,7 @@ uv run pytest tests/unit/test_api_sectors.py tests/unit/test_auth_dependencies.p
   --cov=backend/domains/sectors/api/endpoints \
   --cov=backend/shared/auth/dependencies
 ```
+
 Expected: All PASS. Sectors coverage >60%, auth coverage >70%.
 
 **Step 4: Commit**
@@ -2452,16 +2507,17 @@ git commit -m "test: add sectors API and auth dependency tests"
 
 ---
 
-## Wave 3: Background Job Integration Tests (PostgreSQL)
+## ✅ Wave 3: Background Job Integration Tests (PostgreSQL)
 
 > These tests require the `TEST_DATABASE_URL` env var pointing to a running PostgreSQL database.
 > Set `TEST_DATABASE_URL` to your test PostgreSQL URL (see `.env.example` for the default test credentials).
 
-### Task 12: outcome_tracker integration tests
+### ✅ Task 12: outcome_tracker integration tests
 
 **Target:** `backend/shared/jobs/outcome_tracker.py` (131 missed stmts, 10%)
 
 **Files:**
+
 - Create: `tests/integration/test_outcome_tracker.py`
 
 **Step 1: Write the tests**
@@ -2667,6 +2723,7 @@ async def test_update_agent_accuracy_no_data(test_db_session: AsyncSession):
 uv run pytest tests/integration/test_outcome_tracker.py -v \
   --cov=backend/shared/jobs/outcome_tracker
 ```
+
 Expected: All PASS. Coverage jumps from 10% to >55%.
 
 **Step 3: Commit**
@@ -2678,11 +2735,12 @@ git commit -m "test: add outcome_tracker integration tests"
 
 ---
 
-### Task 13: Scheduler integration tests
+### ✅ Task 13: Scheduler integration tests
 
 **Target:** `backend/shared/jobs/scheduler.py` (78 missed stmts, 22%)
 
 **Files:**
+
 - Create: `tests/integration/test_scheduler.py`
 
 **Step 1: Read the scheduler file**
@@ -2749,6 +2807,7 @@ Note: Scheduler tests are primarily about confirming the job setup and teardown 
 ```bash
 uv run pytest tests/integration/test_scheduler.py -v --cov=backend/shared/jobs/scheduler
 ```
+
 Expected: All PASS.
 
 **Step 4: Commit**
@@ -2760,13 +2819,14 @@ git commit -m "test: add scheduler integration tests"
 
 ---
 
-## Wave 4: WebSocket Mock Tests
+## ✅ Wave 4: WebSocket Mock Tests
 
-### Task 14: WebSocket handler tests
+### ✅ Task 14: WebSocket handler tests
 
 **Target:** `backend/domains/analysis/api/websocket.py` (127 missed stmts, 17%)
 
 **Files:**
+
 - Create: `tests/unit/test_websocket_handlers.py`
 
 **Step 1: Read the full WebSocket file**
@@ -2882,6 +2942,7 @@ async def test_portfolio_sector_weight_market_data_error(test_user, mock_db):
 ```bash
 uv run pytest tests/unit/test_websocket_handlers.py -v --cov=backend/domains/analysis/api/websocket
 ```
+
 Expected: All PASS. Coverage jumps from 17% to >35% (the WebSocket route itself remains uncovered by unit tests).
 
 **Step 4: Commit**
@@ -2893,7 +2954,7 @@ git commit -m "test: add WebSocket handler unit tests"
 
 ---
 
-## Final: Check Coverage
+## ⬜ Final: Check Coverage (run to verify ≥80% achieved)
 
 After all waves are complete, run the full test suite to verify coverage target is met.
 
@@ -2904,6 +2965,7 @@ uv run pytest tests/ -v --cov=backend --cov-report=term-missing --cov-fail-under
 ```
 
 Expected output:
+
 ```
 TOTAL     ....  XX%   (≥80%)
 XX passed, X warnings
