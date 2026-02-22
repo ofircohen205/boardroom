@@ -165,7 +165,7 @@ export function TickerInput({ onAnalyze, isLoading, analysisMode, onModeChange }
         {showDropdown && (
           <div
             ref={dropdownRef}
-            className="absolute top-full left-0 right-0 mt-2 bg-[#0a0a0f] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50"
+            className="absolute top-full left-0 right-0 mt-2 bg-popover border border-border rounded-xl shadow-2xl overflow-hidden z-50"
           >
             {isSearching && suggestions.length === 0 ? (
               <div className="px-4 py-3 text-muted-foreground text-sm flex items-center gap-2">
@@ -210,7 +210,7 @@ export function TickerInput({ onAnalyze, isLoading, analysisMode, onModeChange }
             </span>
             <SelectValue />
           </SelectTrigger>
-          <SelectContent className="bg-[#0a0a0f] border-white/10 text-foreground">
+          <SelectContent className="bg-popover border-border text-foreground">
             <SelectItem
               value="US"
               className="focus:bg-primary/20 focus:text-primary cursor-pointer"
