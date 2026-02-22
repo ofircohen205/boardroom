@@ -17,10 +17,9 @@ async def get_markets():
 
 
 @router.get("/stocks/search")
-async def search_stocks_endpoint(q: str = "", market: str = "US") -> list[dict]:
+async def search_stocks_endpoint(q: str = "", market: Market = Market.US) -> list[dict]:
     """Search for stock symbols matching the query."""
-    market_enum = Market.TASE if market == "TASE" else Market.US
-    results = await search_stocks(q, market_enum)
+    results = await search_stocks(q, market)
     return [
         {
             "symbol": r.symbol,
