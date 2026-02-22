@@ -2,8 +2,6 @@
 
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from backend.shared.ai.state.enums import Market
 from backend.shared.ai.tools.stock_search import (
     _POPULAR_STOCKS,
@@ -277,13 +275,11 @@ class TestPopularStocksCoversAllMarkets:
 
 
 class TestSearchStocksLSE:
-    @pytest.mark.asyncio
     async def test_search_lse_popular(self):
         results = await search_stocks("HSBA", Market.LSE)
         assert any(r.symbol == "HSBA" for r in results)
         assert all(r.market == Market.LSE for r in results)
 
-    @pytest.mark.asyncio
     async def test_lse_yfinance_called_with_l_suffix(self):
         mock_ticker = MagicMock()
         mock_ticker.info = {"shortName": "Some UK Corp", "exchange": "LSE"}
@@ -302,12 +298,10 @@ class TestSearchStocksLSE:
 
 
 class TestSearchStocksTSE:
-    @pytest.mark.asyncio
     async def test_search_tse_popular(self):
         results = await search_stocks("7203", Market.TSE)
         assert any(r.symbol == "7203" for r in results)
 
-    @pytest.mark.asyncio
     async def test_tse_yfinance_called_with_t_suffix(self):
         mock_ticker = MagicMock()
         mock_ticker.info = {"shortName": "Some JP Corp", "exchange": "TSE"}
@@ -326,12 +320,10 @@ class TestSearchStocksTSE:
 
 
 class TestSearchStocksHKEX:
-    @pytest.mark.asyncio
     async def test_search_hkex_popular(self):
         results = await search_stocks("0700", Market.HKEX)
         assert any(r.symbol == "0700" for r in results)
 
-    @pytest.mark.asyncio
     async def test_hkex_yfinance_called_with_hk_suffix(self):
         mock_ticker = MagicMock()
         mock_ticker.info = {"shortName": "Some HK Corp", "exchange": "HKEX"}
@@ -350,12 +342,10 @@ class TestSearchStocksHKEX:
 
 
 class TestSearchStocksXETRA:
-    @pytest.mark.asyncio
     async def test_search_xetra_popular(self):
         results = await search_stocks("SAP", Market.XETRA)
         assert any(r.symbol == "SAP" for r in results)
 
-    @pytest.mark.asyncio
     async def test_xetra_yfinance_called_with_de_suffix(self):
         mock_ticker = MagicMock()
         mock_ticker.info = {"shortName": "Some DE Corp", "exchange": "XETRA"}

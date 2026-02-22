@@ -5,6 +5,7 @@ from dataclasses import dataclass
 import yfinance as yf
 
 from backend.shared.ai.state.enums import Market
+from backend.shared.ai.tools.market_data import _MARKET_SUFFIX
 
 
 @dataclass
@@ -117,14 +118,6 @@ _POPULAR_STOCKS: dict[Market, dict[str, tuple[str, str]]] = {
     Market.XETRA: POPULAR_XETRA_STOCKS,
 }
 
-_SEARCH_SUFFIX: dict[Market, str] = {
-    Market.TASE: ".TA",
-    Market.LSE: ".L",
-    Market.TSE: ".T",
-    Market.HKEX: ".HK",
-    Market.XETRA: ".DE",
-}
-
 
 async def search_stocks(
     query: str, market: Market, limit: int = 8
@@ -134,7 +127,7 @@ async def search_stocks(
 
     Args:
         query: Search query (partial or full ticker/company name)
-        market: Market to search in (US or TASE)
+        market: Market to search in (US, TASE, LSE, TSE, HKEX, or XETRA)
         limit: Maximum number of results to return
 
     Returns:
@@ -166,7 +159,7 @@ async def search_stocks(
     if len(results) < limit and len(query_upper) >= 1:
         try:
             # Format ticker for the market
-            ticker_symbol = f"{query_upper}{_SEARCH_SUFFIX.get(market, '')}"
+            ticker_symbol = f"{query_upper}{_MARKET_SUFFIX.get(market, '')}"
 
             ticker = yf.Ticker(ticker_symbol)
             info = ticker.info
