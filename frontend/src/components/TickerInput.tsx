@@ -137,7 +137,7 @@ export function TickerInput({ onAnalyze, isLoading, analysisMode, onModeChange }
         className={`relative flex items-center gap-4 p-2 pl-4 rounded-2xl transition-all duration-300 border ${
           isFocused
             ? "bg-white/10 border-primary/50 shadow-[0_0_30px_rgba(var(--primary),0.2)]"
-            : "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20"
+            : "bg-white/5 border-border hover:bg-white/10 hover:border-white/20"
         }`}
       >
       <Search
