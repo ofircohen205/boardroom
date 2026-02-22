@@ -27,6 +27,7 @@ import {
   Keyboard,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { Market } from "@/types";
 
 export function Dashboard() {
   const { state, analyze, retry, connectionStatus } = useWebSocket();
@@ -56,7 +57,7 @@ export function Dashboard() {
       setShowHistory(false);
   };
 
-  const handleAnalyze = (ticker: string, market: "US" | "TASE") => {
+  const handleAnalyze = (ticker: string, market: Market) => {
       analyze(ticker, market, analysisMode);
       setShowHistory(false);
   };

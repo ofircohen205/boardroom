@@ -1,4 +1,4 @@
-export type Market = "US" | "TASE";
+export type Market = "US" | "TASE" | "LSE" | "TSE" | "HKEX" | "XETRA";
 export type Action = "BUY" | "SELL" | "HOLD";
 export type Trend = "bullish" | "bearish" | "neutral";
 export type AgentType = "fundamental" | "sentiment" | "technical" | "risk" | "chairperson";

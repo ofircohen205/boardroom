@@ -215,13 +215,37 @@ export function TickerInput({ onAnalyze, isLoading, analysisMode, onModeChange }
               value="US"
               className="focus:bg-primary/20 focus:text-primary cursor-pointer"
             >
-              US Market
+              🇺🇸 US Market
             </SelectItem>
             <SelectItem
               value="TASE"
               className="focus:bg-primary/20 focus:text-primary cursor-pointer"
             >
-              Tel Aviv
+              🇮🇱 Tel Aviv
+            </SelectItem>
+            <SelectItem
+              value="LSE"
+              className="focus:bg-primary/20 focus:text-primary cursor-pointer"
+            >
+              🇬🇧 London
+            </SelectItem>
+            <SelectItem
+              value="TSE"
+              className="focus:bg-primary/20 focus:text-primary cursor-pointer"
+            >
+              🇯🇵 Tokyo
+            </SelectItem>
+            <SelectItem
+              value="HKEX"
+              className="focus:bg-primary/20 focus:text-primary cursor-pointer"
+            >
+              🇭🇰 Hong Kong
+            </SelectItem>
+            <SelectItem
+              value="XETRA"
+              className="focus:bg-primary/20 focus:text-primary cursor-pointer"
+            >
+              🇩🇪 Frankfurt
             </SelectItem>
           </SelectContent>
         </Select>
