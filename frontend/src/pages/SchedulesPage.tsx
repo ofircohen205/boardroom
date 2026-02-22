@@ -154,8 +154,12 @@ export default function SchedulesPage() {
                     onChange={(e) => setMarket(e.target.value)}
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                   >
-                    <option value="US">US</option>
-                    <option value="TASE">TASE</option>
+                    <option value="US">🇺🇸 US Market</option>
+                    <option value="TASE">🇮🇱 Tel Aviv</option>
+                    <option value="LSE">🇬🇧 London</option>
+                    <option value="TSE">🇯🇵 Tokyo</option>
+                    <option value="HKEX">🇭🇰 Hong Kong</option>
+                    <option value="XETRA">🇩🇪 Frankfurt</option>
                   </select>
                 </div>
 
