@@ -19,6 +19,14 @@ interface Props {
   onRetry?: () => void;
 }
 
+const LOADING_MESSAGES: Record<string, string> = {
+  fundamental: "Fetching financials from Yahoo Finance...",
+  sentiment: "Scanning news headlines and social signals...",
+  technical: "Computing RSI, MA50, and MA200...",
+  risk: "Assessing portfolio sector exposure...",
+  chairperson: "Weighing all agent reports...",
+};
+
 export function AgentPanel({
   agent,
   title,
@@ -31,14 +39,6 @@ export function AgentPanel({
   index,
   onRetry,
 }: Props) {
-  const LOADING_MESSAGES: Record<string, string> = {
-    fundamental: "Fetching financials from Yahoo Finance...",
-    sentiment: "Scanning news headlines and social signals...",
-    technical: "Computing RSI, MA50, and MA200...",
-    risk: "Assessing portfolio sector exposure...",
-    chairperson: "Weighing all agent reports...",
-  };
-
   return (
     <Card
       className={cn(
