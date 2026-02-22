@@ -20,6 +20,7 @@ The application currently relies on each LLM provider's native rate limiting wit
 ### Provider Rate Limits (as of 2026)
 
 #### Anthropic Claude
+
 - **Claude Sonnet 4.5** (current default model):
   - Free tier: ~50 requests/minute
   - Paid tier: ~1,000 requests/minute
@@ -28,6 +29,7 @@ The application currently relies on each LLM provider's native rate limiting wit
 - **Error handling**: Returns `429 Too Many Requests` when exceeded
 
 #### OpenAI GPT-4
+
 - **GPT-4o** (current model):
   - Free tier: ~3 requests/minute
   - Paid tier: ~10,000 requests/minute (tier-based)
@@ -36,6 +38,7 @@ The application currently relies on each LLM provider's native rate limiting wit
 - **Error handling**: Returns `429 Too Many Requests` with `Retry-After` header
 
 #### Google Gemini
+
 - **Gemini 2.0 Flash** (current model):
   - Free tier: ~15 requests/minute
   - Paid tier: ~360 requests/minute
@@ -63,6 +66,7 @@ class AnthropicClient(BaseLLMClient):
 ```
 
 **Issues**:
+
 - ❌ No retry logic for 429 errors
 - ❌ No exponential backoff
 - ❌ No request queuing
@@ -279,7 +283,7 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from fastapi import Request, Response
-from backend.core.settings import settings
+from backend.shared.core.settings import settings
 
 # Create limiter instance
 limiter = Limiter(
@@ -292,7 +296,7 @@ limiter = Limiter(
 # Custom key functions
 def get_user_id(request: Request) -> str:
     """Extract user ID from JWT token for authenticated rate limiting."""
-    from backend.auth.dependencies import get_current_user_optional
+    from backend.shared.auth.dependencies import get_current_user_optional
 
     user = get_current_user_optional(request)
     if user:
@@ -315,7 +319,7 @@ async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
 
 ```python
 from slowapi.errors import RateLimitExceeded
-from backend.core.rate_limit import rate_limit_exceeded_handler, limiter
+from backend.shared.core.rate_limit import rate_limit_exceeded_handler, limiter
 
 app = FastAPI(...)
 app.state.limiter = limiter
@@ -326,7 +330,7 @@ app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 
 ```python
 from slowapi import Limiter
-from backend.core.rate_limit import limiter
+from backend.shared.core.rate_limit import limiter
 
 @router.post("/login")
 @limiter.limit("5/minute")  # 5 login attempts per minute per IP
@@ -352,7 +356,7 @@ async def register(
 **File**: `backend/api/analysis/endpoints.py` (WebSocket rate limiting)
 
 ```python
-from backend.core.rate_limit import limiter
+from backend.shared.core.rate_limit import limiter
 
 @router.websocket("/analyze")
 @limiter.limit("10/minute")  # 10 analysis requests per minute per user
@@ -377,18 +381,18 @@ async def analyze_stock(websocket: WebSocket):
 
 ### Recommended Rate Limits
 
-| Endpoint | Limit | Reasoning |
-|----------|-------|-----------|
-| `POST /api/auth/login` | 5/minute | Prevent brute force attacks |
-| `POST /api/auth/register` | 3/hour | Prevent spam registrations |
-| `POST /api/auth/password` | 3/hour | Prevent password reset abuse |
-| `GET /api/portfolios` | 60/minute | Generous for normal usage |
-| `POST /api/portfolios` | 10/minute | Prevent spam creation |
-| `GET /api/alerts` | 60/minute | High read limit |
-| `POST /api/alerts` | 10/minute | Prevent alert spam |
-| `WS /ws/analyze` | 10/minute | Expensive LLM operations |
-| `WS /ws/backtest` | 5/minute | Very expensive operations |
-| Global fallback | 100/minute | Catch-all safety net |
+| Endpoint                  | Limit      | Reasoning                    |
+| ------------------------- | ---------- | ---------------------------- |
+| `POST /api/auth/login`    | 5/minute   | Prevent brute force attacks  |
+| `POST /api/auth/register` | 3/hour     | Prevent spam registrations   |
+| `POST /api/auth/password` | 3/hour     | Prevent password reset abuse |
+| `GET /api/portfolios`     | 60/minute  | Generous for normal usage    |
+| `POST /api/portfolios`    | 10/minute  | Prevent spam creation        |
+| `GET /api/alerts`         | 60/minute  | High read limit              |
+| `POST /api/alerts`        | 10/minute  | Prevent alert spam           |
+| `WS /ws/analyze`          | 10/minute  | Expensive LLM operations     |
+| `WS /ws/backtest`         | 5/minute   | Very expensive operations    |
+| Global fallback           | 100/minute | Catch-all safety net         |
 
 ### Configuration via Environment Variables
 
@@ -450,22 +454,23 @@ useEffect(() => {
     try {
       const response = await fetch(
         `/api/stocks/search?q=${encodeURIComponent(ticker)}&market=${market}`,
-        { signal: controller.signal }
+        { signal: controller.signal },
       );
       // ... handle response
     } catch (e) {
       // ... handle error
     }
-  }, 300);  // 300ms debounce
+  }, 300); // 300ms debounce
 
   return () => {
     clearTimeout(timeoutId);
-    controller.abort();  // Cancel in-flight request
+    controller.abort(); // Cancel in-flight request
   };
 }, [ticker, market]);
 ```
 
 **Features**:
+
 - ✅ 300ms debounce on input changes
 - ✅ Request cancellation via `AbortController`
 - ✅ Prevents duplicate requests
@@ -485,7 +490,7 @@ useEffect(() => {
 **File**: `frontend/src/hooks/useDebounce.ts` (new file)
 
 ```typescript
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 
 export function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
@@ -512,11 +517,11 @@ const debouncedSearchTerm = useDebounce(searchTerm, 300);
 **File**: `frontend/src/hooks/useThrottle.ts` (new file)
 
 ```typescript
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef } from "react";
 
 export function useThrottle<T extends (...args: any[]) => any>(
   callback: T,
-  delay: number
+  delay: number,
 ): T {
   const lastRun = useRef(Date.now());
 
@@ -528,14 +533,14 @@ export function useThrottle<T extends (...args: any[]) => any>(
         lastRun.current = now;
       }
     },
-    [callback, delay]
+    [callback, delay],
   ) as T;
 }
 
 // Usage
 const throttledAnalyze = useThrottle((ticker: string) => {
   onAnalyze(ticker, market);
-}, 2000);  // Maximum 1 analysis per 2 seconds
+}, 2000); // Maximum 1 analysis per 2 seconds
 ```
 
 #### Option 3: Create Request Queue System
@@ -596,7 +601,9 @@ await apiQueue.enqueue(() =>
 **File**: `frontend/src/lib/api.ts` (enhance existing file)
 
 ```typescript
-export const API_BASE_URL = (import.meta.env.VITE_API_URL as string | undefined) || 'http://localhost:8000';
+export const API_BASE_URL =
+  (import.meta.env.VITE_API_URL as string | undefined) ||
+  "http://localhost:8000";
 
 interface RetryOptions {
   maxRetries?: number;
@@ -608,7 +615,7 @@ interface RetryOptions {
 export async function fetchAPIWithRetry(
   endpoint: string,
   options?: RequestInit,
-  retryOptions?: RetryOptions
+  retryOptions?: RetryOptions,
 ) {
   const {
     maxRetries = 3,
@@ -630,12 +637,12 @@ export async function fetchAPIWithRetry(
 
         if (shouldRetry(error) && attempt < maxRetries) {
           // Rate limited - wait for Retry-After header or exponential backoff
-          const retryAfter = response.headers.get('Retry-After');
+          const retryAfter = response.headers.get("Retry-After");
           const delay = retryAfter
             ? parseInt(retryAfter) * 1000
             : Math.min(baseDelay * Math.pow(2, attempt), maxDelay);
 
-          await new Promise(resolve => setTimeout(resolve, delay));
+          await new Promise((resolve) => setTimeout(resolve, delay));
           continue;
         }
 
@@ -658,13 +665,13 @@ export async function fetchAPIWithRetry(
 export async function fetchAPIAuthenticated(
   endpoint: string,
   token: string,
-  options?: RequestInit
+  options?: RequestInit,
 ) {
   return fetchAPIWithRetry(endpoint, {
     ...options,
     headers: {
       ...options?.headers,
-      'Authorization': `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
     },
   });
 }
@@ -672,14 +679,14 @@ export async function fetchAPIAuthenticated(
 
 ### Recommended Frontend Throttling
 
-| Action | Strategy | Delay | Reasoning |
-|--------|----------|-------|-----------|
-| Stock search autocomplete | Debounce | 300ms | Reduce API calls while typing |
-| Analysis request | Throttle | 2000ms | Prevent button spam |
-| Portfolio updates | Debounce | 500ms | Batch rapid changes |
-| Alert creation | Throttle | 1000ms | Prevent accidental duplicates |
-| Settings changes | Debounce | 1000ms | Wait for user to finish |
-| Failed API requests | Retry with exponential backoff | 1s → 2s → 4s | Handle temporary failures |
+| Action                    | Strategy                       | Delay        | Reasoning                     |
+| ------------------------- | ------------------------------ | ------------ | ----------------------------- |
+| Stock search autocomplete | Debounce                       | 300ms        | Reduce API calls while typing |
+| Analysis request          | Throttle                       | 2000ms       | Prevent button spam           |
+| Portfolio updates         | Debounce                       | 500ms        | Batch rapid changes           |
+| Alert creation            | Throttle                       | 1000ms       | Prevent accidental duplicates |
+| Settings changes          | Debounce                       | 1000ms       | Wait for user to finish       |
+| Failed API requests       | Retry with exponential backoff | 1s → 2s → 4s | Handle temporary failures     |
 
 ### Implementation in TickerInput
 
@@ -789,7 +796,7 @@ async def test_login_rate_limit(client: AsyncClient):
     for i in range(6):
         response = await client.post("/api/auth/login", json={
             "email": "test@example.com",
-            "password": "wrong"
+            "password": "wrong"  # pragma: allowlist secret
         })
 
         if i < 5:
@@ -803,10 +810,10 @@ async def test_login_rate_limit(client: AsyncClient):
 
 ```typescript
 // frontend/src/hooks/__tests__/useThrottle.test.ts
-import { renderHook, act } from '@testing-library/react';
-import { useThrottle } from '../useThrottle';
+import { renderHook, act } from "@testing-library/react";
+import { useThrottle } from "../useThrottle";
 
-test('throttles function calls', async () => {
+test("throttles function calls", async () => {
   const callback = jest.fn();
   const { result } = renderHook(() => useThrottle(callback, 1000));
 
@@ -821,7 +828,7 @@ test('throttles function calls', async () => {
   expect(callback).toHaveBeenCalledTimes(1);
 
   // Wait for throttle period
-  await new Promise(resolve => setTimeout(resolve, 1100));
+  await new Promise((resolve) => setTimeout(resolve, 1100));
 
   // Call again
   act(() => {
@@ -837,15 +844,15 @@ test('throttles function calls', async () => {
 
 ## Summary
 
-| Component | Current Status | Recommendation | Priority |
-|-----------|---------------|----------------|----------|
-| **LLM APIs** | ⚠️ No client-side limiting | Add retry logic with exponential backoff | 🔴 High |
-| **Auth Endpoints** | ❌ Not rate limited | Add SlowAPI with 5/min for login | 🔴 Critical |
-| **WebSocket** | ❌ Not rate limited | Add SlowAPI with 10/min per user | 🟡 Medium |
-| **Frontend Search** | ✅ 300ms debounce | Keep current implementation | ✅ Done |
-| **Frontend Analyze** | ❌ No throttling | Add 2s throttle on button | 🟡 Medium |
-| **Global API** | ❌ No limiting | Add 100/min fallback limit | 🟡 Medium |
-| **Distributed** | ❌ Not implemented | Add Redis-based limiting (future) | 🟢 Low |
+| Component            | Current Status             | Recommendation                           | Priority    |
+| -------------------- | -------------------------- | ---------------------------------------- | ----------- |
+| **LLM APIs**         | ⚠️ No client-side limiting | Add retry logic with exponential backoff | 🔴 High     |
+| **Auth Endpoints**   | ❌ Not rate limited        | Add SlowAPI with 5/min for login         | 🔴 Critical |
+| **WebSocket**        | ❌ Not rate limited        | Add SlowAPI with 10/min per user         | 🟡 Medium   |
+| **Frontend Search**  | ✅ 300ms debounce          | Keep current implementation              | ✅ Done     |
+| **Frontend Analyze** | ❌ No throttling           | Add 2s throttle on button                | 🟡 Medium   |
+| **Global API**       | ❌ No limiting             | Add 100/min fallback limit               | 🟡 Medium   |
+| **Distributed**      | ❌ Not implemented         | Add Redis-based limiting (future)        | 🟢 Low      |
 
 ## Next Steps
 

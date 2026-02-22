@@ -24,6 +24,7 @@ Boardroom is a full-stack application composed of:
 ### Project Structure
 
 The backend follows the **project-root/package-name/** pattern:
+
 - Project root: `boardroom/`
 - Package name: `backend/` (importable as `from backend.*`)
 
@@ -31,165 +32,80 @@ This is a standard Python project layout, equivalent to the alternative `src/` l
 
 ### Directory Structure
 
+The backend uses **domain-driven design**: cross-cutting infrastructure lives in `shared/`, while feature logic lives in `domains/` (vertical slices).
+
 ```
 backend/
-├── agents/          # AI agent implementations
-│   ├── base.py             # BaseLLMClient and LLM provider abstraction
-│   ├── fundamental.py      # FundamentalAgent - financial metrics analysis
-│   ├── sentiment.py        # SentimentAgent - news/social sentiment
-│   ├── technical.py        # TechnicalAgent - price action and indicators
-│   ├── risk_manager.py     # RiskManagerAgent - portfolio risk assessment
-│   └── chairperson.py      # ChairpersonAgent - final decision synthesis
+├── shared/                  # Cross-domain infrastructure (imported by all domains)
+│   ├── core/                # App fundamentals (settings, enums, security, logging, exceptions)
+│   ├── db/                  # Database layer (engine, session management, models)
+│   ├── dao/                 # Data Access Objects (CRUD wrappers)
+│   ├── ai/                  # LangGraph agent system (workflow, agents, state, tools, prompts)
+│   ├── auth/                # Auth dependency injection (get_current_user)
+│   ├── services/            # BaseService & exceptions
+│   ├── jobs/                # APScheduler background jobs
+│   ├── data/                # Historical data utilities
+│   └── utils/               # Misc shared utilities
 │
-├── api/             # FastAPI routes and endpoints (flat structure)
-│   ├── routes.py           # Main REST endpoints (auth, watchlists, portfolios)
-│   ├── websocket.py        # WebSocket handler for real-time analysis streaming
-│   ├── comparison.py       # Multi-stock comparison endpoints
-│   └── performance.py      # Performance tracking and accuracy metrics
+├── domains/                 # Feature domains (vertical slices)
+│   ├── analysis/            # Stock analysis & backtesting
+│   ├── auth/                # Authentication domain
+│   ├── notifications/       # Alerts & scheduled analysis
+│   ├── performance/         # Performance tracking & leaderboards
+│   ├── portfolio/           # Portfolio & watchlist management
+│   ├── sectors/             # Sector info endpoints
+│   └── settings/            # User settings
+│   # Inside each domain:
+│   # ├── api/               # REST/WebSocket endpoints & schemas
+│   # └── services/          # Business logic services
 │
-├── auth/            # Authentication and authorization
-│   ├── jwt.py              # JWT token creation and verification
-│   └── dependencies.py     # FastAPI auth dependencies (get_current_user)
-│
-├── dao/             # Database access layer
-│   ├── models.py           # SQLAlchemy ORM models (User, Portfolio, AnalysisSession, etc.)
-│   └── database.py         # Database connection and session management
-│
-├── graph/           # LangGraph workflow orchestration
-│   └── workflow.py         # Multi-agent workflow definition
-│
-├── jobs/            # Background job processing
-│   ├── scheduler.py        # APScheduler configuration for periodic jobs
-│   └── outcome_tracker.py  # Track recommendation outcomes and accuracy
-│
-├── services/        # Business logic layer
-│   └── outcome_service.py  # Outcome tracking business logic
-│
-├── state/           # State management for agents
-│   ├── agent_state.py      # TypedDict definitions for agent state
-│   └── enums.py            # Enums (Action, Market, AgentType, etc.)
-│
-├── tools/           # External data integration tools
-│   ├── market_data.py          # Yahoo Finance integration
-│   ├── search.py               # Exa search for news/social data
-│   ├── stock_search.py         # Stock symbol autocomplete
-│   ├── technical_indicators.py # MA, RSI, trend calculations
-│   ├── sector_data.py          # Sector-based stock data
-│   └── relative_strength.py    # Relative strength calculations
-│
-├── cache.py         # In-memory caching layer with TTL support
-├── config.py        # Pydantic Settings for environment configuration
-└── main.py          # FastAPI application entry point
+├── api.py                   # Main router (aggregates all domain routers)
+├── dependencies.py          # Shared FastAPI dependencies
+└── main.py                  # FastAPI app entry point
 ```
 
-### Layer Responsibilities
+### Layer Responsibilities & Patterns
 
-#### 1. **API Layer** (`backend/api/`)
-- **Purpose**: HTTP/WebSocket endpoints, request/response handling
+#### 1. **API Endpoints (`api/`)**
+
+- **Purpose**: HTTP/WebSocket entry points, request validation, and response formatting.
 - **Responsibilities**:
-  - FastAPI route definitions
-  - Request validation (Pydantic models)
-  - Response serialization
-  - WebSocket connection management
-  - Error handling and HTTP status codes
-- **Current Structure**: Flat (no versioning). All endpoints in root-level route files.
-- **Key Files**:
-  - `routes.py`: User auth, watchlists, portfolios (REST endpoints)
-  - `websocket.py`: Real-time analysis streaming
-  - `comparison.py`: Multi-stock comparison API
-  - `performance.py`: Agent accuracy and performance metrics
+  - FastAPI route definitions and Pydantic schema validation.
+  - WebSocket connection management (`analysis/api/websocket.py`).
+  - Uses FastAPI's `Depends()` system to inject dependencies (Services and Database Sessions). Endpoints **do not** contain business logic.
 
-#### 2. **Authentication Layer** (`backend/auth/`)
-- **Purpose**: User authentication and authorization
+#### 2. **Service Layer (`services/`) & Dependency Injection**
+
+- **Purpose**: Encapsulates all business logic, orchestrating DAOs and external calls.
 - **Responsibilities**:
-  - JWT token generation and verification
-  - Password hashing with bcrypt
-  - User session management
-  - FastAPI dependency injection for protected routes
-- **Key Files**:
-  - `jwt.py`: Token creation/validation utilities
-  - `dependencies.py`: `get_current_user` dependency for route protection
+  - Services are created via Factory functions (e.g., `get_portfolio_service` in `backend.dependencies`) and injected into endpoints using `Depends()`.
+  - **Dependency Injection (DI)**: Services accept Data Access Objects (DAOs) via constructor injection. They _do not_ create DAOs themselves.
+  - **Transaction Control**: Services accept a fresh `AsyncSession` (provided per request) so that operations can be grouped in a single transaction. The endpoints dictate session lifecycle.
+  - They inherit from `BaseService` and raise domain-specific exceptions (inheriting from `ServiceError`).
 
-#### 3. **Database Access Layer** (`backend/dao/`)
-- **Purpose**: Database operations and ORM models
+#### 3. **Database Access Layer (`shared/db/` and `shared/dao/`)**
+
+- **Purpose**: Database connection, ORM models, and CRUD wrappers.
 - **Responsibilities**:
-  - SQLAlchemy ORM model definitions
-  - Database connection pooling
-  - Session management
-  - Query execution
-- **Key Files**:
-  - `models.py`: All database models (User, Watchlist, Portfolio, AnalysisSession, etc.)
-  - `database.py`: Async database engine and session factory
+  - SQLAlchemy 2.0 async ORM models definition.
+  - `get_db()` provides a fresh database session for each request, keeping requests isolated.
+  - DAOs isolate database queries. They are passed directly into the Service layer.
 
-#### 4. **Service Layer** (`backend/services/`)
-- **Purpose**: Business logic separate from API/database concerns
+#### 4. **AI Agent & Workflow Layer (`shared/ai/`)**
+
+- **Purpose**: Multi-agent financial analysis using LangGraph.
 - **Responsibilities**:
-  - Complex business operations
-  - Orchestration of multiple data sources
-  - Integration with external services
-- **Current State**: Minimal (only `outcome_service.py`)
-- **Future**: Will expand as business logic grows
+  - `agents`: Specialized financial analysis (fundamental, sentiment, technical, risk, chairperson). Multi-LLM support via `base.py`.
+  - `workflow`: LangGraph orchestration of parallel agent execution and state passing.
+  - `tools`: External data integration (Yahoo Finance, Exa search, indicators).
+  - `state`: Shared `AgentState` TypedDict definitions flowing through the pipeline.
 
-#### 5. **Agent Layer** (`backend/agents/`)
-- **Purpose**: AI-powered financial analysis agents
+#### 5. **Jobs Layer (`shared/jobs/`)**
+
+- **Purpose**: Background task processing.
 - **Responsibilities**:
-  - Multi-LLM support (Claude, GPT-4, Gemini) via `base.py`
-  - Specialized financial analysis (fundamental, technical, sentiment)
-  - Risk assessment and portfolio constraints
-  - Final decision synthesis
-- **Key Files**:
-  - `base.py`: LLM client abstraction (`get_llm_client()`)
-  - `fundamental.py`: Financial metrics and company data analysis
-  - `sentiment.py`: News and social media sentiment analysis
-  - `technical.py`: Price action, MA, RSI, trend analysis
-  - `risk_manager.py`: Portfolio risk checks, VaR calculations
-  - `chairperson.py`: Aggregates all reports into final BUY/SELL/HOLD decision
-
-#### 6. **Workflow Layer** (`backend/graph/`)
-- **Purpose**: LangGraph orchestration of multi-agent pipeline
-- **Responsibilities**:
-  - Agent execution order (parallel + sequential)
-  - State passing between agents
-  - Workflow compilation and streaming
-- **Key Files**:
-  - `workflow.py`: Defines the `BoardroomGraph` with parallel analyst execution
-
-#### 7. **Jobs Layer** (`backend/jobs/`)
-- **Purpose**: Background task processing
-- **Responsibilities**:
-  - Scheduled periodic jobs (APScheduler)
-  - Outcome tracking for recommendations
-  - Agent accuracy calculations
-- **Key Files**:
-  - `scheduler.py`: APScheduler setup, job registration
-  - `outcome_tracker.py`: Tracks BUY/SELL outcomes, calculates accuracy
-
-#### 8. **Tools Layer** (`backend/tools/`)
-- **Purpose**: External data integration utilities
-- **Responsibilities**:
-  - Market data fetching (Yahoo Finance)
-  - News/social search (Exa)
-  - Technical indicator calculations
-  - Stock symbol search
-- **Key Files**:
-  - `market_data.py`: Historical prices, fundamentals
-  - `search.py`: Exa search wrapper
-  - `technical_indicators.py`: Pure functions for MA, RSI, trend
-  - `stock_search.py`: Symbol autocomplete
-
-#### 9. **State Management** (`backend/state/`)
-- **Purpose**: Shared state definitions for agent pipeline
-- **Responsibilities**:
-  - TypedDict definitions for agent state
-  - Enum definitions for actions, markets, agent types
-- **Key Files**:
-  - `agent_state.py`: `AgentState`, `FundamentalReport`, `SentimentReport`, etc.
-  - `enums.py`: `Action`, `Market`, `AgentType`, `MessageType` enums
-
-#### 10. **Core Utilities** (root-level files)
-- **`config.py`**: Pydantic Settings for environment-based configuration (LLM keys, DB URL, JWT secret)
-- **`cache.py`**: In-memory cache with TTL, stats, and `@cached` decorator
-- **`main.py`**: FastAPI app initialization, CORS, route registration
+  - Scheduled periodic jobs via APScheduler.
+  - Ongoing background analysis and alert checking.
 
 ### Data Flow
 
@@ -320,51 +236,61 @@ The system uses **PostgreSQL** with **SQLAlchemy 2.0** (async ORM).
 All models defined in `backend/dao/models.py`:
 
 #### 1. **User**
+
 - **Purpose**: User identity and authentication
 - **Fields**: `id`, `email`, `hashed_password`, `created_at`, `updated_at`
 - **Relationships**: Has many `Watchlist`, `Portfolio`, `AnalysisSession`
 
 #### 2. **Watchlist**
+
 - **Purpose**: User's saved stock tickers for monitoring
 - **Fields**: `id`, `user_id`, `name`, `created_at`
 - **Relationships**: Belongs to `User`, has many `WatchlistItem`
 
 #### 3. **WatchlistItem**
+
 - **Purpose**: Individual ticker in a watchlist
 - **Fields**: `id`, `watchlist_id`, `ticker`, `added_at`
 - **Relationships**: Belongs to `Watchlist`
 
 #### 4. **Portfolio**
+
 - **Purpose**: User's investment portfolio
 - **Fields**: `id`, `user_id`, `name`, `created_at`
 - **Relationships**: Belongs to `User`, has many `Position`
 
 #### 5. **Position**
+
 - **Purpose**: Stock position within a portfolio
 - **Fields**: `id`, `portfolio_id`, `ticker`, `shares`, `entry_price`, `entry_date`
 - **Relationships**: Belongs to `Portfolio`
 
 #### 6. **AnalysisSession**
+
 - **Purpose**: Record of an AI analysis run
 - **Fields**: `id`, `user_id`, `ticker`, `market`, `created_at`, `llm_provider`, `final_action`
 - **Relationships**: Belongs to `User`, has many `AgentReport`, has one `FinalDecision`
 
 #### 7. **AgentReport**
+
 - **Purpose**: Individual agent's analysis output
 - **Fields**: `id`, `session_id`, `agent_type`, `report_data` (JSONB), `created_at`
 - **Relationships**: Belongs to `AnalysisSession`
 
 #### 8. **FinalDecision**
+
 - **Purpose**: Chairperson's final BUY/SELL/HOLD decision
 - **Fields**: `id`, `session_id`, `action`, `reasoning`, `confidence`, `created_at`
 - **Relationships**: Belongs to `AnalysisSession`
 
 #### 9. **AnalysisOutcome** (Phase 2 - Performance Tracking)
+
 - **Purpose**: Track actual price movement after recommendations
 - **Fields**: `id`, `session_id`, `ticker`, `action`, `price_at_analysis`, `price_after_1d`, `price_after_7d`, `price_after_30d`, `tracked_at`
 - **Relationships**: Belongs to `AnalysisSession`
 
 #### 10. **AgentAccuracy** (Phase 2 - Performance Tracking)
+
 - **Purpose**: Aggregate accuracy metrics per agent
 - **Fields**: `id`, `agent_type`, `time_period`, `accuracy`, `total_predictions`, `correct_predictions`, `updated_at`
 
@@ -429,24 +355,27 @@ The core intelligence is powered by **LangGraph** with a multi-agent workflow.
 
 ### Agent Responsibilities
 
-#### 1. **Fundamental Agent** (`backend/agents/fundamental.py`)
-- **Data Sources**: Yahoo Finance (via `tools/market_data.py`)
+#### 1. **Fundamental Agent** (`backend/shared/ai/agents/fundamental.py`)
+
+- **Data Sources**: Yahoo Finance (via `backend/shared/ai/tools/market_data.py`)
 - **Analysis**:
   - Financial metrics (P/E, EPS, revenue growth, margins)
   - Company fundamentals (market cap, sector, description)
   - Valuation assessment
 - **Output**: `FundamentalReport` with summary and key metrics
 
-#### 2. **Sentiment Agent** (`backend/agents/sentiment.py`)
-- **Data Sources**: Exa search (via `tools/search.py`)
+#### 2. **Sentiment Agent** (`backend/shared/ai/agents/sentiment.py`)
+
+- **Data Sources**: Exa search (via `backend/shared/ai/tools/search.py`)
 - **Analysis**:
   - News sentiment (recent headlines, articles)
   - Social media mentions
   - Overall sentiment score (bullish/bearish)
 - **Output**: `SentimentReport` with summary and sentiment indicators
 
-#### 3. **Technical Agent** (`backend/agents/technical.py`)
-- **Data Sources**: Historical price data (via `tools/market_data.py`)
+#### 3. **Technical Agent** (`backend/shared/ai/agents/technical.py`)
+
+- **Data Sources**: Historical price data (via `backend/shared/ai/tools/market_data.py`)
 - **Analysis**:
   - Moving averages (50-day, 200-day)
   - RSI (Relative Strength Index)
@@ -454,8 +383,9 @@ The core intelligence is powered by **LangGraph** with a multi-agent workflow.
   - Support/resistance levels
 - **Output**: `TechnicalReport` with summary and indicators
 
-#### 4. **Risk Manager Agent** (`backend/agents/risk_manager.py`)
-- **Data Sources**: Portfolio data (via `dao/models.py`), historical prices
+#### 4. **Risk Manager Agent** (`backend/shared/ai/agents/risk_manager.py`)
+
+- **Data Sources**: Portfolio data (via `backend/shared/db/models/`), historical prices
 - **Analysis**:
   - Portfolio sector concentration (max 30% per sector)
   - Value at Risk (VaR) calculations
@@ -463,7 +393,8 @@ The core intelligence is powered by **LangGraph** with a multi-agent workflow.
   - **Veto Power**: Can override BUY recommendation if risk too high
 - **Output**: `RiskAssessment` with veto decision and reasoning
 
-#### 5. **Chairperson Agent** (`backend/agents/chairperson.py`)
+#### 5. **Chairperson Agent** (`backend/shared/ai/agents/chairperson.py`)
+
 - **Data Sources**: All previous agent reports
 - **Analysis**:
   - Weighs fundamental, sentiment, technical reports
@@ -474,16 +405,17 @@ The core intelligence is powered by **LangGraph** with a multi-agent workflow.
 
 ### LLM Abstraction
 
-The `backend/agents/base.py` module provides a unified interface for multiple LLM providers:
+The `backend/shared/ai/agents/base.py` module provides a unified interface for multiple LLM providers:
 
 ```python
-from backend.agents import get_llm_client
+from backend.shared.ai.agents import get_llm_client
 
 llm = get_llm_client()  # Returns AnthropicClient, OpenAIClient, or GeminiClient
 response = llm.generate(system_prompt, user_prompt)
 ```
 
 **Supported Providers**:
+
 - **Anthropic Claude** (default): `claude-3-5-sonnet-20241022`
 - **OpenAI GPT-4**: `gpt-4-turbo-preview`
 - **Google Gemini**: `gemini-pro`
@@ -492,7 +424,7 @@ Provider selection via `LLM_PROVIDER` environment variable.
 
 ### State Management
 
-The `AgentState` TypedDict (defined in `backend/state/agent_state.py`) flows through the entire workflow:
+The `AgentState` TypedDict (defined in `backend/shared/ai/state/agent_state.py`) flows through the entire workflow:
 
 ```python
 AgentState = {
@@ -525,7 +457,7 @@ Each agent adds its report to the state, which is then available to downstream a
    - Create services for auth, portfolio, watchlist, comparison
 
 3. **Core Utilities Module** (Optional):
-   - Consolidate `config.py`, `cache.py` into `backend/core/`
+   - Consolidate `config.py`, `cache.py` into `backend/shared/core/`
    - Add logging, metrics, exception handling utilities
 
 4. **Redis Caching** (Phase 4+):
@@ -543,16 +475,16 @@ Each agent adds its report to the state, which is then available to downstream a
 
 ### Adding a New Agent
 
-1. Create `backend/agents/new_agent.py`
-2. Define report TypedDict in `backend/state/agent_state.py`
-3. Add agent to workflow in `backend/graph/workflow.py`
+1. Create `backend/shared/ai/agents/new_agent.py`
+2. Define report TypedDict in `backend/shared/ai/state/agent_state.py`
+3. Add agent to workflow in `backend/shared/ai/workflow.py`
 4. Update `AgentState` to include new report field
 5. Wire into frontend in `frontend/src/components/AgentPanel.tsx`
-6. Write tests in `tests/test_agents.py`
+6. Write tests in `tests/unit/analysis/test_agents.py`
 
 ### Adding a New API Endpoint
 
-1. Add route to `backend/api/routes.py` (or create new module)
+1. Add route to `backend/domains/<domain>/api/endpoints.py` (or create new module)
 2. Use Pydantic models for request/response validation
 3. Add auth dependency for protected routes: `user: User = Depends(get_current_user)`
 4. Write tests in `tests/test_api.py`
