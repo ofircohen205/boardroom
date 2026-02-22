@@ -61,10 +61,21 @@ export function Dashboard() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      {/* Sidebar - Collapsible */}
+      {/* Overlay backdrop on mobile when sidebar is open */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-30 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar - overlay on mobile, inline on desktop */}
       <div className={cn(
           "transition-all duration-300 border-r border-white/10 bg-card/10 backdrop-blur-xl",
-          sidebarOpen ? "w-80" : "w-0 overflow-hidden"
+          "fixed md:relative z-40 md:z-auto h-full",
+          sidebarOpen
+            ? "w-80 translate-x-0"
+            : "-translate-x-full md:w-0 md:overflow-hidden md:translate-x-0"
       )}>
           <WatchlistSidebar onSelectTicker={handleTickerSelect} />
       </div>
@@ -133,7 +144,7 @@ export function Dashboard() {
                         hasStarted ? "mb-8" : "mb-0 text-center"
                     )}>
                         {!hasStarted && (
-                             <div className="mb-10 space-y-4">
+                             <div className="mb-10 space-y-4 px-4">
                                 <h1 className="text-5xl sm:text-7xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-white via-white/90 to-white/50 animate-fade-up">
                                     The Boardroom
                                 </h1>
@@ -209,7 +220,7 @@ export function Dashboard() {
                         )}
 
                         {/* Agents Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 min-w-0">
                             <AgentPanel
                                 agent="fundamental"
                                 title="Fundamental"
