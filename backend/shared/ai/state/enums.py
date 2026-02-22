@@ -4,6 +4,10 @@ from enum import Enum
 class Market(str, Enum):
     US = "US"
     TASE = "TASE"
+    LSE = "LSE"
+    TSE = "TSE"
+    HKEX = "HKEX"
+    XETRA = "XETRA"
 
 
 class Trend(str, Enum):

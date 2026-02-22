@@ -2,8 +2,11 @@
 
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from backend.shared.ai.state.enums import Market
 from backend.shared.ai.tools.stock_search import (
+    _POPULAR_STOCKS,
     POPULAR_TASE_STOCKS,
     StockSuggestion,
     search_stocks,
@@ -254,3 +257,112 @@ class TestSearchStocksYFinanceFallback:
 
         symbols = [r.symbol for r in result]
         assert "NOOP" not in symbols
+
+
+# ===========================================================================
+# International markets — _POPULAR_STOCKS coverage
+# ===========================================================================
+
+
+class TestPopularStocksCoversAllMarkets:
+    def test_popular_stocks_covers_all_markets(self):
+        """Every Market enum value has a popular stocks entry."""
+        for market in Market:
+            assert market in _POPULAR_STOCKS, f"Missing popular stocks for {market}"
+
+
+# ===========================================================================
+# International markets — LSE
+# ===========================================================================
+
+
+class TestSearchStocksLSE:
+    @pytest.mark.asyncio
+    async def test_search_lse_popular(self):
+        results = await search_stocks("HSBA", Market.LSE)
+        assert any(r.symbol == "HSBA" for r in results)
+        assert all(r.market == Market.LSE for r in results)
+
+    @pytest.mark.asyncio
+    async def test_lse_yfinance_called_with_l_suffix(self):
+        mock_ticker = MagicMock()
+        mock_ticker.info = {"shortName": "Some UK Corp", "exchange": "LSE"}
+
+        with patch(
+            "backend.shared.ai.tools.stock_search.yf.Ticker", return_value=mock_ticker
+        ) as mock_yf:
+            await search_stocks("UNKN", Market.LSE)
+
+        mock_yf.assert_called_once_with("UNKN.L")
+
+
+# ===========================================================================
+# International markets — TSE
+# ===========================================================================
+
+
+class TestSearchStocksTSE:
+    @pytest.mark.asyncio
+    async def test_search_tse_popular(self):
+        results = await search_stocks("7203", Market.TSE)
+        assert any(r.symbol == "7203" for r in results)
+
+    @pytest.mark.asyncio
+    async def test_tse_yfinance_called_with_t_suffix(self):
+        mock_ticker = MagicMock()
+        mock_ticker.info = {"shortName": "Some JP Corp", "exchange": "TSE"}
+
+        with patch(
+            "backend.shared.ai.tools.stock_search.yf.Ticker", return_value=mock_ticker
+        ) as mock_yf:
+            await search_stocks("9999", Market.TSE)
+
+        mock_yf.assert_called_once_with("9999.T")
+
+
+# ===========================================================================
+# International markets — HKEX
+# ===========================================================================
+
+
+class TestSearchStocksHKEX:
+    @pytest.mark.asyncio
+    async def test_search_hkex_popular(self):
+        results = await search_stocks("0700", Market.HKEX)
+        assert any(r.symbol == "0700" for r in results)
+
+    @pytest.mark.asyncio
+    async def test_hkex_yfinance_called_with_hk_suffix(self):
+        mock_ticker = MagicMock()
+        mock_ticker.info = {"shortName": "Some HK Corp", "exchange": "HKEX"}
+
+        with patch(
+            "backend.shared.ai.tools.stock_search.yf.Ticker", return_value=mock_ticker
+        ) as mock_yf:
+            await search_stocks("9999", Market.HKEX)
+
+        mock_yf.assert_called_once_with("9999.HK")
+
+
+# ===========================================================================
+# International markets — XETRA
+# ===========================================================================
+
+
+class TestSearchStocksXETRA:
+    @pytest.mark.asyncio
+    async def test_search_xetra_popular(self):
+        results = await search_stocks("SAP", Market.XETRA)
+        assert any(r.symbol == "SAP" for r in results)
+
+    @pytest.mark.asyncio
+    async def test_xetra_yfinance_called_with_de_suffix(self):
+        mock_ticker = MagicMock()
+        mock_ticker.info = {"shortName": "Some DE Corp", "exchange": "XETRA"}
+
+        with patch(
+            "backend.shared.ai.tools.stock_search.yf.Ticker", return_value=mock_ticker
+        ) as mock_yf:
+            await search_stocks("UNKN", Market.XETRA)
+
+        mock_yf.assert_called_once_with("UNKN.DE")
