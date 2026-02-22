@@ -195,6 +195,26 @@ export function AgentPanel({
               )}
             </div>
 
+            {/* Secondary technical metrics row */}
+            {agent === "technical" && (data.macd_histogram != null || data.bollinger_width_pct != null || data.atr != null) && (
+              <div className="grid grid-cols-3 gap-2 p-3 rounded-lg bg-black/20 border border-white/10 backdrop-blur-sm">
+                <Metric
+                  label="MACD"
+                  value={data.macd_histogram != null ? data.macd_histogram.toFixed(4) : "—"}
+                  positive={data.macd_histogram > 0}
+                  negative={data.macd_histogram < 0}
+                />
+                <Metric
+                  label="BB Width"
+                  value={data.bollinger_width_pct != null ? `${data.bollinger_width_pct.toFixed(1)}%` : "—"}
+                />
+                <Metric
+                  label="ATR"
+                  value={data.atr != null ? data.atr.toFixed(2) : "—"}
+                />
+              </div>
+            )}
+
             {/* Summary - the AI analysis text */}
             {data.summary && (
               <div className="bg-white/5 rounded-lg p-3 border border-white/10 group-hover:bg-white/10 transition-colors">

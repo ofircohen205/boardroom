@@ -52,6 +52,13 @@ export interface TechnicalReport {
   trend: Trend;
   price_history: PricePoint[];
   summary: string;
+  macd?: number;
+  macd_signal?: number;
+  macd_histogram?: number;
+  bollinger_upper?: number;
+  bollinger_lower?: number;
+  bollinger_width_pct?: number;
+  atr?: number;
 }
 
 export interface PricePoint {

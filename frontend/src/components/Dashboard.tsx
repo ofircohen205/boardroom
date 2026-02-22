@@ -210,6 +210,8 @@ export function Dashboard() {
                                            ma50={state.technical.ma_50}
                                            ma200={state.technical.ma_200}
                                            rsi={state.technical.rsi}
+                                           bollingerUpper={state.technical.bollinger_upper}
+                                           bollingerLower={state.technical.bollinger_lower}
                                        />
                                    ) : (
                                        <div className="h-full flex items-center justify-center text-muted-foreground/20 text-sm font-mono uppercase tracking-widest">
