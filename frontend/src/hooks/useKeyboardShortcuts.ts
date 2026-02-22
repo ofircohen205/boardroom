@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 
 /**
  * Keyboard shortcuts hook
@@ -15,9 +15,13 @@ import { useEffect, useRef } from 'react';
  * ```
  */
 export function useKeyboardShortcuts(shortcuts: Record<string, (e: KeyboardEvent) => void>) {
-  // Keep a ref to the latest shortcuts map so the effect never needs to re-subscribe
+  // Keep a ref to the latest shortcuts map so the effect never needs to re-subscribe.
+  // useLayoutEffect updates the ref synchronously after each render (before paint),
+  // satisfying the react-hooks/refs rule while keeping the event listener stable.
   const shortcutsRef = useRef(shortcuts);
-  shortcutsRef.current = shortcuts;
+  useLayoutEffect(() => {
+    shortcutsRef.current = shortcuts;
+  });
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
