@@ -136,8 +136,8 @@ export function TickerInput({ onAnalyze, isLoading, analysisMode, onModeChange }
         onSubmit={handleSubmit}
         className={`relative flex items-center gap-4 p-2 pl-4 rounded-2xl transition-all duration-300 border ${
           isFocused
-            ? "bg-white/10 border-primary/50 shadow-[0_0_30px_rgba(var(--primary),0.2)]"
-            : "bg-white/5 border-border hover:bg-white/10 hover:border-white/20"
+            ? "bg-muted/60 border-primary/50 shadow-[0_0_30px_rgba(var(--primary),0.2)]"
+            : "bg-muted/40 border-border hover:bg-muted/60 hover:border-border"
         }`}
       >
       <Search
@@ -201,7 +201,7 @@ export function TickerInput({ onAnalyze, isLoading, analysisMode, onModeChange }
       </div>
 
       <div className="flex items-center gap-2">
-        <div className="h-8 w-px bg-white/10 hidden sm:block" />
+        <div className="h-8 w-px bg-border hidden sm:block" />
 
         <Select value={market} onValueChange={(v) => setMarket(v as Market)}>
           <SelectTrigger className="w-auto gap-2 bg-transparent border-none focus:ring-0 text-muted-foreground hover:text-foreground transition-colors font-medium">
@@ -233,7 +233,7 @@ export function TickerInput({ onAnalyze, isLoading, analysisMode, onModeChange }
           className={`h-12 w-12 rounded-xl transition-all duration-300 ${
             ticker.trim()
               ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_0_20px_rgba(var(--primary),0.4)]"
-              : "bg-white/5 text-muted-foreground hover:bg-white/10"
+              : "bg-muted text-muted-foreground hover:bg-muted/80"
           }`}
         >
           {isLoading ? (
