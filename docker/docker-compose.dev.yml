@@ -36,7 +36,7 @@ services:
     env_file:
       - ../.env
     environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-boardroom}:${POSTGRES_PASSWORD:-boardroom}@postgres-db:5432/${POSTGRES_DB:-boardroom}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-boardroom}:${POSTGRES_PASSWORD:-boardroom}@postgres-db:5432/litellm
       - STORE_MODEL_IN_DB=True
       - LANGFUSE_HOST=http://langfuse-server:3000
     depends_on:
@@ -66,7 +66,7 @@ services:
       - POSTGRES_USER=boardroom
       - POSTGRES_PASSWORD=${DB_PASSWORD:-boardroom}
       - POSTGRES_DB=boardroom
-      - POSTGRES_MULTIPLE_DATABASES=langfuse
+      - POSTGRES_MULTIPLE_DATABASES=langfuse,litellm
     ports:
       - "5432:5432"
     env_file:

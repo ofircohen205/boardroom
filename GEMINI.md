@@ -12,11 +12,22 @@ This file provides guidance to Gemini when working with code in this repository.
 
 Boardroom is a multi-agent financial analysis system using LangGraph. Agents pass a "Token of Authority" between them to collaboratively analyze stocks and make trading decisions.
 
-**Current Status:** Phase 0 (Core System) is complete. All 6 planned phases + quick wins remain to be implemented.
+**Current Status:**
+
+- ✅ Phase 0 (Core System) complete - 5-agent pipeline, WebSocket streaming
+- ✅ Phase 1 (Auth/Watchlist) complete - User authentication, portfolio management
+- ✅ Phase 2 (Performance) complete - Accuracy tracking, agent leaderboards
+- ✅ Phase 3 (Comparison) complete - Multi-stock side-by-side analysis
+- ✅ Phase 4a (Alerts) complete - Price alerts, WebSocket notifications
+- ✅ Phase 4b (Scheduled Analysis) complete - Automated analysis, TASE support
+- ✅ Phase 5 (Backtesting) complete - Historical testing, paper trading, strategy builder
+- ✅ Services Layer Refactoring complete - Class-based services with dependency injection
+- ⏳ Phase 6 (Export & Reporting) - Not yet started
 
 **Key Documentation:**
 
 - [AGENTS.md](./AGENTS.md) — Detailed agent system architecture
+
 - [docs/plans/roadmap.md](./docs/plans/roadmap.md) — Implementation phases and roadmap
 - [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) — System architecture overview
 - [docs/DEVELOPMENT.md](./docs/DEVELOPMENT.md) — Development setup and workflow
@@ -24,21 +35,23 @@ Boardroom is a multi-agent financial analysis system using LangGraph. Agents pas
 ## Quick Start
 
 ```bash
-# Backend
-make dev                                       # Start backend (requires PostgreSQL)
-make test                                      # Run all tests
-make test-cov                                  # Run tests with coverage
+# Full system (Docker Compose — backend + frontend + DB)
+make dev                                       # Start all services
+make down                                      # Stop all services
 
-# Frontend
-make frontend                                  # Start frontend dev server
+# Backend only (requires PostgreSQL already running)
+uv run uvicorn backend.main:app --reload
+
+# Frontend only
+make frontend                                  # or: cd frontend && npm run dev
 
 # Database
 make db-migrate                                # Run Alembic migrations
 make db-revision MESSAGE="description"         # Create new migration
 
-# Full System (Docker)
-make dev                                       # Start all services via Docker Compose
-make down                                      # Stop all services
+# Tests
+make test                                      # Run all tests
+make test-cov                                  # Run tests with coverage report
 ```
 
 ## Development Commands
@@ -47,7 +60,7 @@ make down                                      # Stop all services
 # Backend
 uv run uvicorn backend.main:app --reload     # Run API server
 uv run pytest tests/ -v                       # Run all tests
-uv run pytest tests/test_specific.py -v       # Run specific test file
+uv run pytest tests/unit/analysis/ -v         # Run specific domain tests
 uv run pytest tests/test_file.py::test_name   # Run single test
 
 # Frontend
@@ -62,6 +75,14 @@ cd frontend && npm install                    # Install JS dependencies
 ```
 
 ## Architecture
+
+### Project Structure
+
+The project follows the **project-root/package-name/** Python layout pattern:
+
+- `boardroom/` (project root) contains `backend/` (importable as `backend`)
+- This is a standard Python structure, equivalent to the alternative `src/` layout
+- All imports use `from backend.*` (e.g., `from backend.shared.ai.agents import FundamentalAgent`)
 
 ### Technology Stack
 
@@ -85,16 +106,16 @@ cd frontend && npm install                    # Install JS dependencies
 
 **Analyst Agents (Workers):**
 
-- **Fundamental Agent** (`backend/agents/fundamental.py`): Pulls hard data via Yahoo Finance
-- **Sentiment Agent** (`backend/agents/sentiment.py`): Scans news/social via Exa
-- **Technical Agent** (`backend/agents/technical.py`): Analyzes price trends (MA, RSI)
+- **Fundamental Agent** (`backend/shared/ai/agents/fundamental.py`): Pulls hard data via Yahoo Finance
+- **Sentiment Agent** (`backend/shared/ai/agents/sentiment.py`): Scans news/social via Exa
+- **Technical Agent** (`backend/shared/ai/agents/technical.py`): Analyzes price trends (MA, RSI)
 
-**Risk Manager (Brake)** (`backend/agents/risk_manager.py`):
+**Risk Manager (Brake)** (`backend/shared/ai/agents/risk_manager.py`):
 
 - Checks portfolio sector weight (max 30%)
 - Has veto power over trades
 
-**Chairperson (Closer)** (`backend/agents/chairperson.py`):
+**Chairperson (Closer)** (`backend/shared/ai/agents/chairperson.py`):
 
 - Weighs all reports
 - Makes final BUY/SELL/HOLD decision
@@ -103,131 +124,150 @@ See [AGENTS.md](./AGENTS.md) for detailed agent documentation.
 
 ### Key Directories
 
+The backend uses **domain-driven design**: cross-cutting infrastructure lives in `shared/`, feature logic lives in `domains/`.
+
 ```
 backend/
-├── core/            # ✨ Application fundamentals
-│   ├── settings.py  # Pydantic Settings (formerly config.py)
-│   ├── enums.py     # LLMProvider, MarketDataProvider
-│   ├── security.py  # JWT, password hashing
-│   ├── logging.py   # Structured logging
-│   └── exceptions.py # Base exceptions, error handlers
+├── shared/                  # Cross-domain infrastructure (imported by all domains)
+│   ├── core/                # App fundamentals
+│   │   ├── settings.py      # Pydantic Settings (env vars)
+│   │   ├── enums.py         # LLMProvider, MarketDataProvider
+│   │   ├── security.py      # JWT, password hashing
+│   │   ├── logging.py       # Structured logging
+│   │   ├── cache.py         # Redis caching helpers
+│   │   └── exceptions.py    # Base exceptions, error handlers
+│   ├── db/                  # Database layer
+│   │   ├── database.py      # Engine, session maker, get_db()
+│   │   └── models/          # SQLAlchemy models
+│   │       ├── user.py          # User, UserAPIKey
+│   │       ├── portfolio.py     # Watchlist, Portfolio, Position
+│   │       ├── analysis.py      # AnalysisSession, AgentReport, FinalDecision
+│   │       ├── alerts.py        # Alert, AlertHistory
+│   │       ├── performance.py   # AnalysisOutcome, AgentAccuracy
+│   │       └── backtesting.py   # BacktestRun, BacktestTrade
+│   ├── dao/                 # Data Access Objects (CRUD wrappers)
+│   │   ├── base.py          # Base DAO with shared CRUD helpers
+│   │   ├── user.py
+│   │   ├── portfolio.py
+│   │   ├── analysis.py
+│   │   ├── alerts.py
+│   │   ├── performance.py
+│   │   └── backtesting.py
+│   ├── ai/                  # LangGraph agent system
+│   │   ├── workflow.py      # LangGraph orchestration (create_boardroom_graph)
+│   │   ├── agents/          # All 5 agents
+│   │   │   ├── base.py
+│   │   │   ├── fundamental.py
+│   │   │   ├── sentiment.py
+│   │   │   ├── technical.py
+│   │   │   ├── risk_manager.py
+│   │   │   └── chairperson.py
+│   │   ├── state/           # Shared state definitions
+│   │   │   ├── agent_state.py   # AgentState TypedDict
+│   │   │   ├── enums.py         # Action, Market, AgentType
+│   │   │   └── result_state.py  # Result state definitions
+│   │   ├── tools/           # Market data & analysis tools
+│   │   │   ├── market_data.py
+│   │   │   ├── search.py
+│   │   │   ├── stock_search.py
+│   │   │   ├── technical_indicators.py
+│   │   │   ├── relative_strength.py
+│   │   │   └── sector_data.py
+│   │   └── prompts/         # LLM prompt templates
+│   ├── auth/                # Auth dependency injection
+│   │   └── dependencies.py  # get_current_user, etc.
+│   ├── services/            # Base service class & exceptions
+│   │   ├── base.py          # BaseService
+│   │   └── exceptions.py    # ServiceError base class
+│   ├── jobs/                # APScheduler background jobs
+│   │   ├── scheduler.py
+│   │   ├── outcome_tracker.py
+│   │   ├── alert_checker.py
+│   │   └── scheduled_analyzer.py
+│   ├── data/                # Historical data utilities
+│   │   └── historical.py
+│   └── utils/               # Misc shared utilities
+│       └── routes.py
 │
-├── db/              # ✨ Database models layer
-│   ├── database.py  # Engine, session maker, get_db()
-│   └── models/      # SQLAlchemy models (modular)
-│       ├── base.py       # DeclarativeBase
-│       ├── user.py       # User, UserAPIKey
-│       ├── portfolio.py  # Watchlist, Portfolio, Position
-│       ├── analysis.py   # AnalysisSession, AgentReport, FinalDecision
-│       ├── alerts.py     # Alert, AlertHistory
-│       └── performance.py # AnalysisOutcome, AgentAccuracy
+├── domains/                 # Feature domains (vertical slices)
+│   ├── analysis/            # Stock analysis & backtesting
+│   │   ├── api/
+│   │   │   ├── endpoints.py     # REST + WebSocket analysis endpoints
+│   │   │   ├── websocket.py     # WebSocket connection handler
+│   │   │   ├── schemas.py
+│   │   │   ├── backtest/        # Backtesting API (router, schemas, websocket)
+│   │   │   ├── paper/           # Paper trading API
+│   │   │   └── strategies/      # Strategy management API
+│   │   ├── services/
+│   │   │   ├── service.py       # AnalysisService
+│   │   │   └── exceptions.py
+│   │   └── scoring/             # Agent output scoring
+│   │       ├── fundamental_scorer.py
+│   │       ├── sentiment_scorer.py
+│   │       ├── technical_scorer.py
+│   │       └── chairperson_scorer.py
+│   ├── auth/                # Authentication domain
+│   │   ├── api/             # Login, register, token endpoints
+│   │   └── services/        # AuthService
+│   ├── notifications/       # Alerts & scheduled analysis
+│   │   ├── api/             # alerts.py, schedules.py, endpoints.py
+│   │   └── services/        # AlertService, ScheduleService, EmailService
+│   ├── performance/         # Performance tracking & leaderboards
+│   │   ├── api/
+│   │   └── services/        # PerformanceService
+│   ├── portfolio/           # Portfolio & watchlist management
+│   │   ├── api/             # portfolios.py, watchlists.py
+│   │   └── services/        # PortfolioService, WatchlistService
+│   ├── sectors/             # Sector info endpoints
+│   ├── settings/            # User settings
+│   │   ├── api/
+│   │   └── services/        # SettingsService
+│   └── ...
 │
-├── dao/             # ✨ Data Access Objects layer
-│   ├── base.py      # Base DAO with CRUD operations
-│   ├── user.py      # User data operations
-│   ├── portfolio.py # Portfolio/Watchlist operations
-│   ├── analysis.py  # Analysis session operations
-│   ├── alerts.py    # Alert operations
-│   └── performance.py # Performance tracking operations
-│
-├── ai/              # ✨ AI/LLM analysis system
-│   ├── workflow.py  # LangGraph orchestration
-│   ├── agents/      # All 5 agents + LLM abstraction
-│   │   ├── base.py
-│   │   ├── fundamental.py
-│   │   ├── sentiment.py
-│   │   ├── technical.py
-│   │   ├── risk_manager.py
-│   │   └── chairperson.py
-│   ├── state/       # TypedDicts and enums
-│   │   ├── agent_state.py  # State definitions
-│   │   └── enums.py        # Action, Market, AgentType enums
-│   └── tools/       # Market data, search, indicators
-│       ├── market_data.py       # Yahoo Finance integration
-│       ├── search.py            # Exa search for news/social
-│       ├── stock_search.py      # Stock symbol autocomplete
-│       ├── technical_indicators.py  # MA, RSI calculations
-│       ├── relative_strength.py     # Comparative metrics
-│       └── sector_data.py           # Sector information
-│
-├── api/             # ✨ FastAPI routes (feature-based organization)
-│   ├── __init__.py
-│   ├── routes.py         # Main router aggregation
-│   ├── auth/             # Authentication endpoints
-│   ├── analysis/         # Stock analysis endpoints
-│   ├── websocket/        # WebSocket connections
-│   ├── portfolios/       # Portfolio management
-│   ├── watchlists/       # Watchlist endpoints
-│   ├── alerts/           # Alert management
-│   ├── schedules/        # Scheduled analysis
-│   ├── performance/      # Performance tracking
-│   ├── settings/         # User settings
-│   ├── sectors/          # Sector information
-│   └── notifications/    # Notification endpoints
-│
-├── services/        # ✨ Business logic layer
-│   ├── __init__.py
-│   ├── auth/                    # Authentication services
-│   ├── analysis_history/        # Analysis history services
-│   ├── performance_tracking/    # Performance tracking
-│   ├── portfolio_management/    # Portfolio operations
-│   ├── alerts/                  # Alert services
-│   ├── settings/                # Settings management
-│   └── email.py                 # Email notifications
-│
-├── auth/            # Authentication dependencies
-│   └── dependencies.py  # get_current_user, etc.
-│
-├── jobs/            # Background jobs (APScheduler)
-│   ├── scheduler.py
-│   └── outcome_tracker.py
-│
-└── main.py          # FastAPI app entry point
+├── api.py                   # Main router (aggregates all domain routers)
+├── dependencies.py          # Shared FastAPI dependencies
+└── main.py                  # FastAPI app entry point
 
-frontend/
-└── src/
-    ├── components/      # React components
-    │   ├── layout/          # AppLayout, Navbar, Footer, PageContainer
-    │   ├── Dashboard.tsx    # Main analysis dashboard
-    │   ├── AgentPanel.tsx   # Individual agent display
-    │   ├── DecisionCard.tsx # Final decision display
-    │   ├── StockChart.tsx   # Price chart (lightweight-charts)
-    │   └── ui/              # shadcn/ui components
-    ├── pages/           # Route pages
-    │   ├── DashboardPage.tsx
-    │   ├── PortfolioPage.tsx
-    │   ├── AlertsPage.tsx
-    │   ├── SchedulesPage.tsx
-    │   ├── PerformancePage.tsx
-    │   ├── ComparePage.tsx
-    │   └── SettingsPage.tsx
-    ├── hooks/           # React hooks
-    │   └── useWebSocket.ts    # WebSocket state management
-    ├── contexts/        # React contexts
-    │   └── AuthContext.tsx
-    ├── types/           # TypeScript types
-    ├── lib/             # Utilities
-    └── App.tsx          # Root component with routing
+frontend/src/
+├── components/
+│   ├── layout/              # AppLayout, Navbar, Footer, PageContainer
+│   ├── backtest/            # BacktestForm, BacktestSummary, TradeLog
+│   ├── common/              # AsyncDataDisplay, EmptyState, ErrorState, LoadingState
+│   ├── performance/         # AccuracyChart, AgentLeaderboard, PerformanceSummary
+│   ├── strategies/          # AgentWeightSliders, StrategyForm
+│   ├── ui/                  # shadcn/ui components
+│   └── (root)               # Dashboard, AgentPanel, DecisionCard, StockChart, etc.
+├── pages/                   # AuthPage, PortfolioPage, AlertsPage, SchedulesPage,
+│                            # BacktestPage, PaperTradingPage, StrategiesPage, etc.
+├── hooks/                   # useWebSocket, useAPIClient, useFetch, useTheme, etc.
+├── contexts/                # AuthContext, APIContext, ThemeContext
+├── lib/
+│   ├── api/                 # Per-feature API clients (alerts, analysis, portfolios, etc.)
+│   ├── apiClient.ts         # Axios/fetch base client
+│   └── utils.ts
+└── App.tsx
 
 tests/
-├── conftest.py          # Pytest fixtures
-├── unit/                # Unit tests (SQLite in-memory)
-│   ├── test_agents.py
-│   ├── test_tools.py
-│   ├── test_dao.py
-│   └── ...
-└── integration/         # Integration tests (PostgreSQL)
-    ├── test_workflow.py
-    ├── test_api.py
-    └── ...
+├── conftest.py              # Pytest fixtures (DB setup, factories)
+├── unit/                    # SQLite in-memory — fast, no external deps
+│   ├── analysis/            # Agents, tools, scoring, DAO, services
+│   ├── auth/                # Auth DAO, dependencies
+│   ├── notifications/       # Alert/schedule services, email, market hours
+│   ├── performance/         # DAO, service, API
+│   ├── portfolio/           # DAO, watchlist service
+│   ├── sectors/             # API
+│   ├── settings/            # Service
+│   └── shared/              # Cache, DAOs, exceptions, scheduler, workflow
+└── integration/             # PostgreSQL — full stack tests
+    ├── analysis/            # Full workflow, backtest flow
+    ├── notifications/       # Alert checker, scheduled analysis
+    └── shared/              # API, DB connection, health, scheduler
 
 docs/
-├── plans/                  # Phase implementation plans
-│   ├── roadmap.md
-│   ├── phase-1-portfolio-watchlists.md
-│   └── ...
+├── plans/                   # Phase implementation plans + roadmap
 ├── ARCHITECTURE.md
 ├── DEVELOPMENT.md
+
 └── SECURITY.md
 ```
 
@@ -261,6 +301,73 @@ AgentState = {
 }
 ```
 
+## Workflow Orchestration
+
+> These principles govern how to approach tasks, leverage AI capabilities effectively, and maintain quality throughout execution.
+
+### 1. Plan Before You Build
+
+- Enter plan mode for **any non-trivial task** — 3+ steps, architectural decisions, or anything touching multiple files
+- Write detailed specs upfront to surface edge cases and reduce ambiguity before a single line of code is written
+- If execution goes sideways, **STOP and re-plan** — don't keep pushing through a broken approach
+- Use plan mode for verification steps too, not just initial design
+
+### 2. Subagent Strategy
+
+- Use subagents liberally to keep the main context window clean and focused
+- Offload research, codebase exploration, and parallel analysis to subagents
+- For complex problems: throw more compute via subagents rather than brute-forcing in a single context thread
+- One focused task per subagent — don't overload a single subagent with unrelated concerns
+
+### 3. Self-Improvement Loop
+
+- After **any** correction from the user: update `tasks/lessons.md` with the pattern
+- Write specific, actionable rules that prevent the same mistake from recurring
+- Ruthlessly iterate on these lessons until mistake rate drops
+- Review `tasks/lessons.md` at session start before beginning any work on this project
+
+### 4. Verification Before Done
+
+- **Never mark a task complete without proving it works** — run tests, check logs, demonstrate correctness
+- When relevant, diff behavior between `main` and your changes to catch regressions
+- Ask yourself: "Would a staff engineer approve this?" before presenting work
+- See the [Git Workflow → Code Review](#git-workflow) section for automated review hooks
+
+### 5. Demand Elegance (Balanced)
+
+- For non-trivial changes: pause and ask "is there a more elegant way?"
+- If a fix feels hacky: step back — "Knowing everything I know now, what's the clean solution?"
+- **Skip this for obvious, simple fixes** — don't over-engineer one-liners
+- Challenge your own first draft before presenting it to the user
+
+### 6. Autonomous Bug Fixing
+
+- When given a bug report: **just fix it** — don't ask for hand-holding
+- Point at logs, errors, and failing tests to identify the root cause, then resolve it
+- Zero unnecessary context-switching required from the user
+- Fix failing CI/tests proactively without waiting to be told how
+
+## Task Management
+
+When working on any multi-step task, follow this workflow:
+
+1. **Plan First:** Write the plan to `tasks/todo.md` with checkable items (`- [ ] step`)
+2. **Verify Plan:** Check in with the user before starting implementation
+3. **Track Progress:** Mark items complete (`- [x]`) as you go; keep the file current
+4. **Explain Changes:** Provide a high-level summary at each significant step — no silent changes
+5. **Document Results:** Add a review/outcome section to `tasks/todo.md` when done
+6. **Capture Lessons:** Update `tasks/lessons.md` after any corrections, surprises, or new insights
+
+> The `tasks/` directory is gitignored and is for session-local planning only. Never commit it.
+
+### Core Principles
+
+These apply to every change, no matter how small:
+
+- **Simplicity First:** Make every change as simple as possible. Impact the minimal amount of code necessary.
+- **No Laziness:** Find root causes. No temporary fixes. Hold yourself to senior developer standards.
+- **Minimal Impact:** Changes should only touch what's necessary. Avoid accidentally introducing bugs in adjacent code.
+
 ## Code Quality Standards
 
 ### General Coding Principles
@@ -278,8 +385,8 @@ AgentState = {
 
 3. **Documentation:**
    - Update relevant documentation files when making architectural changes:
-     - [CLAUDE.md](./CLAUDE.md) - Claude-specific guidance
      - [GEMINI.md](./GEMINI.md) - Gemini-specific guidance and corrections
+     - [CLAUDE.md](./CLAUDE.md) - Claude-specific guidance
      - [AGENTS.md](./AGENTS.md) - Agent system architecture
      - [STATUS.md](./STATUS.md) - Project status, completed features, pending bugs
    - Add docstrings to all new functions and classes
@@ -352,6 +459,53 @@ This project involves financial data analysis, agent decision-making, and LLM in
 
 ## Best Practices
 
+### Import Patterns
+
+The backend uses a `shared/` + `domains/` split. All shared infrastructure is under `backend.shared.*`; domain services/APIs are under `backend.domains.<domain>.*`.
+
+```python
+# Shared infrastructure
+from backend.shared.core.settings import settings
+from backend.shared.core.security import create_access_token, get_password_hash
+from backend.shared.core.enums import LLMProvider, MarketDataProvider
+from backend.shared.core.exceptions import ServiceError
+
+# Database
+from backend.shared.db.models import User, AnalysisSession, Portfolio
+from backend.shared.db.database import get_db
+
+# DAOs
+from backend.shared.dao.user import UserDAO
+from backend.shared.dao.portfolio import PortfolioDAO
+
+# AI system
+from backend.shared.ai.workflow import create_boardroom_graph
+from backend.shared.ai.state.enums import Market, Action, AgentType
+from backend.shared.ai.state.agent_state import AgentState
+from backend.shared.ai.agents.fundamental import FundamentalAgent
+from backend.shared.ai.tools.market_data import get_market_data_client
+
+# Domain services
+from backend.domains.analysis.services.service import AnalysisService
+from backend.domains.auth.services.service import AuthService
+from backend.domains.portfolio.services.portfolio_service import PortfolioService
+from backend.domains.notifications.services.alert_service import AlertService
+from backend.domains.notifications.services.schedule_service import ScheduleService
+
+# Auth dependency
+from backend.shared.auth.dependencies import get_current_user
+```
+
+**Do NOT use these old paths** (pre-refactor, no longer exist):
+
+- ❌ `from backend.core.*` → ✅ `from backend.shared.core.*`
+- ❌ `from backend.db.*` → ✅ `from backend.shared.db.*`
+- ❌ `from backend.dao.*` → ✅ `from backend.shared.dao.*`
+- ❌ `from backend.ai.*` → ✅ `from backend.shared.ai.*`
+- ❌ `from backend.services.*` → ✅ `from backend.domains.<domain>.services.*`
+- ❌ `from backend.auth.dependencies` → ✅ `from backend.shared.auth.dependencies`
+- ❌ `from backend.api.*` → ✅ `from backend.domains.<domain>.api.*`
+
 ### Code Style
 
 - **Backend:** Follow PEP 8, use type hints, async/await for I/O
@@ -369,10 +523,69 @@ This project involves financial data analysis, agent decision-making, and LLM in
 
 ### Working with Tools
 
-- Tools are in `backend/tools/` and are synchronous or async functions
+- Tools are in `backend/shared/ai/tools/` and are synchronous or async functions
 - Tools should handle errors gracefully and return sensible defaults
 - Cache expensive operations (market data, LLM calls)
 - Test tools with mocked external APIs
+
+### Services Layer
+
+**Architecture:** Each domain owns its own service(s) under `backend/domains/<domain>/services/`. The base class and shared exceptions live in `backend/shared/services/`.
+
+**Service pattern:**
+
+```python
+# Domain service (e.g., backend/domains/portfolio/services/portfolio_service.py)
+class PortfolioService(BaseService):
+    def __init__(self, dao: PortfolioDAO):
+        self.dao = dao
+
+    async def create_portfolio(self, user_id: int, name: str, db: AsyncSession) -> Portfolio:
+        ...
+
+# API endpoint — construct service inline or via Depends
+@router.post("/portfolios")
+async def create_portfolio(
+    data: PortfolioCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    service = PortfolioService(PortfolioDAO(db))
+    return await service.create_portfolio(current_user.id, data.name, db)
+```
+
+**Key conventions:**
+
+- Services live in `backend/domains/<domain>/services/service.py` (or named descriptively)
+- Services receive DAOs via constructor injection; they do **not** manage their own sessions
+- All service methods are async
+- Services raise domain-specific exceptions that inherit from `ServiceError` (`backend/shared/services/exceptions.py`)
+- Endpoints catch service exceptions and map them to HTTP status codes
+
+**Exception handling pattern:**
+
+```python
+try:
+    result = await service.create_scheduled_analysis(...)
+except ScheduleRateLimitError as e:
+    raise HTTPException(status_code=400, detail=str(e))
+except ScheduleError as e:
+    logger.error(f"Failed: {e}")
+    raise HTTPException(status_code=500, detail="Operation failed")
+```
+
+**Available services** (one per domain):
+
+| Domain        | Service                                           | Location                                  |
+| ------------- | ------------------------------------------------- | ----------------------------------------- |
+| auth          | `AuthService`                                     | `domains/auth/services/service.py`        |
+| portfolio     | `PortfolioService`, `WatchlistService`            | `domains/portfolio/services/`             |
+| notifications | `AlertService`, `ScheduleService`, `EmailService` | `domains/notifications/services/`         |
+| performance   | `PerformanceService`                              | `domains/performance/services/service.py` |
+| settings      | `SettingsService`                                 | `domains/settings/services/service.py`    |
+| analysis      | `AnalysisService`                                 | `domains/analysis/services/service.py`    |
+
+See [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) for details about the architecture, services, and dependency injection patterns.
 
 ### Database Migrations
 
@@ -395,46 +608,47 @@ This project involves financial data analysis, agent decision-making, and LLM in
   - Frontend Dockerfiles: `frontend/docker/Dockerfile.{dev,prod}`
 - Frontend uses anonymous volume for node_modules
 - After adding npm deps: `docker compose -f docker/docker-compose.dev.yml up -d --build boardroom-frontend`
-- Redis cache available at `boardroom-redis:6379` in Docker network
 - Backend runs with hot reload via uvicorn --reload
+- Redis cache available at `boardroom-redis:6379` in Docker network
 
 ## Common Tasks
 
 ### Adding a New Agent
 
-1. Create agent class in `backend/agents/new_agent.py`
-2. Define report TypedDict in `backend/state/agent_state.py`
-3. Add agent to `BoardroomGraph` in `backend/graph/workflow.py`
-4. Update `AgentState` to include new report
+1. Create agent class in `backend/shared/ai/agents/new_agent.py`
+2. Define report TypedDict in `backend/shared/ai/state/agent_state.py`
+3. Update `AgentState` to include the new report field
+4. Add agent to `BoardroomGraph` in `backend/shared/ai/workflow.py`
 5. Wire into workflow (parallel or sequential)
-6. Add WebSocket message type to `backend/state/enums.py`
+6. Add WebSocket message type to `backend/shared/ai/state/enums.py`
 7. Update frontend to display new agent results
-8. Write tests in `tests/test_agents.py`
+8. Write tests in `tests/unit/analysis/test_<agent_name>.py`
 
 See [AGENTS.md](./AGENTS.md) for detailed instructions.
 
 ### Adding a New Tool
 
-1. Create function in appropriate `backend/tools/*.py` file
+1. Create function in `backend/shared/ai/tools/<name>.py`
 2. Add type hints and docstring
-3. Handle errors and edge cases
-4. Add caching if expensive
-5. Write tests in `tests/test_tools.py`
-6. Use in agent by calling the tool function
+3. Handle errors and edge cases gracefully
+4. Add caching if the operation is expensive
+5. Write tests in `tests/unit/analysis/test_tools.py`
+6. Use in an agent by importing and calling the tool function
 
 ### Adding a New Endpoint
 
-1. Add route to `backend/api/routes.py`
-2. Use FastAPI dependency injection for auth (Phase 1+)
-3. Return Pydantic models for type safety
-4. Add OpenAPI documentation via docstrings
-5. Write tests in `tests/test_api.py` (or create new test file)
+1. Add router to the relevant `backend/domains/<domain>/api/` module
+2. Register it in `backend/api.py` (the main router aggregator)
+3. Use `Depends(get_current_user)` for authenticated endpoints
+4. Return Pydantic schemas for type safety
+5. Add OpenAPI documentation via docstrings
+6. Write tests in `tests/unit/<domain>/test_api.py`
 
 ### Updating the Frontend
 
 1. Run frontend dev server: `cd frontend && npm run dev`
 2. Use shadcn CLI to add components: `npx shadcn@latest add <component>`
-3. Update types in `frontend/src/types/` to match backend
+3. Update types in `frontend/src/lib/api/types.ts` to match backend
 4. Use `useWebSocket` hook for real-time data
 5. Test in browser at http://localhost:5173
 
@@ -450,74 +664,57 @@ Optional:
 
 - `LLM_PROVIDER` — anthropic | openai | gemini (default: anthropic)
 - `REDIS_URL` — Redis connection string for caching
-- `JWT_SECRET` — Secret for JWT tokens (Phase 1+)
+- `JWT_SECRET` — Secret for JWT tokens
 
 See `.env.example` for full list.
 
 ## Implementation Phases
 
-**✅ Phase 0: Core System (Complete)**
-
-- 5-agent analysis pipeline
-- Real-time WebSocket streaming
-- Stock search + charts + news
-- PostgreSQL audit trail
-- Multi-LLM support
-
-**🚧 Next Up:**
-
-1. **Phase 1:** Portfolio & Watchlists (user auth, saved tickers, positions)
-2. **Phase 2:** Performance Tracking (track accuracy of recommendations)
-3. **Phase 3:** Comparative Analysis (compare multiple stocks)
-4. **Phase 4:** Alerts & Notifications (price alerts, scheduled analysis)
-5. **Phase 5:** Backtesting & Simulation (paper trading, strategy builder)
-6. **Phase 6:** Export & Reporting (PDF reports, API keys, webhooks)
-7. **Quick Wins:** Small improvements (dark mode, keyboard shortcuts, etc.)
+- ✅ **Phase 0:** Core System — 5-agent pipeline, WebSocket streaming, stock search, charts, PostgreSQL audit trail
+- ✅ **Phase 1:** Auth & Watchlists — User authentication, portfolio management
+- ✅ **Phase 2:** Performance Tracking — Accuracy tracking, agent leaderboards
+- ✅ **Phase 3:** Comparative Analysis — Multi-stock side-by-side analysis
+- ✅ **Phase 4a:** Alerts — Price alerts, WebSocket notifications
+- ✅ **Phase 4b:** Scheduled Analysis — Automated analysis, TASE support
+- ✅ **Phase 5:** Backtesting & Paper Trading — Historical testing, paper trading, strategy builder
+- ⏳ **Phase 6:** Export & Reporting — PDF reports, API keys, webhooks _(not started)_
 
 See [docs/plans/roadmap.md](./docs/plans/roadmap.md) for details.
 
 ## Testing
 
-### Running Tests
-
 ```bash
-# All tests (auto-starts PostgreSQL for integration tests)
+# Run all tests
 make test
 
-# Unit tests only (fast, uses SQLite)
-make test-unit
+# Unit tests only (fast, SQLite in-memory)
+uv run pytest tests/unit/ -v
 
-# Integration tests only (uses PostgreSQL)
-make test-integration
+# Integration tests only (requires PostgreSQL on port 5433)
+uv run pytest tests/integration/ -v
 
-# Run with coverage
+# Specific domain
+uv run pytest tests/unit/analysis/ -v
+uv run pytest tests/unit/notifications/ -v
+
+# Single test
+uv run pytest tests/unit/analysis/test_fundamental_agent.py::test_name -v
+
+# With coverage
 make test-cov
-
-# Manual test database control
-make test-db-up      # Start test database
-make test-db-down    # Stop test database
-
-# Run specific test file
-uv run pytest tests/unit/test_agents.py -v
-
-# Run single test
-uv run pytest tests/unit/test_agents.py::test_fundamental_agent -v
 ```
 
-### Test Database Strategy
+**Test structure mirrors domain structure:**
 
-- **Unit tests** (`tests/unit/`): Use SQLite in-memory for speed
-- **Integration tests** (`tests/integration/`): Use PostgreSQL for production parity
-- Test database runs on port 5433 to avoid conflicts with development database (port 5432)
-- The `conftest.py` fixture automatically detects test type and uses the appropriate database
+- `tests/unit/<domain>/` — fast, isolated, SQLite in-memory
+- `tests/integration/<domain>/` — full stack, PostgreSQL (port 5433 to avoid dev DB conflicts)
 
-**Testing Philosophy:**
+**Philosophy:**
 
-- **All Python execution uses `uv`** (not bare `pytest` or `python`)
-- Unit test each agent independently with mocked tools
-- Integration test the full workflow with real database queries
-- Mock external APIs (Yahoo Finance, Exa, LLM providers)
-- Use fixtures for common test data
+- **Always use `uv run pytest`**, never bare `pytest` or `python -m pytest`
+- Unit test each agent/service independently with mocked external calls
+- Integration tests cover end-to-end flows (workflow → DB → API)
+- Mock external APIs (Yahoo Finance, Exa, LLM providers) in unit tests
 - Aim for >80% coverage
 
 ## Troubleshooting
@@ -535,9 +732,9 @@ uv run pytest tests/unit/test_agents.py::test_fundamental_agent -v
 
 ### Tests failing
 
-- Ensure test database is separate from dev: use `TEST_DATABASE_URL`
+- Ensure test database is separate from dev: use `TEST_DATABASE_URL` (port 5433)
 - Check that mocks are set up correctly
-- Run individual test to isolate: `uv run pytest tests/test_file.py::test_name -v`
+- Run individual test to isolate: `uv run pytest tests/unit/<domain>/test_file.py::test_name -v`
 
 ### WebSocket connection issues
 
@@ -549,7 +746,7 @@ uv run pytest tests/unit/test_agents.py::test_fundamental_agent -v
 
 When working on new features:
 
-1. Create a new branch from `main`
+1. Create a feature branch from `main` (never commit to `main` directly)
 2. Implement feature following best practices above
 3. Write tests (aim for >80% coverage)
 4. Update documentation if needed
@@ -580,5 +777,5 @@ When working on new features:
 
 ---
 
-**Last Updated:** 2026-02-10
-**Version:** 2.0.0
+**Last Updated:** 2026-02-22
+**Version:** 3.0.0
