@@ -61,7 +61,10 @@ async def add_item(
     service: WatchlistService = Depends(get_watchlist_service),
 ) -> WatchlistItemSchema:
     """Add a stock to a watchlist."""
-    market_enum = Market.TASE if market == "TASE" else Market.US
+    try:
+        market_enum = Market(market)
+    except ValueError:
+        raise HTTPException(status_code=422, detail=f"Invalid market: {market}")
     item = await service.add_to_watchlist(
         watchlist_id, ticker, market_enum, service.watchlist_dao.session
     )

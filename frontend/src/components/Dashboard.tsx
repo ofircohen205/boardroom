@@ -9,6 +9,7 @@ import { useWebSocket } from "@/hooks/useWebSocket";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { WatchlistSidebar } from "@/components/WatchlistSidebar";
 import { AnalysisHistory } from "@/components/AnalysisHistory";
+import { ShortcutsModal } from "@/components/ShortcutsModal";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -23,23 +24,29 @@ import {
   History,
   Menu,
   GitCompare,
+  Keyboard,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { Market } from "@/types";
 
 export function Dashboard() {
   const { state, analyze, retry, connectionStatus } = useWebSocket();
   const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(
+    () => typeof window !== "undefined" && window.innerWidth >= 768
+  );
   const [showHistory, setShowHistory] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
   const [analysisMode, setAnalysisMode] = useState<AnalysisMode>("standard");
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Keyboard shortcuts
   useKeyboardShortcuts({
     'Ctrl+k': () => searchInputRef.current?.focus(),
-    'Ctrl+h': () => setShowHistory(!showHistory),
-    'Ctrl+b': () => setSidebarOpen(!sidebarOpen),
-    'Escape': () => setShowHistory(false),
+    'Ctrl+h': () => setShowHistory((v) => !v),
+    'Ctrl+b': () => setSidebarOpen((v) => !v),
+    'Escape': () => { setShowHistory(false); setShowShortcuts(false); },
+    '?': () => setShowShortcuts(true),
   });
 
   const isLoading = state.activeAgents.size > 0;
@@ -50,17 +57,28 @@ export function Dashboard() {
       setShowHistory(false);
   };
 
-  const handleAnalyze = (ticker: string, market: "US" | "TASE") => {
+  const handleAnalyze = (ticker: string, market: Market) => {
       analyze(ticker, market, analysisMode);
       setShowHistory(false);
   };
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      {/* Sidebar - Collapsible */}
+      {/* Overlay backdrop on mobile when sidebar is open */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-[60] md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar - overlay on mobile, inline on desktop */}
       <div className={cn(
           "transition-all duration-300 border-r border-white/10 bg-card/10 backdrop-blur-xl",
-          sidebarOpen ? "w-80" : "w-0 overflow-hidden"
+          "fixed md:relative z-[70] md:z-auto h-full",
+          sidebarOpen
+            ? "w-80 translate-x-0"
+            : "-translate-x-full md:w-0 md:overflow-hidden md:translate-x-0"
       )}>
           <WatchlistSidebar onSelectTicker={handleTickerSelect} />
       </div>
@@ -83,6 +101,16 @@ export function Dashboard() {
             <div className="flex items-center gap-2">
                 <Button variant="ghost" size="sm" onClick={() => setShowHistory(!showHistory)} className={cn("gap-2", showHistory && "bg-accent")}>
                     <History className="w-4 h-4"/> <span className="hidden sm:inline">History</span>
+                </Button>
+
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setShowShortcuts(true)}
+                  title="Keyboard shortcuts (?)"
+                >
+                  <Keyboard className="w-4 h-4" />
                 </Button>
 
                 {/* Connection Status Indicator */}
@@ -119,7 +147,7 @@ export function Dashboard() {
                         hasStarted ? "mb-8" : "mb-0 text-center"
                     )}>
                         {!hasStarted && (
-                             <div className="mb-10 space-y-4">
+                             <div className="mb-10 space-y-4 px-4">
                                 <h1 className="text-5xl sm:text-7xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-white via-white/90 to-white/50 animate-fade-up">
                                     The Boardroom
                                 </h1>
@@ -183,6 +211,8 @@ export function Dashboard() {
                                            ma50={state.technical.ma_50}
                                            ma200={state.technical.ma_200}
                                            rsi={state.technical.rsi}
+                                           bollingerUpper={state.technical.bollinger_upper}
+                                           bollingerLower={state.technical.bollinger_lower}
                                        />
                                    ) : (
                                        <div className="h-full flex items-center justify-center text-muted-foreground/20 text-sm font-mono uppercase tracking-widest">
@@ -195,7 +225,7 @@ export function Dashboard() {
                         )}
 
                         {/* Agents Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 min-w-0">
                             <AgentPanel
                                 agent="fundamental"
                                 title="Fundamental"
@@ -273,6 +303,8 @@ export function Dashboard() {
                 </Alert>
             </div>
         )}
+
+        <ShortcutsModal open={showShortcuts} onClose={() => setShowShortcuts(false)} />
       </div>
     </div>
   );

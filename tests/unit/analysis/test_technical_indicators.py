@@ -2,7 +2,10 @@ import pytest
 
 from backend.shared.ai.state.enums import Trend
 from backend.shared.ai.tools.technical_indicators import (
+    calculate_atr,
+    calculate_bollinger_bands,
     calculate_ma,
+    calculate_macd,
     calculate_rsi,
     calculate_trend,
 )
@@ -124,3 +127,53 @@ def test_calculate_trend_death_cross_above():
     """Price above both MAs but 50 < 200 (death cross) is neutral."""
     trend = calculate_trend(current_price=110, ma_50=100, ma_200=105)
     assert trend == Trend.NEUTRAL
+
+
+# --- MACD tests ---
+
+
+def test_calculate_macd_returns_all_keys():
+    prices = list(range(1, 50))  # 49 prices
+    result = calculate_macd(prices)
+    assert "macd" in result
+    assert "signal" in result
+    assert "histogram" in result
+
+
+def test_calculate_macd_insufficient_data_returns_zeros():
+    result = calculate_macd([100.0, 101.0])
+    assert result == {"macd": 0.0, "signal": 0.0, "histogram": 0.0}
+
+
+# --- Bollinger Bands tests ---
+
+
+def test_calculate_bollinger_bands_returns_all_keys():
+    prices = [100.0 + i for i in range(25)]
+    result = calculate_bollinger_bands(prices)
+    assert "upper" in result and "lower" in result and "middle" in result
+    assert result["upper"] > result["middle"] > result["lower"]
+
+
+def test_calculate_bollinger_bands_insufficient_data():
+    result = calculate_bollinger_bands([100.0])
+    assert result["upper"] == result["middle"] == result["lower"] == 100.0
+
+
+# --- ATR tests ---
+
+
+def test_calculate_atr_returns_float():
+    history = [
+        {"high": 105.0, "low": 98.0, "close": 102.0},
+        {"high": 107.0, "low": 100.0, "close": 104.0},
+        {"high": 103.0, "low": 97.0, "close": 100.0},
+    ]
+    result = calculate_atr(history)
+    assert isinstance(result, float)
+    assert result > 0
+
+
+def test_calculate_atr_insufficient_data():
+    result = calculate_atr([{"high": 100.0, "low": 98.0, "close": 99.0}])
+    assert result == 0.0

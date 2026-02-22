@@ -38,7 +38,7 @@ class AnalysisService(BaseService):
 
         Args:
             ticker: Stock ticker symbol
-            market: Market enum (US or TASE)
+            market: Market enum (US, TASE, LSE, TSE, HKEX, or XETRA)
             user_id: Optional user ID for personalized analysis
             db: Database session
 

@@ -4,7 +4,7 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 
 from backend.dependencies import get_portfolio_service
 from backend.domains.portfolio.services import PortfolioService
@@ -69,7 +69,10 @@ async def add_new_position(
     sector: str | None = None,
 ) -> PortfolioPositionSchema:
     """Add a position to a portfolio."""
-    market_enum = Market.TASE if market == "TASE" else Market.US
+    try:
+        market_enum = Market(market)
+    except ValueError:
+        raise HTTPException(status_code=422, detail=f"Invalid market: {market}")
     position = await service.add_position(
         portfolio_id,
         ticker,

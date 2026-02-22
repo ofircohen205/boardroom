@@ -46,6 +46,14 @@ class TechnicalReport(TypedDict):
     trend: Trend
     price_history: list[dict]
     summary: str
+    # New indicators
+    macd: Optional[float]
+    macd_signal: Optional[float]
+    macd_histogram: Optional[float]
+    bollinger_upper: Optional[float]
+    bollinger_lower: Optional[float]
+    bollinger_width_pct: Optional[float]
+    atr: Optional[float]
 
 
 class RiskAssessment(TypedDict):

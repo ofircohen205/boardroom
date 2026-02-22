@@ -19,6 +19,15 @@ def test_yahoo_ticker_formatting():
     assert client._format_ticker("TEVA", Market.TASE) == "TEVA.TA"
 
 
+def test_format_ticker_new_markets():
+    client = YahooFinanceClient()
+    assert client._format_ticker("HSBA", Market.LSE) == "HSBA.L"
+    assert client._format_ticker("7203", Market.TSE) == "7203.T"
+    assert client._format_ticker("0700", Market.HKEX) == "0700.HK"
+    assert client._format_ticker("SAP", Market.XETRA) == "SAP.DE"
+    assert client._format_ticker("AAPL", Market.US) == "AAPL"
+
+
 @pytest.mark.asyncio
 async def test_yahoo_get_stock_data():
     client = YahooFinanceClient()

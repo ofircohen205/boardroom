@@ -12,6 +12,14 @@ from backend.shared.core.settings import settings
 
 logger = get_logger(__name__)
 
+_MARKET_SUFFIX: dict[Market, str] = {
+    Market.TASE: ".TA",
+    Market.LSE: ".L",
+    Market.TSE: ".T",
+    Market.HKEX: ".HK",
+    Market.XETRA: ".DE",
+}
+
 
 class StockData(TypedDict):
     ticker: str
@@ -43,9 +51,8 @@ class BaseMarketDataClient(ABC):
 
 class YahooFinanceClient(BaseMarketDataClient):
     def _format_ticker(self, ticker: str, market: Market) -> str:
-        if market == Market.TASE:
-            return f"{ticker}.TA"
-        return ticker
+        suffix = _MARKET_SUFFIX.get(market, "")
+        return f"{ticker}{suffix}"
 
     @cached(ttl=300, skip_self=True)
     async def get_stock_data(self, ticker: str, market: Market) -> StockData:

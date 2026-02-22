@@ -19,6 +19,14 @@ interface Props {
   onRetry?: () => void;
 }
 
+const LOADING_MESSAGES: Record<string, string> = {
+  fundamental: "Fetching financials from Yahoo Finance...",
+  sentiment: "Scanning news headlines and social signals...",
+  technical: "Computing RSI, MA50, and MA200...",
+  risk: "Assessing portfolio sector exposure...",
+  chairperson: "Weighing all agent reports...",
+};
+
 export function AgentPanel({
   agent,
   title,
@@ -88,10 +96,15 @@ export function AgentPanel({
       <CardContent className="relative z-10">
         {/* Shimmer loading state */}
         {isActive && !data && (
-          <div className="space-y-4 py-3">
-            <div className="h-2 w-3/4 rounded-full bg-white/10 animate-pulse" />
-            <div className="h-2 w-1/2 rounded-full bg-white/10 animate-pulse delay-75" />
-            <div className="h-2 w-2/3 rounded-full bg-white/10 animate-pulse delay-150" />
+          <div className="space-y-3 py-2">
+            <div className="space-y-2">
+              <div className="h-2 w-3/4 rounded-full bg-white/10 animate-pulse" />
+              <div className="h-2 w-1/2 rounded-full bg-white/10 animate-pulse delay-75" />
+              <div className="h-2 w-2/3 rounded-full bg-white/10 animate-pulse delay-150" />
+            </div>
+            <p className="text-[11px] text-muted-foreground/50 font-mono animate-pulse">
+              {LOADING_MESSAGES[agent] ?? "Analyzing..."}
+            </p>
           </div>
         )}
 
@@ -181,6 +194,26 @@ export function AgentPanel({
                 </>
               )}
             </div>
+
+            {/* Secondary technical metrics row */}
+            {agent === "technical" && (data.macd_histogram != null || data.bollinger_width_pct != null || data.atr != null) && (
+              <div className="grid grid-cols-3 gap-2 p-3 rounded-lg bg-black/20 border border-white/10 backdrop-blur-sm">
+                <Metric
+                  label="MACD"
+                  value={data.macd_histogram != null ? data.macd_histogram.toFixed(4) : "—"}
+                  positive={data.macd_histogram > 0}
+                  negative={data.macd_histogram < 0}
+                />
+                <Metric
+                  label="BB Width"
+                  value={data.bollinger_width_pct != null ? `${data.bollinger_width_pct.toFixed(1)}%` : "—"}
+                />
+                <Metric
+                  label="ATR"
+                  value={data.atr != null ? data.atr.toFixed(2) : "—"}
+                />
+              </div>
+            )}
 
             {/* Summary - the AI analysis text */}
             {data.summary && (

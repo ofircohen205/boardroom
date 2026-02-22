@@ -13,7 +13,9 @@ def mock_stock_data():
         "ticker": "AAPL",
         "market": Market.US,
         "current_price": 150.0,
-        "price_history": [{"close": p} for p in prices],
+        "price_history": [
+            {"close": p, "high": p + 1.0, "low": p - 1.0} for p in prices
+        ],
     }
 
 
@@ -42,3 +44,10 @@ async def test_technical_agent_analyze(mock_stock_data):
             assert "ma_200" in report
             assert "rsi" in report
             assert "trend" in report
+            assert "macd" in report
+            assert "macd_signal" in report
+            assert "macd_histogram" in report
+            assert "bollinger_upper" in report
+            assert "bollinger_lower" in report
+            assert "bollinger_width_pct" in report
+            assert "atr" in report

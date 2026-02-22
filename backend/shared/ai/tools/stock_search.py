@@ -5,6 +5,7 @@ from dataclasses import dataclass
 import yfinance as yf
 
 from backend.shared.ai.state.enums import Market
+from backend.shared.ai.tools.market_data import _MARKET_SUFFIX
 
 
 @dataclass
@@ -64,6 +65,59 @@ POPULAR_TASE_STOCKS = {
     "PHOE": ("Phoenix Holdings", "TASE"),
 }
 
+POPULAR_LSE_STOCKS = {
+    "HSBA": ("HSBC Holdings", "LSE"),
+    "BP": ("BP plc", "LSE"),
+    "SHEL": ("Shell plc", "LSE"),
+    "AZN": ("AstraZeneca plc", "LSE"),
+    "LLOY": ("Lloyds Banking Group", "LSE"),
+    "RIO": ("Rio Tinto plc", "LSE"),
+    "GSK": ("GSK plc", "LSE"),
+    "ULVR": ("Unilever plc", "LSE"),
+}
+
+POPULAR_TSE_STOCKS = {
+    "7203": ("Toyota Motor Corporation", "TSE"),
+    "6758": ("Sony Group Corporation", "TSE"),
+    "9984": ("SoftBank Group Corp.", "TSE"),
+    "6861": ("Keyence Corporation", "TSE"),
+    "8306": ("Mitsubishi UFJ Financial Group", "TSE"),
+    "7267": ("Honda Motor Co.", "TSE"),
+    "6501": ("Hitachi Ltd.", "TSE"),
+    "4063": ("Shin-Etsu Chemical Co.", "TSE"),
+}
+
+POPULAR_HKEX_STOCKS = {
+    "0700": ("Tencent Holdings", "HKEX"),
+    "0005": ("HSBC Holdings", "HKEX"),
+    "0939": ("China Construction Bank", "HKEX"),
+    "0941": ("China Mobile", "HKEX"),
+    "0175": ("Geely Automobile", "HKEX"),
+    "1299": ("AIA Group", "HKEX"),
+    "2318": ("Ping An Insurance", "HKEX"),
+    "3690": ("Meituan", "HKEX"),
+}
+
+POPULAR_XETRA_STOCKS = {
+    "SAP": ("SAP SE", "XETRA"),
+    "BMW": ("BMW AG", "XETRA"),
+    "SIE": ("Siemens AG", "XETRA"),
+    "VOW3": ("Volkswagen AG", "XETRA"),
+    "ALV": ("Allianz SE", "XETRA"),
+    "DTE": ("Deutsche Telekom AG", "XETRA"),
+    "BAS": ("BASF SE", "XETRA"),
+    "MBG": ("Mercedes-Benz Group AG", "XETRA"),
+}
+
+_POPULAR_STOCKS: dict[Market, dict[str, tuple[str, str]]] = {
+    Market.US: POPULAR_US_STOCKS,
+    Market.TASE: POPULAR_TASE_STOCKS,
+    Market.LSE: POPULAR_LSE_STOCKS,
+    Market.TSE: POPULAR_TSE_STOCKS,
+    Market.HKEX: POPULAR_HKEX_STOCKS,
+    Market.XETRA: POPULAR_XETRA_STOCKS,
+}
+
 
 async def search_stocks(
     query: str, market: Market, limit: int = 8
@@ -73,7 +127,7 @@ async def search_stocks(
 
     Args:
         query: Search query (partial or full ticker/company name)
-        market: Market to search in (US or TASE)
+        market: Market to search in (US, TASE, LSE, TSE, HKEX, or XETRA)
         limit: Maximum number of results to return
 
     Returns:
@@ -86,7 +140,7 @@ async def search_stocks(
     results: list[StockSuggestion] = []
 
     # First check popular stocks cache for fast response
-    popular_stocks = POPULAR_US_STOCKS if market == Market.US else POPULAR_TASE_STOCKS
+    popular_stocks = _POPULAR_STOCKS.get(market, {})
 
     for symbol, (name, exchange) in popular_stocks.items():
         if query_upper in symbol or query_upper.lower() in name.lower():
@@ -105,10 +159,7 @@ async def search_stocks(
     if len(results) < limit and len(query_upper) >= 1:
         try:
             # Format ticker for the market
-            if market == Market.TASE:
-                ticker_symbol = f"{query_upper}.TA"
-            else:
-                ticker_symbol = query_upper
+            ticker_symbol = f"{query_upper}{_MARKET_SUFFIX.get(market, '')}"
 
             ticker = yf.Ticker(ticker_symbol)
             info = ticker.info
@@ -116,9 +167,7 @@ async def search_stocks(
             # Check if we got valid data
             if (info and info.get("shortName")) or info.get("longName"):
                 name = info.get("shortName") or info.get("longName") or query_upper
-                exchange = info.get("exchange") or (
-                    "TASE" if market == Market.TASE else "US"
-                )
+                exchange = info.get("exchange") or market.value
 
                 # Avoid duplicates
                 if not any(r.symbol == query_upper for r in results):

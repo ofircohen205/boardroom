@@ -136,8 +136,8 @@ export function TickerInput({ onAnalyze, isLoading, analysisMode, onModeChange }
         onSubmit={handleSubmit}
         className={`relative flex items-center gap-4 p-2 pl-4 rounded-2xl transition-all duration-300 border ${
           isFocused
-            ? "bg-white/10 border-primary/50 shadow-[0_0_30px_rgba(var(--primary),0.2)]"
-            : "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20"
+            ? "bg-muted/60 border-primary/50 shadow-[0_0_30px_rgba(var(--primary),0.2)]"
+            : "bg-muted/40 border-border hover:bg-muted/60 hover:border-border"
         }`}
       >
       <Search
@@ -165,7 +165,7 @@ export function TickerInput({ onAnalyze, isLoading, analysisMode, onModeChange }
         {showDropdown && (
           <div
             ref={dropdownRef}
-            className="absolute top-full left-0 right-0 mt-2 bg-[#0a0a0f] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50"
+            className="absolute top-full left-0 right-0 mt-2 bg-popover border border-border rounded-xl shadow-2xl overflow-hidden z-50"
           >
             {isSearching && suggestions.length === 0 ? (
               <div className="px-4 py-3 text-muted-foreground text-sm flex items-center gap-2">
@@ -201,7 +201,7 @@ export function TickerInput({ onAnalyze, isLoading, analysisMode, onModeChange }
       </div>
 
       <div className="flex items-center gap-2">
-        <div className="h-8 w-px bg-white/10 hidden sm:block" />
+        <div className="h-8 w-px bg-border hidden sm:block" />
 
         <Select value={market} onValueChange={(v) => setMarket(v as Market)}>
           <SelectTrigger className="w-auto gap-2 bg-transparent border-none focus:ring-0 text-muted-foreground hover:text-foreground transition-colors font-medium">
@@ -210,18 +210,42 @@ export function TickerInput({ onAnalyze, isLoading, analysisMode, onModeChange }
             </span>
             <SelectValue />
           </SelectTrigger>
-          <SelectContent className="bg-[#0a0a0f] border-white/10 text-foreground">
+          <SelectContent className="bg-popover border-border text-foreground">
             <SelectItem
               value="US"
               className="focus:bg-primary/20 focus:text-primary cursor-pointer"
             >
-              US Market
+              🇺🇸 US Market
             </SelectItem>
             <SelectItem
               value="TASE"
               className="focus:bg-primary/20 focus:text-primary cursor-pointer"
             >
-              Tel Aviv
+              🇮🇱 Tel Aviv
+            </SelectItem>
+            <SelectItem
+              value="LSE"
+              className="focus:bg-primary/20 focus:text-primary cursor-pointer"
+            >
+              🇬🇧 London
+            </SelectItem>
+            <SelectItem
+              value="TSE"
+              className="focus:bg-primary/20 focus:text-primary cursor-pointer"
+            >
+              🇯🇵 Tokyo
+            </SelectItem>
+            <SelectItem
+              value="HKEX"
+              className="focus:bg-primary/20 focus:text-primary cursor-pointer"
+            >
+              🇭🇰 Hong Kong
+            </SelectItem>
+            <SelectItem
+              value="XETRA"
+              className="focus:bg-primary/20 focus:text-primary cursor-pointer"
+            >
+              🇩🇪 Frankfurt
             </SelectItem>
           </SelectContent>
         </Select>
@@ -233,7 +257,7 @@ export function TickerInput({ onAnalyze, isLoading, analysisMode, onModeChange }
           className={`h-12 w-12 rounded-xl transition-all duration-300 ${
             ticker.trim()
               ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_0_20px_rgba(var(--primary),0.4)]"
-              : "bg-white/5 text-muted-foreground hover:bg-white/10"
+              : "bg-muted text-muted-foreground hover:bg-muted/80"
           }`}
         >
           {isLoading ? (

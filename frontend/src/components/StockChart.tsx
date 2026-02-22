@@ -21,11 +21,13 @@ interface Props {
   ma50?: number;
   ma200?: number;
   rsi?: number;
+  bollingerUpper?: number;
+  bollingerLower?: number;
 }
 
 type ChartType = "area" | "candlestick";
 
-export function StockChart({ priceHistory, ticker, ma50, ma200, rsi }: Props) {
+export function StockChart({ priceHistory, ticker, ma50, ma200, rsi, bollingerUpper, bollingerLower }: Props) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const volumeChartRef = useRef<HTMLDivElement>(null);
   const rsiChartRef = useRef<HTMLDivElement>(null);
@@ -146,6 +148,42 @@ export function StockChart({ priceHistory, ticker, ma50, ma200, rsi }: Props) {
         priceHistory.map((p) => ({
           time: p.date.split("T")[0],
           value: ma200,
+        }))
+      );
+    }
+
+    // Bollinger Band upper overlay
+    if (bollingerUpper && bollingerUpper > 0) {
+      const bbUpperSeries = chart.addSeries(LineSeries, {
+        color: "#06b6d480",
+        lineWidth: 1,
+        crosshairMarkerVisible: false,
+        lastValueVisible: false,
+        priceLineVisible: false,
+        lineStyle: 2, // dashed
+      });
+      bbUpperSeries.setData(
+        priceHistory.map((p) => ({
+          time: p.date.split("T")[0],
+          value: bollingerUpper,
+        }))
+      );
+    }
+
+    // Bollinger Band lower overlay
+    if (bollingerLower && bollingerLower > 0) {
+      const bbLowerSeries = chart.addSeries(LineSeries, {
+        color: "#06b6d480",
+        lineWidth: 1,
+        crosshairMarkerVisible: false,
+        lastValueVisible: false,
+        priceLineVisible: false,
+        lineStyle: 2, // dashed
+      });
+      bbLowerSeries.setData(
+        priceHistory.map((p) => ({
+          time: p.date.split("T")[0],
+          value: bollingerLower,
         }))
       );
     }
@@ -325,7 +363,7 @@ export function StockChart({ priceHistory, ticker, ma50, ma200, rsi }: Props) {
       volumeChartInstanceRef.current?.remove();
       rsiChartInstanceRef.current?.remove();
     };
-  }, [priceHistory, chartType, ma50, ma200, rsi]);
+  }, [priceHistory, chartType, ma50, ma200, rsi, bollingerUpper, bollingerLower]);
 
   if (priceHistory.length === 0) return null;
 
@@ -423,7 +461,7 @@ export function StockChart({ priceHistory, ticker, ma50, ma200, rsi }: Props) {
         )}
 
         {/* Legend */}
-        {(ma50 || ma200) && (
+        {(ma50 || ma200 || (bollingerUpper && bollingerLower)) && (
           <div className="px-4 py-2 border-t border-white/5 flex gap-4 text-[10px] font-mono">
             {ma50 && ma50 > 0 && (
               <div className="flex items-center gap-1.5">
@@ -435,6 +473,12 @@ export function StockChart({ priceHistory, ticker, ma50, ma200, rsi }: Props) {
               <div className="flex items-center gap-1.5">
                 <div className="h-[2px] w-3 bg-[#3b82f6]" />
                 <span className="text-muted-foreground">MA200: ${ma200.toFixed(2)}</span>
+              </div>
+            )}
+            {bollingerUpper && bollingerUpper > 0 && bollingerLower && bollingerLower > 0 && (
+              <div className="flex items-center gap-1.5">
+                <div className="h-[2px] w-3 bg-[#06b6d4]" />
+                <span className="text-muted-foreground">BB: ${bollingerLower.toFixed(2)}–${bollingerUpper.toFixed(2)}</span>
               </div>
             )}
           </div>

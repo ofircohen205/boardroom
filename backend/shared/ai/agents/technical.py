@@ -3,7 +3,10 @@ from backend.shared.ai.state.agent_state import TechnicalReport
 from backend.shared.ai.state.enums import Market
 from backend.shared.ai.tools.market_data import get_market_data_client
 from backend.shared.ai.tools.technical_indicators import (
+    calculate_atr,
+    calculate_bollinger_bands,
     calculate_ma,
+    calculate_macd,
     calculate_rsi,
     calculate_trend,
 )
@@ -32,12 +35,18 @@ class TechnicalAgent:
         )
         rsi = calculate_rsi(prices)
         trend = calculate_trend(current_price, ma_50, ma_200)
+        macd_data = calculate_macd(prices)
+        bb_data = calculate_bollinger_bands(prices)
+        atr = calculate_atr(stock_data["price_history"])
 
         prompt = f"""Provide a brief technical analysis for {ticker}:
 - Current Price: ${current_price:.2f}
 - 50-day MA: ${ma_50:.2f}
 - 200-day MA: ${ma_200:.2f}
 - RSI: {rsi:.1f}
+- MACD: {macd_data["macd"]:.4f} (Signal: {macd_data["signal"]:.4f}, Histogram: {macd_data["histogram"]:.4f})
+- Bollinger Bands: Upper ${bb_data["upper"]:.2f} / Lower ${bb_data["lower"]:.2f} (Width: {bb_data["width_pct"]:.1f}%)
+- ATR (14): {atr:.2f}
 - Trend: {trend.value}
 
 Summarize the technical outlook in 2-3 sentences."""
@@ -52,4 +61,11 @@ Summarize the technical outlook in 2-3 sentences."""
             trend=trend,
             price_history=stock_data["price_history"],
             summary=summary,
+            macd=macd_data["macd"],
+            macd_signal=macd_data["signal"],
+            macd_histogram=macd_data["histogram"],
+            bollinger_upper=bb_data["upper"],
+            bollinger_lower=bb_data["lower"],
+            bollinger_width_pct=bb_data["width_pct"],
+            atr=atr,
         )
