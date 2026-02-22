@@ -9,6 +9,7 @@ import { useWebSocket } from "@/hooks/useWebSocket";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { WatchlistSidebar } from "@/components/WatchlistSidebar";
 import { AnalysisHistory } from "@/components/AnalysisHistory";
+import { ShortcutsModal } from "@/components/ShortcutsModal";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -23,6 +24,7 @@ import {
   History,
   Menu,
   GitCompare,
+  Keyboard,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -31,15 +33,17 @@ export function Dashboard() {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showHistory, setShowHistory] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
   const [analysisMode, setAnalysisMode] = useState<AnalysisMode>("standard");
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Keyboard shortcuts
   useKeyboardShortcuts({
     'Ctrl+k': () => searchInputRef.current?.focus(),
-    'Ctrl+h': () => setShowHistory(!showHistory),
-    'Ctrl+b': () => setSidebarOpen(!sidebarOpen),
-    'Escape': () => setShowHistory(false),
+    'Ctrl+h': () => setShowHistory((v) => !v),
+    'Ctrl+b': () => setSidebarOpen((v) => !v),
+    'Escape': () => { setShowHistory(false); setShowShortcuts(false); },
+    '?': () => setShowShortcuts(true),
   });
 
   const isLoading = state.activeAgents.size > 0;
@@ -83,6 +87,16 @@ export function Dashboard() {
             <div className="flex items-center gap-2">
                 <Button variant="ghost" size="sm" onClick={() => setShowHistory(!showHistory)} className={cn("gap-2", showHistory && "bg-accent")}>
                     <History className="w-4 h-4"/> <span className="hidden sm:inline">History</span>
+                </Button>
+
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setShowShortcuts(true)}
+                  title="Keyboard shortcuts (?)"
+                >
+                  <Keyboard className="w-4 h-4" />
                 </Button>
 
                 {/* Connection Status Indicator */}
@@ -273,6 +287,8 @@ export function Dashboard() {
                 </Alert>
             </div>
         )}
+
+        <ShortcutsModal open={showShortcuts} onClose={() => setShowShortcuts(false)} />
       </div>
     </div>
   );
