@@ -50,16 +50,19 @@ def calculate_macd(
 
     def _ema(data: list[float], period: int) -> list[float]:
         k = 2 / (period + 1)
-        ema = [data[0]]
-        for price in data[1:]:
+        seed = sum(data[:period]) / period
+        ema = [seed]
+        for price in data[period:]:
             ema.append(price * k + ema[-1] * (1 - k))
         return ema
 
     ema_fast = _ema(prices, fast)
     ema_slow = _ema(prices, slow)
 
-    macd_line = [f - s for f, s in zip(ema_fast, ema_slow)]
-    macd_signal = _ema(macd_line[slow - 1 :], signal)
+    # Align EMAs: ema_fast starts at t=fast-1, ema_slow starts at t=slow-1
+    # Offset ema_fast by (slow - fast) so both series start at t=slow-1
+    macd_line = [f - s for f, s in zip(ema_fast[slow - fast :], ema_slow)]
+    macd_signal = _ema(macd_line, signal)
     histogram = macd_line[-1] - macd_signal[-1]
 
     return {
@@ -96,8 +99,8 @@ def calculate_bollinger_bands(
 def calculate_atr(price_history: list[dict], period: int = 14) -> float:
     """Average True Range — measures volatility. Expects dicts with high/low/close keys.
 
-    Returns 0.0 if price_history has fewer than 2 entries or if required keys
-    (high, low, close) are missing from any entry.
+    Returns 0.0 if price_history has fewer than 2 entries or if no rows with
+    valid high/low/close data are found. Rows missing required keys are skipped.
     """
     if len(price_history) < 2:
         return 0.0
@@ -108,9 +111,12 @@ def calculate_atr(price_history: list[dict], period: int = 14) -> float:
         low = price_history[i].get("low")
         prev_close = price_history[i - 1].get("close")
         if high is None or low is None or prev_close is None:
-            return 0.0
+            continue  # skip rows with missing data
         true_range = max(high - low, abs(high - prev_close), abs(low - prev_close))
         true_ranges.append(true_range)
+
+    if not true_ranges:
+        return 0.0
 
     recent = true_ranges[-period:]
     return round(sum(recent) / len(recent), 4)
