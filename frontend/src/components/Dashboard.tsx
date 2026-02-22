@@ -31,7 +31,9 @@ import { cn } from "@/lib/utils";
 export function Dashboard() {
   const { state, analyze, retry, connectionStatus } = useWebSocket();
   const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(
+    () => typeof window !== "undefined" && window.innerWidth >= 768
+  );
   const [showHistory, setShowHistory] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [analysisMode, setAnalysisMode] = useState<AnalysisMode>("standard");
@@ -64,7 +66,7 @@ export function Dashboard() {
       {/* Overlay backdrop on mobile when sidebar is open */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-30 md:hidden"
+          className="fixed inset-0 bg-black/50 z-[60] md:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -72,7 +74,7 @@ export function Dashboard() {
       {/* Sidebar - overlay on mobile, inline on desktop */}
       <div className={cn(
           "transition-all duration-300 border-r border-white/10 bg-card/10 backdrop-blur-xl",
-          "fixed md:relative z-40 md:z-auto h-full",
+          "fixed md:relative z-[70] md:z-auto h-full",
           sidebarOpen
             ? "w-80 translate-x-0"
             : "-translate-x-full md:w-0 md:overflow-hidden md:translate-x-0"
