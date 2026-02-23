@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import type { Strategy, StrategyCreate } from "@/types/strategy";
 import { Plus, Settings, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 export function StrategiesPage() {
   const api = useAPIClient();
@@ -31,11 +31,7 @@ export function StrategiesPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingStrategy, setEditingStrategy] = useState<Strategy | undefined>();
 
-  useEffect(() => {
-    fetchStrategies();
-  }, []);
-
-  const fetchStrategies = async () => {
+  const fetchStrategies = useCallback(async () => {
     try {
       setIsLoading(true);
       const data = await api.get<Strategy[]>('/api/strategies');
@@ -45,7 +41,11 @@ export function StrategiesPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [api]);
+
+  useEffect(() => {
+    fetchStrategies();
+  }, [fetchStrategies]);
 
   const handleCreate = async (data: StrategyCreate) => {
     try {

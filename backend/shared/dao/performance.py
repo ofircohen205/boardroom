@@ -106,12 +106,12 @@ class PerformanceDAO(BaseDAO[AnalysisOutcome]):
             .where(AnalysisOutcome.created_at >= start_date)
             .order_by(AnalysisOutcome.created_at.asc())
         )
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def get_all_agent_accuracy(self) -> List[AgentAccuracy]:
         """Get all agent accuracy records."""
         result = await self.session.execute(select(AgentAccuracy))
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def get_agent_detailed_accuracy(
         self, agent_enum: AgentType
@@ -120,7 +120,7 @@ class PerformanceDAO(BaseDAO[AnalysisOutcome]):
         result = await self.session.execute(
             select(AgentAccuracy).where(AgentAccuracy.agent_type == agent_enum)
         )
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def get_ticker_history(self, ticker: str) -> List[AnalysisOutcome]:
         """Get history of outcomes for a specific ticker."""
@@ -129,4 +129,4 @@ class PerformanceDAO(BaseDAO[AnalysisOutcome]):
             .where(AnalysisOutcome.ticker == ticker)
             .order_by(AnalysisOutcome.created_at.desc())
         )
-        return result.scalars().all()
+        return list(result.scalars().all())

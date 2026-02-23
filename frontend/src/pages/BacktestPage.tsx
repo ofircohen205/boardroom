@@ -18,7 +18,7 @@ import { Progress } from "@/components/ui/progress";
 import type { BacktestConfig, BacktestProgress, BacktestResult } from "@/types/backtest";
 import type { Strategy } from "@/types/strategy";
 import { AlertCircle, BarChart3, Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 export function BacktestPage() {
   const api = useAPIClient();
@@ -30,11 +30,7 @@ export function BacktestPage() {
   });
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchStrategies();
-  }, []);
-
-  const fetchStrategies = async () => {
+  const fetchStrategies = useCallback(async () => {
     try {
       setIsLoadingStrategies(true);
       const data = await api.get<Strategy[]>('/api/strategies');
@@ -44,7 +40,11 @@ export function BacktestPage() {
     } finally {
       setIsLoadingStrategies(false);
     }
-  };
+  }, [api]);
+
+  useEffect(() => {
+    fetchStrategies();
+  }, [fetchStrategies]);
 
   const runBacktest = (config: BacktestConfig) => {
     setResult(null);

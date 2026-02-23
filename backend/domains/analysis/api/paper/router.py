@@ -52,11 +52,6 @@ async def create_paper_account(
         HTTPException: 404 if strategy not found
     """
     # Validate strategy belongs to user
-    strategy_dao = (
-        service.account_dao.session.bind
-    )  # Need StrategyDAO here? Let's use service directly.
-    # Actually wait, StrategyDAO check isn't in PaperTradingService yet.
-    # I should add it there soon, but for now I'll just use the DAO from properties or add it.
     from backend.shared.dao.backtesting import StrategyDAO
 
     strategy_dao = StrategyDAO(service.db)
@@ -142,7 +137,7 @@ async def get_paper_account(
 
         for position in positions:
             # Get current price
-            current_price = await get_latest_price(db, position.ticker)
+            current_price = await get_latest_price(service.db, position.ticker)
             if current_price:
                 position.current_price = current_price
                 position.last_price_update = datetime.utcnow()

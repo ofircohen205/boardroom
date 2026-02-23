@@ -18,7 +18,7 @@ export function AnalysisHistory({ ticker }: { ticker?: string }) {
   const api = useAPIClient();
   const [history, setHistory] = useState<AnalysisSession[]>([]);
   const [loading, setLoading] = useState(true);
-  const [limit, setLimit] = useState(10);
+  const [limit] = useState(10);
 
   const fetchHistory = useCallback(async () => {
     setLoading(true);

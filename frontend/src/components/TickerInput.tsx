@@ -69,7 +69,7 @@ export function TickerInput({ onAnalyze, isLoading, analysisMode, onModeChange }
       clearTimeout(timeoutId);
       controller.abort();
     };
-  }, [ticker, market]);
+  }, [ticker, market, api]);
 
   // Close dropdown on outside click
   useEffect(() => {
