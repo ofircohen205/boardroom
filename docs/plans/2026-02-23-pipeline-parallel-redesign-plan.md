@@ -165,12 +165,8 @@ export function AgentPipeline({ activeAgents, completedAgents, hasDecision }: Pr
       </div>
 
       {/* Phase 2 — appears after Phase 1 completes */}
-      <div
-        className={cn(
-          "flex items-start gap-4 transition-all duration-700 ease-out",
-          allPhase1Complete ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3 pointer-events-none select-none",
-        )}
-      >
+      {allPhase1Complete && (
+      <div className="flex items-start gap-4 animate-fade-up">
         <div className="flex flex-col items-start gap-0.5 min-w-[72px] pt-1">
           <span className="text-[9px] font-black tracking-[0.25em] uppercase text-primary/70">Phase 2</span>
           <span className="text-[9px] tracking-wider uppercase text-muted-foreground/40">Sequential</span>
@@ -212,6 +208,7 @@ export function AgentPipeline({ activeAgents, completedAgents, hasDecision }: Pr
           </div>
         </div>
       </div>
+      )}
 
     </div>
   );
@@ -300,12 +297,8 @@ Replace it with:
 </div>
 
 {/* Phase 2 — Risk + Decision (appears after Phase 1 completes) */}
-<div
-  className={cn(
-    "transition-all duration-700 ease-out space-y-6",
-    allPhase1Complete ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none select-none hidden",
-  )}
->
+{allPhase1Complete && (
+<div className="space-y-6 animate-fade-up">
   {/* Quick Actions */}
   {(state.decision !== null || state.vetoed) && (
     <div className="flex justify-end">
@@ -377,6 +370,7 @@ Replace it with:
     </div>
   )}
 </div>
+)}
 ```
 
 **Step 3: Remove now-unused imports**
