@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useAPIClient } from "@/hooks/useAPIClient";
 import type { Market } from "@/types";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,6 +26,7 @@ interface StockSuggestion {
 }
 
 export function TickerInput({ onAnalyze, isLoading, analysisMode, onModeChange }: Props) {
+  const api = useAPIClient();
   const [ticker, setTicker] = useState("");
   const [market, setMarket] = useState<Market>("US");
   const [isFocused, setIsFocused] = useState(false);
@@ -47,16 +49,13 @@ export function TickerInput({ onAnalyze, isLoading, analysisMode, onModeChange }
     const timeoutId = setTimeout(async () => {
       setIsSearching(true);
       try {
-        const response = await fetch(
+        const data = await api.get<StockSuggestion[]>(
           `/api/stocks/search?q=${encodeURIComponent(ticker)}&market=${market}`,
           { signal: controller.signal }
         );
-        if (response.ok) {
-          const data = await response.json();
-          setSuggestions(data);
-          setShowDropdown(data.length > 0);
-          setSelectedIndex(-1);
-        }
+        setSuggestions(data);
+        setShowDropdown(data.length > 0);
+        setSelectedIndex(-1);
       } catch (e) {
         if (!(e instanceof Error && e.name === "AbortError")) {
           console.error("Search failed:", e);
@@ -70,7 +69,7 @@ export function TickerInput({ onAnalyze, isLoading, analysisMode, onModeChange }
       clearTimeout(timeoutId);
       controller.abort();
     };
-  }, [ticker, market]);
+  }, [ticker, market, api]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -181,7 +180,7 @@ export function TickerInput({ onAnalyze, isLoading, analysisMode, onModeChange }
                   className={`w-full px-4 py-3 flex items-center gap-3 text-left transition-colors ${
                     index === selectedIndex
                       ? "bg-primary/20 text-primary"
-                      : "hover:bg-white/5 text-foreground"
+                      : "hover:bg-muted/30 text-foreground"
                   }`}
                 >
                   <span className="font-mono font-bold text-lg tracking-wider">

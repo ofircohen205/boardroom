@@ -25,7 +25,7 @@ const steps = [
 
 export function AgentPipeline({ activeAgents, completedAgents, hasDecision }: Props) {
   return (
-    <div className="glass flex items-center justify-between rounded-2xl px-10 py-8 border-white/10 bg-black/40 backdrop-blur-xl">
+    <div className="glass flex items-center justify-between rounded-2xl px-10 py-8 border-border bg-card/80 backdrop-blur-xl">
       {steps.map((step) => {
         const isActive = activeAgents.has(step.key);
         const isComplete = completedAgents.has(step.key);
@@ -38,7 +38,7 @@ export function AgentPipeline({ activeAgents, completedAgents, hasDecision }: Pr
                   "relative flex h-14 w-14 items-center justify-center rounded-2xl transition-all duration-500 border-2 shadow-lg",
                   isComplete && "bg-primary text-primary-foreground border-primary shadow-[0_0_25px_rgba(var(--primary),0.6)] scale-105",
                   isActive && "bg-primary/20 text-primary border-primary animate-pulse-glow shadow-[0_0_20px_rgba(var(--primary),0.4)]",
-                  !isComplete && !isActive && "bg-white/5 text-muted-foreground border-white/10 group-hover:bg-white/10 group-hover:border-white/20 hover:scale-105",
+                  !isComplete && !isActive && "bg-muted/30 text-muted-foreground border-border group-hover:bg-muted/50 group-hover:border-border hover:scale-105",
                 )}
               >
                 {isComplete ? (
@@ -60,7 +60,7 @@ export function AgentPipeline({ activeAgents, completedAgents, hasDecision }: Pr
             </div>
 
             {/* Connecting Line */}
-            <div className="flex-1 h-[2px] bg-white/10 relative overflow-hidden rounded-full mx-2">
+            <div className="flex-1 h-[2px] bg-muted-foreground/20 relative overflow-hidden rounded-full mx-2">
                <div
                   className={cn(
                     "absolute inset-0 transition-all duration-1000 w-full origin-left bg-gradient-to-r from-primary to-primary/50",
@@ -78,7 +78,7 @@ export function AgentPipeline({ activeAgents, completedAgents, hasDecision }: Pr
           className={cn(
             "relative flex h-14 w-14 items-center justify-center rounded-2xl transition-all duration-500 border-2 shadow-lg",
             hasDecision && "bg-emerald-500 text-white border-emerald-500 shadow-[0_0_30px_rgba(16,185,129,0.6)] scale-110",
-            !hasDecision && "bg-white/5 text-muted-foreground border-white/10",
+            !hasDecision && "bg-muted/30 text-muted-foreground border-border",
           )}
         >
           {hasDecision ? (

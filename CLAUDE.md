@@ -27,7 +27,6 @@ Boardroom is a multi-agent financial analysis system using LangGraph. Agents pas
 **Key Documentation:**
 
 - [AGENTS.md](./AGENTS.md) — Detailed agent system architecture
-
 - [docs/plans/roadmap.md](./docs/plans/roadmap.md) — Implementation phases and roadmap
 - [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) — System architecture overview
 - [docs/DEVELOPMENT.md](./docs/DEVELOPMENT.md) — Development setup and workflow

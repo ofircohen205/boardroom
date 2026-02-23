@@ -227,9 +227,9 @@ async def test_streaming_event_order():
 
         # Then risk started + completed
         assert event_types[7] == WSMessageType.AGENT_STARTED
-        assert events[7]["agent"] == AgentType.RISK
+        assert events[7]["agent"] == AgentType.RISK_MANAGER
         assert event_types[8] == WSMessageType.AGENT_COMPLETED
-        assert events[8]["agent"] == AgentType.RISK
+        assert events[8]["agent"] == AgentType.RISK_MANAGER
 
         # Then chairperson started + decision
         assert event_types[9] == WSMessageType.AGENT_STARTED

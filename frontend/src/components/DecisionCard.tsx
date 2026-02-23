@@ -77,7 +77,7 @@ ${decision.rationale ? `\nRationale: ${decision.rationale}` : ''}
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-destructive mb-2">
               Risk Protocol Activated
             </p>
-            <h2 className="text-3xl font-black text-white tracking-tight mb-2">Trade Vetoed</h2>
+            <h2 className="text-3xl font-black text-foreground tracking-tight mb-2">Trade Vetoed</h2>
             {vetoReason && (
               <p className="text-sm font-mono text-destructive-foreground/80 leading-relaxed border-l-2 border-destructive/30 pl-3">
                 {vetoReason}
@@ -102,7 +102,7 @@ ${decision.rationale ? `\nRationale: ${decision.rationale}` : ''}
         'animate-fade-up overflow-hidden border transition-all duration-500',
         config.border,
         `shadow-2xl ${config.shadow}`,
-        'bg-white/5 backdrop-blur-md'
+        'bg-card backdrop-blur-md'
       )}
     >
       <div className={cn('bg-gradient-to-br', config.bg, 'p-8 relative')}>
@@ -124,7 +124,7 @@ ${decision.rationale ? `\nRationale: ${decision.rationale}` : ''}
               className={cn(
                 'flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl border-2 shadow-inner',
                 config.border,
-                'bg-white/5 backdrop-blur-sm'
+                'bg-muted/30 backdrop-blur-sm'
               )}
             >
               <Icon className={cn('h-10 w-10', config.color)} />
@@ -136,7 +136,7 @@ ${decision.rationale ? `\nRationale: ${decision.rationale}` : ''}
                   {decision.action}
                 </span>
                 <div className="flex flex-col">
-                  <span className="text-2xl font-bold tabular-nums text-white">{confidence}%</span>
+                  <span className="text-2xl font-bold tabular-nums text-foreground">{confidence}%</span>
                   <span className="text-[10px] uppercase text-muted-foreground font-medium">Confidence</span>
                 </div>
               </div>
@@ -144,11 +144,11 @@ ${decision.rationale ? `\nRationale: ${decision.rationale}` : ''}
           </div>
 
           {/* Confidence Meter */}
-          <div className="flex-1 sm:max-w-xs w-full bg-black/20 rounded-xl p-4 border border-white/5">
+          <div className="flex-1 sm:max-w-xs w-full bg-muted/30 rounded-xl p-4 border border-border">
             <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
               <span className="uppercase tracking-wider font-semibold">Consensus Strength</span>
             </div>
-            <div className="h-3 w-full overflow-hidden rounded-full bg-black/40 shadow-inner">
+            <div className="h-3 w-full overflow-hidden rounded-full bg-muted-foreground/20 shadow-inner">
               <div
                 className={cn(
                   'h-full rounded-full transition-all duration-1000 ease-out shadow-[0_0_10px_currentColor]',
@@ -170,7 +170,7 @@ ${decision.rationale ? `\nRationale: ${decision.rationale}` : ''}
 
         {/* Rationale Section */}
         {decision.rationale && (
-          <div className="mt-8 pt-6 border-t border-white/10">
+          <div className="mt-8 pt-6 border-t border-border">
             <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">Analysis Summary</p>
             <p className="text-base text-foreground/90 leading-relaxed font-light">{decision.rationale}</p>
           </div>

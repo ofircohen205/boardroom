@@ -6,7 +6,7 @@ import { BacktestForm } from "@/components/backtest/BacktestForm";
 import { BacktestSummary } from "@/components/backtest/BacktestSummary";
 import { TradeLog } from "@/components/backtest/TradeLog";
 import PageContainer from "@/components/layout/PageContainer";
-import { API_BASE_URL } from "@/lib/api";
+import { useAPIClient } from "@/hooks/useAPIClient";
 import {
   Card,
   CardContent,
@@ -18,9 +18,10 @@ import { Progress } from "@/components/ui/progress";
 import type { BacktestConfig, BacktestProgress, BacktestResult } from "@/types/backtest";
 import type { Strategy } from "@/types/strategy";
 import { AlertCircle, BarChart3, Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 export function BacktestPage() {
+  const api = useAPIClient();
   const [strategies, setStrategies] = useState<Strategy[]>([]);
   const [isLoadingStrategies, setIsLoadingStrategies] = useState(true);
   const [result, setResult] = useState<BacktestResult | null>(null);
@@ -29,30 +30,21 @@ export function BacktestPage() {
   });
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchStrategies();
-  }, []);
-
-  const fetchStrategies = async () => {
+  const fetchStrategies = useCallback(async () => {
     try {
       setIsLoadingStrategies(true);
-      const token = localStorage.getItem("token");
-      const response = await fetch(`${API_BASE_URL}/api/strategies`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setStrategies(data);
-      }
+      const data = await api.get<Strategy[]>('/api/strategies');
+      setStrategies(data);
     } catch (error) {
       console.error("Failed to fetch strategies:", error);
     } finally {
       setIsLoadingStrategies(false);
     }
-  };
+  }, [api]);
+
+  useEffect(() => {
+    fetchStrategies();
+  }, [fetchStrategies]);
 
   const runBacktest = (config: BacktestConfig) => {
     setResult(null);

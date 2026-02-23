@@ -72,6 +72,44 @@ class WatchlistDAO(BaseDAO[Watchlist]):
         await self.session.refresh(item)
         return item
 
+    async def get_watchlist_tickers(self, watchlist_id: UUID) -> List[str]:
+        """Get all tickers from a specific watchlist.
+
+        Args:
+            watchlist_id: The UUID of the watchlist to retrieve tickers for.
+
+        Returns:
+            A list of ticker strings.
+        """
+        result = await self.session.execute(
+            select(WatchlistItem.ticker).where(
+                WatchlistItem.watchlist_id == watchlist_id
+            )
+        )
+        return list(result.scalars().all())
+
+    async def remove_item(self, watchlist_id: UUID, ticker: str) -> bool:
+        """Remove an item from a watchlist.
+
+        Args:
+            watchlist_id: The UUID of the watchlist.
+            ticker: The ticker symbol to remove.
+
+        Returns:
+            True if an item was removed, False otherwise.
+        """
+        result = await self.session.execute(
+            select(WatchlistItem)
+            .where(WatchlistItem.watchlist_id == watchlist_id)
+            .where(WatchlistItem.ticker == ticker)
+        )
+        item_to_remove = result.scalars().first()
+
+        if item_to_remove:
+            await self.delete(item_to_remove.id)
+            return True
+        return False
+
 
 class PortfolioDAO(BaseDAO[Portfolio]):
     """Data access object for Portfolio operations."""

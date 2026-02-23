@@ -12,7 +12,7 @@ const AgentLeaderboard = () => {
   );
 
   return (
-    <div className="bg-gray-800 p-4 rounded-lg">
+    <div className="bg-card p-4 rounded-lg border border-border">
       <h2 className="text-lg font-semibold mb-2">Agent Leaderboard</h2>
 
       <AsyncDataDisplay
@@ -25,7 +25,7 @@ const AgentLeaderboard = () => {
       >
         {(leaderboard) => (
           <table className="w-full text-sm text-left">
-            <thead className="text-xs text-gray-400 uppercase">
+            <thead className="text-xs text-muted-foreground uppercase">
               <tr>
                 <th scope="col" className="py-2">Agent</th>
                 <th scope="col" className="py-2 text-right">Accuracy</th>
@@ -33,7 +33,7 @@ const AgentLeaderboard = () => {
             </thead>
             <tbody>
               {leaderboard.map((agent) => (
-                <tr key={agent.agent_name} className="border-b border-gray-700">
+                <tr key={agent.agent_name} className="border-b border-border">
                   <td className="py-2 font-medium capitalize">{agent.agent_name}</td>
                   <td className="py-2 text-right font-mono">{(agent.accuracy * 100).toFixed(1)}%</td>
                 </tr>

@@ -375,7 +375,7 @@ export function StockChart({ priceHistory, ticker, ma50, ma200, rsi, bollingerUp
 
   return (
     <Card className="glass animate-fade-up overflow-hidden border-primary/20">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 border-b border-white/5 bg-white/5">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 border-b border-border bg-muted/30">
         <CardTitle className="flex items-center gap-2 text-sm font-bold tracking-widest uppercase text-muted-foreground">
           <TrendingUp className="h-4 w-4 text-primary" />
           {ticker} Price Action
@@ -396,7 +396,7 @@ export function StockChart({ priceHistory, ticker, ma50, ma200, rsi, bollingerUp
               {change.toFixed(2)}%
             </span>
           </div>
-          <div className="flex gap-1 border-l border-white/10 pl-3">
+          <div className="flex gap-1 border-l border-border pl-3">
             <Button
               variant="ghost"
               size="icon"
@@ -440,7 +440,7 @@ export function StockChart({ priceHistory, ticker, ma50, ma200, rsi, bollingerUp
 
         {/* RSI chart */}
         {rsi !== undefined && (
-          <div className="border-t border-white/5 bg-white/[0.02]">
+          <div className="border-t border-border bg-muted/20">
             <div className="px-3 py-1 flex items-center justify-between">
               <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-bold">
                 RSI
@@ -462,7 +462,7 @@ export function StockChart({ priceHistory, ticker, ma50, ma200, rsi, bollingerUp
 
         {/* Legend */}
         {(ma50 || ma200 || (bollingerUpper && bollingerLower)) && (
-          <div className="px-4 py-2 border-t border-white/5 flex gap-4 text-[10px] font-mono">
+          <div className="px-4 py-2 border-t border-border flex gap-4 text-[10px] font-mono">
             {ma50 && ma50 > 0 && (
               <div className="flex items-center gap-1.5">
                 <div className="h-[2px] w-3 bg-[#fbbf24]" />

@@ -29,12 +29,12 @@ export function NewsFeed({ newsItems, socialMentions }: Props) {
 
   return (
     <Card className="glass animate-fade-up border-primary/20">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b border-white/5 bg-white/5">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b border-border bg-muted/30">
         <CardTitle className="flex items-center gap-2 text-sm font-bold tracking-widest uppercase text-muted-foreground">
           <Newspaper className="h-4 w-4 text-primary" />
           Market Intelligence
         </CardTitle>
-        <span className="text-[10px] font-mono px-2 py-1 rounded-full bg-white/5 text-muted-foreground border border-white/5">
+        <span className="text-[10px] font-mono px-2 py-1 rounded-full bg-muted/30 text-muted-foreground border border-border">
           {allItems.length} EVENTS
         </span>
       </CardHeader>
@@ -47,7 +47,7 @@ export function NewsFeed({ newsItems, socialMentions }: Props) {
                 href={item.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group flex items-start gap-4 px-6 py-4 transition-all hover:bg-white/5 border-b border-white/5 last:border-0"
+                className="group flex items-start gap-4 px-6 py-4 transition-all hover:bg-muted/30 border-b border-border last:border-0"
               >
                 {/* Type indicator */}
                 <div
@@ -72,7 +72,7 @@ export function NewsFeed({ newsItems, socialMentions }: Props) {
                   <div className="flex items-center gap-3">
                     <Badge
                       variant="outline"
-                      className="text-[9px] px-2 py-0 h-4 border-white/10 bg-white/5 text-muted-foreground group-hover:border-white/20"
+                      className="text-[9px] px-2 py-0 h-4 border-border bg-muted/30 text-muted-foreground group-hover:border-border/80"
                     >
                       {item.source}
                     </Badge>

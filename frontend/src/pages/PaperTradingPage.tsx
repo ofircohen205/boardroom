@@ -4,7 +4,7 @@
 
 import PageContainer from "@/components/layout/PageContainer";
 import { Button } from "@/components/ui/button";
-import { API_BASE_URL } from "@/lib/api";
+import { useAPIClient } from "@/hooks/useAPIClient";
 import {
   Card,
   CardContent,
@@ -42,6 +42,7 @@ import { ArrowDownIcon, ArrowUpIcon, Plus, TrendingUp, Wallet } from "lucide-rea
 import { useCallback, useEffect, useState } from "react";
 
 export function PaperTradingPage() {
+  const api = useAPIClient();
   const [accounts, setAccounts] = useState<PaperAccount[]>([]);
   const [strategies, setStrategies] = useState<Strategy[]>([]);
   const [selectedAccount, setSelectedAccount] = useState<PaperAccount | null>(null);
@@ -51,38 +52,26 @@ export function PaperTradingPage() {
 
   const fetchAccounts = useCallback(async () => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`${API_BASE_URL}/api/paper/accounts`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setAccounts(data);
-        if (data.length > 0 && !selectedAccount) {
-          setSelectedAccount(data[0]);
-        }
+      const data = await api.get<PaperAccount[]>('/api/paper/accounts');
+      setAccounts(data);
+      if (data.length > 0 && !selectedAccount) {
+        setSelectedAccount(data[0]);
       }
     } catch (error) {
       console.error("Failed to fetch accounts:", error);
     } finally {
       setIsLoading(false);
     }
-  }, [selectedAccount]);
+  }, [api, selectedAccount]);
 
   const fetchStrategies = useCallback(async () => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`${API_BASE_URL}/api/strategies`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setStrategies(data);
-      }
+      const data = await api.get<Strategy[]>('/api/strategies');
+      setStrategies(data);
     } catch (error) {
       console.error("Failed to fetch strategies:", error);
     }
-  }, []);
+  }, [api]);
 
   useEffect(() => {
     fetchAccounts();
@@ -91,25 +80,16 @@ export function PaperTradingPage() {
 
   const fetchAccountDetails = useCallback(async (accountId: string) => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(
-        `${API_BASE_URL}/api/paper/accounts/${accountId}?include_positions=true`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+      const data = await api.get<PaperAccount>(`/api/paper/accounts/${accountId}?include_positions=true`);
+      setSelectedAccount(data);
+      // Update in list
+      setAccounts((prev) =>
+        prev.map((acc) => (acc.id === accountId ? data : acc))
       );
-      if (response.ok) {
-        const data = await response.json();
-        setSelectedAccount(data);
-        // Update in list
-        setAccounts((prev) =>
-          prev.map((acc) => (acc.id === accountId ? data : acc))
-        );
-      }
     } catch (error) {
       console.error("Failed to fetch account details:", error);
     }
-  }, []);
+  }, [api]);
 
   useEffect(() => {
     if (selectedAccount) {
@@ -119,19 +99,9 @@ export function PaperTradingPage() {
 
   const handleCreateAccount = async (data: PaperAccountCreate) => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`${API_BASE_URL}/api/paper/accounts`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(data),
-      });
-      if (response.ok) {
-        await fetchAccounts();
-        setIsCreateDialogOpen(false);
-      }
+      await api.post('/api/paper/accounts', data);
+      await fetchAccounts();
+      setIsCreateDialogOpen(false);
     } catch (error) {
       console.error("Failed to create account:", error);
     }
@@ -141,22 +111,9 @@ export function PaperTradingPage() {
     if (!selectedAccount) return;
 
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(
-        `${API_BASE_URL}/api/paper/accounts/${selectedAccount.id}/trades`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(data),
-        }
-      );
-      if (response.ok) {
-        await fetchAccountDetails(selectedAccount.id);
-        setIsTradeDialogOpen(false);
-      }
+      await api.post(`/api/paper/accounts/${selectedAccount.id}/trades`, data);
+      await fetchAccountDetails(selectedAccount.id);
+      setIsTradeDialogOpen(false);
     } catch (error) {
       console.error("Failed to execute trade:", error);
     }

@@ -5,7 +5,7 @@
 import PageContainer from "@/components/layout/PageContainer";
 import { StrategyForm } from "@/components/strategies/StrategyForm";
 import { Button } from "@/components/ui/button";
-import { API_BASE_URL } from "@/lib/api";
+import { useAPIClient } from "@/hooks/useAPIClient";
 import {
   Card,
   CardContent,
@@ -22,55 +22,36 @@ import {
 } from "@/components/ui/dialog";
 import type { Strategy, StrategyCreate } from "@/types/strategy";
 import { Plus, Settings, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 export function StrategiesPage() {
+  const api = useAPIClient();
   const [strategies, setStrategies] = useState<Strategy[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingStrategy, setEditingStrategy] = useState<Strategy | undefined>();
 
-  useEffect(() => {
-    fetchStrategies();
-  }, []);
-
-  const fetchStrategies = async () => {
+  const fetchStrategies = useCallback(async () => {
     try {
       setIsLoading(true);
-      const token = localStorage.getItem("token");
-      const response = await fetch(`${API_BASE_URL}/api/strategies`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setStrategies(data);
-      }
+      const data = await api.get<Strategy[]>('/api/strategies');
+      setStrategies(data);
     } catch (error) {
       console.error("Failed to fetch strategies:", error);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [api]);
+
+  useEffect(() => {
+    fetchStrategies();
+  }, [fetchStrategies]);
 
   const handleCreate = async (data: StrategyCreate) => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`${API_BASE_URL}/api/strategies`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(data),
-      });
-
-      if (response.ok) {
-        await fetchStrategies();
-        setIsDialogOpen(false);
-      }
+      await api.post('/api/strategies', data);
+      await fetchStrategies();
+      setIsDialogOpen(false);
     } catch (error) {
       console.error("Failed to create strategy:", error);
     }
@@ -78,24 +59,10 @@ export function StrategiesPage() {
 
   const handleUpdate = async (strategyId: string, data: StrategyCreate) => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(
-        `${API_BASE_URL}/api/strategies/${strategyId}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(data),
-        }
-      );
-
-      if (response.ok) {
-        await fetchStrategies();
-        setIsDialogOpen(false);
-        setEditingStrategy(undefined);
-      }
+      await api.put(`/api/strategies/${strategyId}`, data);
+      await fetchStrategies();
+      setIsDialogOpen(false);
+      setEditingStrategy(undefined);
     } catch (error) {
       console.error("Failed to update strategy:", error);
     }
@@ -107,20 +74,8 @@ export function StrategiesPage() {
     }
 
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(
-        `${API_BASE_URL}/api/strategies/${strategyId}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (response.ok) {
-        await fetchStrategies();
-      }
+      await api.delete(`/api/strategies/${strategyId}`);
+      await fetchStrategies();
     } catch (error) {
       console.error("Failed to delete strategy:", error);
     }

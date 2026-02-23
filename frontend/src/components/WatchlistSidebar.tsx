@@ -1,30 +1,20 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { API_BASE_URL } from '@/lib/api';
+import { useAPIClient } from '@/hooks/useAPIClient';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Loader2, Trash2, TrendingUp, Plus, GitCompare } from 'lucide-react';
-
-interface WatchlistItem {
-  id: string;
-  ticker: string;
-  market: string;
-}
-
-interface Watchlist {
-  id: string;
-  name: string;
-  items: WatchlistItem[];
-}
+import type { Watchlist } from '@/lib/api/types';
 
 interface WatchlistSidebarProps {
   onSelectTicker: (ticker: string) => void;
 }
 
 export function WatchlistSidebar({ onSelectTicker }: WatchlistSidebarProps) {
-  const { token, logout } = useAuth();
+  const { token } = useAuth();
   const navigate = useNavigate();
+  const api = useAPIClient();
   const [watchlists, setWatchlists] = useState<Watchlist[]>([]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
@@ -32,20 +22,14 @@ export function WatchlistSidebar({ onSelectTicker }: WatchlistSidebarProps) {
 
   const fetchWatchlists = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/watchlists`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.status === 401) logout();
-      if (res.ok) {
-        const data = await res.json();
-        setWatchlists(data);
-      }
+      const data = await api.watchlists.list();
+      setWatchlists(data);
     } catch (e) {
       console.error(e);
     } finally {
       setLoading(false);
     }
-  }, [token, logout]);
+  }, [api]);
 
   useEffect(() => {
     if (token) fetchWatchlists();
@@ -55,18 +39,9 @@ export function WatchlistSidebar({ onSelectTicker }: WatchlistSidebarProps) {
     if (!newTicker) return;
     setAdding(true);
     try {
-        const res = await fetch(`${API_BASE_URL}/api/watchlists/${watchlistId}/items`, {
-            method: 'POST',
-            headers: {
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ ticker: newTicker, market: 'US' })
-        });
-        if (res.ok) {
-            setNewTicker('');
-            fetchWatchlists();
-        }
+        await api.watchlists.addItem(watchlistId, { ticker: newTicker, market: 'US' });
+        setNewTicker('');
+        fetchWatchlists();
     } catch (error) {
         console.error(error);
     } finally {
@@ -76,11 +51,8 @@ export function WatchlistSidebar({ onSelectTicker }: WatchlistSidebarProps) {
 
   const handleDeleteItem = async (watchlistId: string, itemId: string) => {
     try {
-        const res = await fetch(`${API_BASE_URL}/api/watchlists/${watchlistId}/items/${itemId}`, {
-            method: 'DELETE',
-            headers: { Authorization: `Bearer ${token}` }
-        });
-        if (res.ok) fetchWatchlists();
+        await api.watchlists.removeItem(watchlistId, itemId);
+        fetchWatchlists();
     } catch (e) { console.error(e); }
   };
 
@@ -91,15 +63,15 @@ export function WatchlistSidebar({ onSelectTicker }: WatchlistSidebarProps) {
     }
   };
 
-  if (loading) return <div className="w-64 h-full border-r border-white/10 p-4 flex justify-center"><Loader2 className="animate-spin" /></div>;
+  if (loading) return <div className="w-64 h-full border-r border-border p-4 flex justify-center"><Loader2 className="animate-spin" /></div>;
 
   const defaultWatchlist = watchlists[0]; // Assuming user has at least one
 
   if (!defaultWatchlist) return <div className="p-4">No watchlist found</div>;
 
   return (
-    <div className="w-80 border-l border-white/10 h-full bg-card/30 backdrop-blur-xl flex flex-col">
-        <div className="p-4 border-b border-white/10 space-y-2">
+    <div className="w-80 border-l border-border h-full bg-card/30 backdrop-blur-xl flex flex-col">
+        <div className="p-4 border-b border-border space-y-2">
             <div className="flex items-center justify-between">
                 <h2 className="font-semibold flex items-center gap-2">
                     <TrendingUp className="w-4 h-4 text-primary"/> Watchlist
@@ -133,7 +105,7 @@ export function WatchlistSidebar({ onSelectTicker }: WatchlistSidebarProps) {
 
             <div className="space-y-1">
                 {defaultWatchlist.items.map(item => (
-                    <div key={item.id} className="group flex items-center justify-between p-2 rounded-md hover:bg-background/50 cursor-pointer border border-transparent hover:border-white/5 transition-all" onClick={() => onSelectTicker(item.ticker)}>
+                    <div key={item.id} className="group flex items-center justify-between p-2 rounded-md hover:bg-muted/30 cursor-pointer border border-transparent hover:border-border transition-all" onClick={() => onSelectTicker(item.ticker)}>
                         <div className="font-medium bg-primary/10 text-primary px-2 py-0.5 rounded text-sm">{item.ticker}</div>
                         <Button
                             variant="ghost"

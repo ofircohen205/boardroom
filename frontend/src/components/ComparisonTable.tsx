@@ -137,7 +137,7 @@ export function ComparisonTable({ data, className = "" }: ComparisonTableProps) 
     <div className={cn("overflow-x-auto", className)}>
       <table className="w-full border-collapse">
         <thead>
-          <tr className="border-b border-white/10">
+          <tr className="border-b border-border">
             <th className="text-left py-3 px-4 text-sm font-semibold text-muted-foreground uppercase tracking-wider">
               Metric
             </th>
@@ -161,7 +161,7 @@ export function ComparisonTable({ data, className = "" }: ComparisonTableProps) 
             return (
               <tr
                 key={metricIdx}
-                className="border-b border-white/5 hover:bg-white/[0.02] transition-colors"
+                className="border-b border-border hover:bg-muted/20 transition-colors"
               >
                 <td className="py-3 px-4 text-sm text-muted-foreground font-medium">
                   {metric.label}

@@ -81,3 +81,52 @@ class PerformanceDAO(BaseDAO[AnalysisOutcome]):
             .where(AgentAccuracy.period == period)
         )
         return result.scalars().first()
+
+    async def get_analysis_session(self, session_id: UUID) -> Optional[AnalysisSession]:
+        """Get an analysis session by ID."""
+        result = await self.session.execute(
+            select(AnalysisSession).where(AnalysisSession.id == session_id)
+        )
+        return result.scalars().first()
+
+    async def get_final_decision(self, session_id: UUID) -> Optional[FinalDecision]:
+        """Get the final decision for an analysis session."""
+        result = await self.session.execute(
+            select(FinalDecision).where(FinalDecision.session_id == session_id)
+        )
+        return result.scalars().first()
+
+    async def get_timeline_outcomes(self, days: int) -> List[AnalysisOutcome]:
+        """Get analysis outcomes from the last N days."""
+        from datetime import datetime, timedelta
+
+        start_date = datetime.now() - timedelta(days=days)
+        result = await self.session.execute(
+            select(AnalysisOutcome)
+            .where(AnalysisOutcome.created_at >= start_date)
+            .order_by(AnalysisOutcome.created_at.asc())
+        )
+        return list(result.scalars().all())
+
+    async def get_all_agent_accuracy(self) -> List[AgentAccuracy]:
+        """Get all agent accuracy records."""
+        result = await self.session.execute(select(AgentAccuracy))
+        return list(result.scalars().all())
+
+    async def get_agent_detailed_accuracy(
+        self, agent_enum: AgentType
+    ) -> List[AgentAccuracy]:
+        """Get detailed accuracy records for a specific agent."""
+        result = await self.session.execute(
+            select(AgentAccuracy).where(AgentAccuracy.agent_type == agent_enum)
+        )
+        return list(result.scalars().all())
+
+    async def get_ticker_history(self, ticker: str) -> List[AnalysisOutcome]:
+        """Get history of outcomes for a specific ticker."""
+        result = await self.session.execute(
+            select(AnalysisOutcome)
+            .where(AnalysisOutcome.ticker == ticker)
+            .order_by(AnalysisOutcome.created_at.desc())
+        )
+        return list(result.scalars().all())

@@ -36,7 +36,7 @@ export class ComparisonAPI {
    * Get available sectors
    */
   async getSectors(): Promise<Sector[]> {
-    const response = await this.client.get<{ sectors: Sector[] }>('/api/compare/sectors');
+    const response = await this.client.get<{ sectors: Sector[] }>('/api/sectors/');
     return response.sectors || [];
   }
 
@@ -44,13 +44,13 @@ export class ComparisonAPI {
    * Compare multiple stocks
    */
   async compareStocks(tickers: string[], market = 'US'): Promise<ComparisonResult> {
-    return this.client.post<ComparisonResult>('/api/compare/stocks', { tickers, market });
+    return this.client.post<ComparisonResult>('/api/sectors/compare', { tickers, market });
   }
 
   /**
    * Analyze stocks in a sector
    */
   async analyzeSector(sector: string, limit = 5, market = 'US'): Promise<ComparisonResult> {
-    return this.client.post<ComparisonResult>('/api/compare/sector', { sector, limit, market });
+    return this.client.post<ComparisonResult>('/api/sectors/analyze', { sector, limit, market });
   }
 }

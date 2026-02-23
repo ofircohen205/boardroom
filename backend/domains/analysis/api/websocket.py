@@ -6,9 +6,7 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect, status
 from jose import JWTError, jwt
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
 from backend.dependencies import get_performance_service
 from backend.domains.analysis.api.backtest.websocket import router as backtest_ws_router
@@ -18,12 +16,13 @@ from backend.shared.ai.tools.market_data import get_market_data_client
 from backend.shared.ai.workflow import BoardroomGraph
 from backend.shared.core.logging import get_logger
 from backend.shared.core.settings import settings
+from backend.shared.dao.portfolio import PortfolioDAO
+from backend.shared.dao.user import UserDAO
 from backend.shared.db.database import get_db
 from backend.shared.db.models import (
     AgentReport,
     AnalysisSession,
     FinalDecision,
-    Portfolio,
     User,
 )
 
@@ -52,8 +51,8 @@ async def get_current_user_ws(token: str, db: AsyncSession) -> User | None:
     except JWTError:
         return None
 
-    result = await db.execute(select(User).filter(User.email == email))
-    return result.scalars().first()
+    user_dao = UserDAO(db)
+    return await user_dao.find_by_email(email)
 
 
 async def _calculate_portfolio_sector_weight(
@@ -73,12 +72,9 @@ async def _calculate_portfolio_sector_weight(
             return 0.0
 
         # 2. Get user's portfolio with all positions
-        portfolio_result = await db.execute(
-            select(Portfolio)
-            .where(Portfolio.user_id == user.id)
-            .options(selectinload(Portfolio.positions))
-        )
-        portfolio = portfolio_result.scalars().first()
+        portfolio_dao = PortfolioDAO(db)
+        portfolios = await portfolio_dao.get_user_portfolios(user.id)
+        portfolio = portfolios[0] if portfolios else None
 
         if not portfolio or not portfolio.positions:
             return 0.0

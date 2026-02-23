@@ -6,8 +6,10 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 import pytest
+from fastapi import HTTPException, status
 from httpx import ASGITransport, AsyncClient
 
+from backend.dependencies import get_paper_trading_service
 from backend.main import app
 from backend.shared.auth.dependencies import get_current_user
 from backend.shared.db.database import get_db
@@ -81,6 +83,26 @@ def _make_strategy(user_id=None, strategy_id=None):
     return strategy
 
 
+def _make_mock_paper_service(mock_db=None):
+    """Build a mock PaperTradingService with all attributes and methods as AsyncMock."""
+    service = MagicMock()
+    service.db = mock_db or MagicMock()
+    service.db.commit = AsyncMock()
+    service.db.refresh = AsyncMock()
+    service.account_dao = MagicMock()
+    service.account_dao.create_account = AsyncMock()
+    service.account_dao.delete = AsyncMock()
+    service.account_dao.execute_trade = AsyncMock()
+    service.position_dao = MagicMock()
+    service.position_dao.get_position = AsyncMock()
+    service.trade_dao = MagicMock()
+    service.get_user_accounts = AsyncMock()
+    service.get_account = AsyncMock()
+    service.get_account_positions = AsyncMock()
+    service.get_account_trades = AsyncMock()
+    return service
+
+
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
@@ -103,33 +125,23 @@ async def paper_client(mock_user, mock_db):
 # ---------------------------------------------------------------------------
 
 
-async def test_create_paper_account_success(paper_client, mock_user):
+async def test_create_paper_account_success(paper_client, mock_user, mock_db):
     """Creating a paper account with valid strategy returns 201."""
     strategy_id = uuid4()
     mock_strategy = _make_strategy(user_id=mock_user.id, strategy_id=strategy_id)
     mock_account = _make_account(user_id=mock_user.id, strategy_id=strategy_id)
 
+    mock_service = _make_mock_paper_service(mock_db)
+    mock_service.account_dao.create_account.return_value = mock_account
+
     mock_strategy_dao = MagicMock()
     mock_strategy_dao.get_by_id_and_user = AsyncMock(return_value=mock_strategy)
 
-    mock_account_dao = MagicMock()
-    mock_account_dao.save = AsyncMock(return_value=mock_account)
+    app.dependency_overrides[get_paper_trading_service] = lambda: mock_service
 
-    def dao_factory(db):
-        return mock_strategy_dao
-
-    def account_dao_factory(db):
-        return mock_account_dao
-
-    with (
-        patch(
-            "backend.domains.analysis.api.paper.router.StrategyDAO",
-            side_effect=dao_factory,
-        ),
-        patch(
-            "backend.domains.analysis.api.paper.router.PaperAccountDAO",
-            side_effect=account_dao_factory,
-        ),
+    with patch(
+        "backend.shared.dao.backtesting.StrategyDAO",
+        return_value=mock_strategy_dao,
     ):
         response = await paper_client.post(
             "/api/api/paper/accounts",
@@ -145,13 +157,17 @@ async def test_create_paper_account_success(paper_client, mock_user):
     assert data["name"] == "Test Account"
 
 
-async def test_create_paper_account_strategy_not_found(paper_client):
+async def test_create_paper_account_strategy_not_found(paper_client, mock_db):
     """Creating a paper account with a missing strategy returns 404."""
+    mock_service = _make_mock_paper_service(mock_db)
+
     mock_strategy_dao = MagicMock()
     mock_strategy_dao.get_by_id_and_user = AsyncMock(return_value=None)
 
+    app.dependency_overrides[get_paper_trading_service] = lambda: mock_service
+
     with patch(
-        "backend.domains.analysis.api.paper.router.StrategyDAO",
+        "backend.shared.dao.backtesting.StrategyDAO",
         return_value=mock_strategy_dao,
     ):
         response = await paper_client.post(
@@ -180,18 +196,15 @@ async def test_create_paper_account_missing_name(paper_client):
 # ---------------------------------------------------------------------------
 
 
-async def test_list_paper_accounts_returns_list(paper_client, mock_user):
+async def test_list_paper_accounts_returns_list(paper_client, mock_user, mock_db):
     """Listing accounts returns 200 with a list."""
     mock_account = _make_account(user_id=mock_user.id)
+    mock_service = _make_mock_paper_service(mock_db)
+    mock_service.get_user_accounts.return_value = [mock_account]
 
-    mock_dao = MagicMock()
-    mock_dao.get_user_accounts = AsyncMock(return_value=[mock_account])
+    app.dependency_overrides[get_paper_trading_service] = lambda: mock_service
 
-    with patch(
-        "backend.domains.analysis.api.paper.router.PaperAccountDAO",
-        return_value=mock_dao,
-    ):
-        response = await paper_client.get("/api/api/paper/accounts")
+    response = await paper_client.get("/api/api/paper/accounts")
 
     assert response.status_code == 200
     data = response.json()
@@ -199,16 +212,14 @@ async def test_list_paper_accounts_returns_list(paper_client, mock_user):
     assert len(data) == 1
 
 
-async def test_list_paper_accounts_empty(paper_client):
+async def test_list_paper_accounts_empty(paper_client, mock_db):
     """Listing accounts when none exist returns 200 with empty list."""
-    mock_dao = MagicMock()
-    mock_dao.get_user_accounts = AsyncMock(return_value=[])
+    mock_service = _make_mock_paper_service(mock_db)
+    mock_service.get_user_accounts.return_value = []
 
-    with patch(
-        "backend.domains.analysis.api.paper.router.PaperAccountDAO",
-        return_value=mock_dao,
-    ):
-        response = await paper_client.get("/api/api/paper/accounts")
+    app.dependency_overrides[get_paper_trading_service] = lambda: mock_service
+
+    response = await paper_client.get("/api/api/paper/accounts")
 
     assert response.status_code == 200
     assert response.json() == []
@@ -219,50 +230,34 @@ async def test_list_paper_accounts_empty(paper_client):
 # ---------------------------------------------------------------------------
 
 
-async def test_get_paper_account_not_found(paper_client):
+async def test_get_paper_account_not_found(paper_client, mock_db):
     """Getting a non-existent account returns 404."""
     account_id = uuid4()
+    mock_service = _make_mock_paper_service(mock_db)
+    mock_service.get_account.side_effect = HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND, detail="Paper account not found"
+    )
 
-    mock_dao = MagicMock()
-    mock_dao.get_by_id_and_user = AsyncMock(return_value=None)
+    app.dependency_overrides[get_paper_trading_service] = lambda: mock_service
 
-    with patch(
-        "backend.domains.analysis.api.paper.router.PaperAccountDAO",
-        return_value=mock_dao,
-    ):
-        response = await paper_client.get(f"/api/api/paper/accounts/{account_id}")
+    response = await paper_client.get(f"/api/api/paper/accounts/{account_id}")
 
     assert response.status_code == 404
 
 
-async def test_get_paper_account_success(paper_client, mock_user):
+async def test_get_paper_account_success(paper_client, mock_user, mock_db):
     """Getting an existing account returns 200 with account data."""
     account_id = uuid4()
     mock_account = _make_account(user_id=mock_user.id, account_id=account_id)
+    mock_service = _make_mock_paper_service(mock_db)
+    mock_service.get_account.return_value = mock_account
+    mock_service.get_account_positions.return_value = []
 
-    mock_account_dao = MagicMock()
-    mock_account_dao.get_by_id_and_user = AsyncMock(return_value=mock_account)
+    app.dependency_overrides[get_paper_trading_service] = lambda: mock_service
 
-    mock_position_dao = MagicMock()
-    mock_position_dao.get_account_positions = AsyncMock(return_value=[])
-
-    with (
-        patch(
-            "backend.domains.analysis.api.paper.router.PaperAccountDAO",
-            return_value=mock_account_dao,
-        ),
-        patch(
-            "backend.domains.analysis.api.paper.router.PaperPositionDAO",
-            return_value=mock_position_dao,
-        ),
-        patch(
-            "backend.domains.analysis.api.paper.router.get_latest_price",
-            new=AsyncMock(return_value=None),
-        ),
-    ):
-        response = await paper_client.get(
-            f"/api/api/paper/accounts/{account_id}?include_positions=true"
-        )
+    response = await paper_client.get(
+        f"/api/api/paper/accounts/{account_id}?include_positions=true"
+    )
 
     assert response.status_code == 200
     data = response.json()
@@ -274,41 +269,37 @@ async def test_get_paper_account_success(paper_client, mock_user):
 # ---------------------------------------------------------------------------
 
 
-async def test_update_paper_account_success(paper_client, mock_user):
+async def test_update_paper_account_success(paper_client, mock_user, mock_db):
     """Updating an existing account returns 200."""
     account_id = uuid4()
     mock_account = _make_account(user_id=mock_user.id, account_id=account_id)
+    mock_service = _make_mock_paper_service(mock_db)
+    mock_service.get_account.return_value = mock_account
 
-    mock_dao = MagicMock()
-    mock_dao.get_by_id_and_user = AsyncMock(return_value=mock_account)
+    app.dependency_overrides[get_paper_trading_service] = lambda: mock_service
 
-    with patch(
-        "backend.domains.analysis.api.paper.router.PaperAccountDAO",
-        return_value=mock_dao,
-    ):
-        response = await paper_client.put(
-            f"/api/api/paper/accounts/{account_id}",
-            json={"name": "Updated Account"},
-        )
+    response = await paper_client.put(
+        f"/api/api/paper/accounts/{account_id}",
+        json={"name": "Updated Account"},
+    )
 
     assert response.status_code == 200
 
 
-async def test_update_paper_account_not_found(paper_client):
+async def test_update_paper_account_not_found(paper_client, mock_db):
     """Updating a non-existent account returns 404."""
     account_id = uuid4()
+    mock_service = _make_mock_paper_service(mock_db)
+    mock_service.get_account.side_effect = HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND, detail="Paper account not found"
+    )
 
-    mock_dao = MagicMock()
-    mock_dao.get_by_id_and_user = AsyncMock(return_value=None)
+    app.dependency_overrides[get_paper_trading_service] = lambda: mock_service
 
-    with patch(
-        "backend.domains.analysis.api.paper.router.PaperAccountDAO",
-        return_value=mock_dao,
-    ):
-        response = await paper_client.put(
-            f"/api/api/paper/accounts/{account_id}",
-            json={"name": "Updated Account"},
-        )
+    response = await paper_client.put(
+        f"/api/api/paper/accounts/{account_id}",
+        json={"name": "Updated Account"},
+    )
 
     assert response.status_code == 404
 
@@ -318,36 +309,31 @@ async def test_update_paper_account_not_found(paper_client):
 # ---------------------------------------------------------------------------
 
 
-async def test_delete_paper_account_success(paper_client, mock_user):
+async def test_delete_paper_account_success(paper_client, mock_user, mock_db):
     """Deleting an existing account returns 204."""
     account_id = uuid4()
     mock_account = _make_account(user_id=mock_user.id, account_id=account_id)
+    mock_service = _make_mock_paper_service(mock_db)
+    mock_service.get_account.return_value = mock_account
 
-    mock_dao = MagicMock()
-    mock_dao.get_by_id_and_user = AsyncMock(return_value=mock_account)
-    mock_dao.delete = AsyncMock()
+    app.dependency_overrides[get_paper_trading_service] = lambda: mock_service
 
-    with patch(
-        "backend.domains.analysis.api.paper.router.PaperAccountDAO",
-        return_value=mock_dao,
-    ):
-        response = await paper_client.delete(f"/api/api/paper/accounts/{account_id}")
+    response = await paper_client.delete(f"/api/api/paper/accounts/{account_id}")
 
     assert response.status_code == 204
 
 
-async def test_delete_paper_account_not_found(paper_client):
+async def test_delete_paper_account_not_found(paper_client, mock_db):
     """Deleting a non-existent account returns 404."""
     account_id = uuid4()
+    mock_service = _make_mock_paper_service(mock_db)
+    mock_service.get_account.side_effect = HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND, detail="Paper account not found"
+    )
 
-    mock_dao = MagicMock()
-    mock_dao.get_by_id_and_user = AsyncMock(return_value=None)
+    app.dependency_overrides[get_paper_trading_service] = lambda: mock_service
 
-    with patch(
-        "backend.domains.analysis.api.paper.router.PaperAccountDAO",
-        return_value=mock_dao,
-    ):
-        response = await paper_client.delete(f"/api/api/paper/accounts/{account_id}")
+    response = await paper_client.delete(f"/api/api/paper/accounts/{account_id}")
 
     assert response.status_code == 404
 
@@ -357,49 +343,38 @@ async def test_delete_paper_account_not_found(paper_client):
 # ---------------------------------------------------------------------------
 
 
-async def test_execute_trade_account_not_found(paper_client):
+async def test_execute_trade_account_not_found(paper_client, mock_db):
     """Executing a trade on a missing account returns 404."""
     account_id = uuid4()
+    mock_service = _make_mock_paper_service(mock_db)
+    mock_service.get_account.side_effect = HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND, detail="Paper account not found"
+    )
 
-    mock_dao = MagicMock()
-    mock_dao.get_by_id_and_user = AsyncMock(return_value=None)
+    app.dependency_overrides[get_paper_trading_service] = lambda: mock_service
 
-    with patch(
-        "backend.domains.analysis.api.paper.router.PaperAccountDAO",
-        return_value=mock_dao,
-    ):
-        response = await paper_client.post(
-            f"/api/api/paper/accounts/{account_id}/trades",
-            json={"ticker": "AAPL", "trade_type": "BUY", "quantity": 10},
-        )
+    response = await paper_client.post(
+        f"/api/api/paper/accounts/{account_id}/trades",
+        json={"ticker": "AAPL", "trade_type": "BUY", "quantity": 10},
+    )
 
     assert response.status_code == 404
 
 
-async def test_execute_trade_insufficient_funds(paper_client, mock_user):
+async def test_execute_trade_insufficient_funds(paper_client, mock_user, mock_db):
     """Executing a BUY trade with insufficient funds returns 400."""
     account_id = uuid4()
     mock_account = _make_account(user_id=mock_user.id, account_id=account_id)
-    mock_account.current_balance = Decimal("100.00")  # Too little for 10 shares at
+    mock_account.current_balance = Decimal("100.00")  # Too little for 10 shares
 
-    mock_account_dao = MagicMock()
-    mock_account_dao.get_by_id_and_user = AsyncMock(return_value=mock_account)
+    mock_service = _make_mock_paper_service(mock_db)
+    mock_service.get_account.return_value = mock_account
 
-    mock_position_dao = MagicMock()
+    app.dependency_overrides[get_paper_trading_service] = lambda: mock_service
 
-    with (
-        patch(
-            "backend.domains.analysis.api.paper.router.PaperAccountDAO",
-            return_value=mock_account_dao,
-        ),
-        patch(
-            "backend.domains.analysis.api.paper.router.PaperPositionDAO",
-            return_value=mock_position_dao,
-        ),
-        patch(
-            "backend.domains.analysis.api.paper.router.get_latest_price",
-            new=AsyncMock(return_value=Decimal("150.00")),
-        ),
+    with patch(
+        "backend.domains.analysis.api.paper.router.get_latest_price",
+        new=AsyncMock(return_value=Decimal("150.00")),
     ):
         response = await paper_client.post(
             f"/api/api/paper/accounts/{account_id}/trades",
@@ -410,30 +385,19 @@ async def test_execute_trade_insufficient_funds(paper_client, mock_user):
     assert "Insufficient funds" in response.json()["detail"]
 
 
-async def test_execute_trade_sell_insufficient_shares(paper_client, mock_user):
+async def test_execute_trade_sell_insufficient_shares(paper_client, mock_user, mock_db):
     """Executing a SELL trade with no position returns 400."""
     account_id = uuid4()
     mock_account = _make_account(user_id=mock_user.id, account_id=account_id)
+    mock_service = _make_mock_paper_service(mock_db)
+    mock_service.get_account.return_value = mock_account
+    mock_service.position_dao.get_position.return_value = None
 
-    mock_account_dao = MagicMock()
-    mock_account_dao.get_by_id_and_user = AsyncMock(return_value=mock_account)
+    app.dependency_overrides[get_paper_trading_service] = lambda: mock_service
 
-    mock_position_dao = MagicMock()
-    mock_position_dao.get_position = AsyncMock(return_value=None)
-
-    with (
-        patch(
-            "backend.domains.analysis.api.paper.router.PaperAccountDAO",
-            return_value=mock_account_dao,
-        ),
-        patch(
-            "backend.domains.analysis.api.paper.router.PaperPositionDAO",
-            return_value=mock_position_dao,
-        ),
-        patch(
-            "backend.domains.analysis.api.paper.router.get_latest_price",
-            new=AsyncMock(return_value=Decimal("150.00")),
-        ),
+    with patch(
+        "backend.domains.analysis.api.paper.router.get_latest_price",
+        new=AsyncMock(return_value=Decimal("150.00")),
     ):
         response = await paper_client.post(
             f"/api/api/paper/accounts/{account_id}/trades",
@@ -444,29 +408,18 @@ async def test_execute_trade_sell_insufficient_shares(paper_client, mock_user):
     assert "Insufficient shares" in response.json()["detail"]
 
 
-async def test_execute_trade_no_price_available(paper_client, mock_user):
+async def test_execute_trade_no_price_available(paper_client, mock_user, mock_db):
     """Executing a trade when price cannot be fetched returns 400."""
     account_id = uuid4()
     mock_account = _make_account(user_id=mock_user.id, account_id=account_id)
+    mock_service = _make_mock_paper_service(mock_db)
+    mock_service.get_account.return_value = mock_account
 
-    mock_account_dao = MagicMock()
-    mock_account_dao.get_by_id_and_user = AsyncMock(return_value=mock_account)
+    app.dependency_overrides[get_paper_trading_service] = lambda: mock_service
 
-    mock_position_dao = MagicMock()
-
-    with (
-        patch(
-            "backend.domains.analysis.api.paper.router.PaperAccountDAO",
-            return_value=mock_account_dao,
-        ),
-        patch(
-            "backend.domains.analysis.api.paper.router.PaperPositionDAO",
-            return_value=mock_position_dao,
-        ),
-        patch(
-            "backend.domains.analysis.api.paper.router.get_latest_price",
-            new=AsyncMock(return_value=None),
-        ),
+    with patch(
+        "backend.domains.analysis.api.paper.router.get_latest_price",
+        new=AsyncMock(return_value=None),
     ):
         response = await paper_client.post(
             f"/api/api/paper/accounts/{account_id}/trades",
@@ -476,48 +429,21 @@ async def test_execute_trade_no_price_available(paper_client, mock_user):
     assert response.status_code == 400
 
 
-async def test_execute_buy_trade_success(paper_client, mock_user):
+async def test_execute_buy_trade_success(paper_client, mock_user, mock_db):
     """Executing a valid BUY trade returns 201."""
     account_id = uuid4()
     mock_account = _make_account(user_id=mock_user.id, account_id=account_id)
     mock_trade = _make_trade(account_id=account_id)
 
-    mock_account_dao = MagicMock()
-    mock_account_dao.get_by_id_and_user = AsyncMock(return_value=mock_account)
-    mock_account_dao.update_balance = AsyncMock()
+    mock_service = _make_mock_paper_service(mock_db)
+    mock_service.get_account.return_value = mock_account
+    mock_service.account_dao.execute_trade.return_value = mock_trade
 
-    mock_trade_dao = MagicMock()
-    mock_trade_dao.save = AsyncMock(return_value=mock_trade)
+    app.dependency_overrides[get_paper_trading_service] = lambda: mock_service
 
-    mock_position_dao = MagicMock()
-    mock_position_dao.update_position = AsyncMock()
-
-    def account_dao_factory(db):
-        return mock_account_dao
-
-    def trade_dao_factory(db):
-        return mock_trade_dao
-
-    def position_dao_factory(db):
-        return mock_position_dao
-
-    with (
-        patch(
-            "backend.domains.analysis.api.paper.router.PaperAccountDAO",
-            side_effect=account_dao_factory,
-        ),
-        patch(
-            "backend.domains.analysis.api.paper.router.PaperTradeDAO",
-            side_effect=trade_dao_factory,
-        ),
-        patch(
-            "backend.domains.analysis.api.paper.router.PaperPositionDAO",
-            side_effect=position_dao_factory,
-        ),
-        patch(
-            "backend.domains.analysis.api.paper.router.get_latest_price",
-            new=AsyncMock(return_value=Decimal("150.00")),
-        ),
+    with patch(
+        "backend.domains.analysis.api.paper.router.get_latest_price",
+        new=AsyncMock(return_value=Decimal("150.00")),
     ):
         response = await paper_client.post(
             f"/api/api/paper/accounts/{account_id}/trades",
@@ -532,55 +458,31 @@ async def test_execute_buy_trade_success(paper_client, mock_user):
 # ---------------------------------------------------------------------------
 
 
-async def test_get_trade_history_account_not_found(paper_client):
+async def test_get_trade_history_account_not_found(paper_client, mock_db):
     """Getting trade history for a missing account returns 404."""
     account_id = uuid4()
+    mock_service = _make_mock_paper_service(mock_db)
+    mock_service.get_account_trades.side_effect = HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND, detail="Paper account not found"
+    )
 
-    mock_dao = MagicMock()
-    mock_dao.get_by_id_and_user = AsyncMock(return_value=None)
+    app.dependency_overrides[get_paper_trading_service] = lambda: mock_service
 
-    with patch(
-        "backend.domains.analysis.api.paper.router.PaperAccountDAO",
-        return_value=mock_dao,
-    ):
-        response = await paper_client.get(
-            f"/api/api/paper/accounts/{account_id}/trades"
-        )
+    response = await paper_client.get(f"/api/api/paper/accounts/{account_id}/trades")
 
     assert response.status_code == 404
 
 
-async def test_get_trade_history_success(paper_client, mock_user):
+async def test_get_trade_history_success(paper_client, mock_user, mock_db):
     """Getting trade history returns 200 with list of trades."""
     account_id = uuid4()
-    mock_account = _make_account(user_id=mock_user.id, account_id=account_id)
     mock_trade = _make_trade(account_id=account_id)
+    mock_service = _make_mock_paper_service(mock_db)
+    mock_service.get_account_trades.return_value = [mock_trade]
 
-    mock_account_dao = MagicMock()
-    mock_account_dao.get_by_id_and_user = AsyncMock(return_value=mock_account)
+    app.dependency_overrides[get_paper_trading_service] = lambda: mock_service
 
-    mock_trade_dao = MagicMock()
-    mock_trade_dao.get_account_trades = AsyncMock(return_value=[mock_trade])
-
-    def account_dao_factory(db):
-        return mock_account_dao
-
-    def trade_dao_factory(db):
-        return mock_trade_dao
-
-    with (
-        patch(
-            "backend.domains.analysis.api.paper.router.PaperAccountDAO",
-            side_effect=account_dao_factory,
-        ),
-        patch(
-            "backend.domains.analysis.api.paper.router.PaperTradeDAO",
-            side_effect=trade_dao_factory,
-        ),
-    ):
-        response = await paper_client.get(
-            f"/api/api/paper/accounts/{account_id}/trades"
-        )
+    response = await paper_client.get(f"/api/api/paper/accounts/{account_id}/trades")
 
     assert response.status_code == 200
     data = response.json()
@@ -592,54 +494,30 @@ async def test_get_trade_history_success(paper_client, mock_user):
 # ---------------------------------------------------------------------------
 
 
-async def test_get_positions_account_not_found(paper_client):
+async def test_get_positions_account_not_found(paper_client, mock_db):
     """Getting positions for a missing account returns 404."""
     account_id = uuid4()
+    mock_service = _make_mock_paper_service(mock_db)
+    mock_service.get_account_positions.side_effect = HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND, detail="Paper account not found"
+    )
 
-    mock_dao = MagicMock()
-    mock_dao.get_by_id_and_user = AsyncMock(return_value=None)
+    app.dependency_overrides[get_paper_trading_service] = lambda: mock_service
 
-    with patch(
-        "backend.domains.analysis.api.paper.router.PaperAccountDAO",
-        return_value=mock_dao,
-    ):
-        response = await paper_client.get(
-            f"/api/api/paper/accounts/{account_id}/positions"
-        )
+    response = await paper_client.get(f"/api/api/paper/accounts/{account_id}/positions")
 
     assert response.status_code == 404
 
 
-async def test_get_positions_success(paper_client, mock_user):
+async def test_get_positions_success(paper_client, mock_user, mock_db):
     """Getting positions returns 200 with empty list when no positions."""
     account_id = uuid4()
-    mock_account = _make_account(user_id=mock_user.id, account_id=account_id)
+    mock_service = _make_mock_paper_service(mock_db)
+    mock_service.get_account_positions.return_value = []
 
-    mock_account_dao = MagicMock()
-    mock_account_dao.get_by_id_and_user = AsyncMock(return_value=mock_account)
+    app.dependency_overrides[get_paper_trading_service] = lambda: mock_service
 
-    mock_position_dao = MagicMock()
-    mock_position_dao.get_account_positions = AsyncMock(return_value=[])
-
-    def account_dao_factory(db):
-        return mock_account_dao
-
-    def position_dao_factory(db):
-        return mock_position_dao
-
-    with (
-        patch(
-            "backend.domains.analysis.api.paper.router.PaperAccountDAO",
-            side_effect=account_dao_factory,
-        ),
-        patch(
-            "backend.domains.analysis.api.paper.router.PaperPositionDAO",
-            side_effect=position_dao_factory,
-        ),
-    ):
-        response = await paper_client.get(
-            f"/api/api/paper/accounts/{account_id}/positions"
-        )
+    response = await paper_client.get(f"/api/api/paper/accounts/{account_id}/positions")
 
     assert response.status_code == 200
     assert response.json() == []
@@ -650,68 +528,37 @@ async def test_get_positions_success(paper_client, mock_user):
 # ---------------------------------------------------------------------------
 
 
-async def test_get_performance_account_not_found(paper_client):
+async def test_get_performance_account_not_found(paper_client, mock_db):
     """Getting performance for a missing account returns 404."""
     account_id = uuid4()
+    mock_service = _make_mock_paper_service(mock_db)
+    mock_service.get_account.side_effect = HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND, detail="Paper account not found"
+    )
 
-    mock_dao = MagicMock()
-    mock_dao.get_by_id_and_user = AsyncMock(return_value=None)
+    app.dependency_overrides[get_paper_trading_service] = lambda: mock_service
 
-    with patch(
-        "backend.domains.analysis.api.paper.router.PaperAccountDAO",
-        return_value=mock_dao,
-    ):
-        response = await paper_client.get(
-            f"/api/api/paper/accounts/{account_id}/performance"
-        )
+    response = await paper_client.get(
+        f"/api/api/paper/accounts/{account_id}/performance"
+    )
 
     assert response.status_code == 404
 
 
-async def test_get_performance_success(paper_client, mock_user):
+async def test_get_performance_success(paper_client, mock_user, mock_db):
     """Getting performance for an existing account returns 200 with metrics."""
     account_id = uuid4()
     mock_account = _make_account(user_id=mock_user.id, account_id=account_id)
+    mock_service = _make_mock_paper_service(mock_db)
+    mock_service.get_account.return_value = mock_account
+    mock_service.get_account_trades.return_value = []
+    mock_service.get_account_positions.return_value = []
 
-    mock_account_dao = MagicMock()
-    mock_account_dao.get_by_id_and_user = AsyncMock(return_value=mock_account)
+    app.dependency_overrides[get_paper_trading_service] = lambda: mock_service
 
-    mock_trade_dao = MagicMock()
-    mock_trade_dao.get_account_trades = AsyncMock(return_value=[])
-
-    mock_position_dao = MagicMock()
-    mock_position_dao.get_account_positions = AsyncMock(return_value=[])
-
-    def account_dao_factory(db):
-        return mock_account_dao
-
-    def trade_dao_factory(db):
-        return mock_trade_dao
-
-    def position_dao_factory(db):
-        return mock_position_dao
-
-    with (
-        patch(
-            "backend.domains.analysis.api.paper.router.PaperAccountDAO",
-            side_effect=account_dao_factory,
-        ),
-        patch(
-            "backend.domains.analysis.api.paper.router.PaperTradeDAO",
-            side_effect=trade_dao_factory,
-        ),
-        patch(
-            "backend.domains.analysis.api.paper.router.PaperPositionDAO",
-            side_effect=position_dao_factory,
-        ),
-        patch(
-            "backend.domains.analysis.api.paper.router.get_latest_price",
-            new=AsyncMock(return_value=None),
-        ),
-    ):
-        response = await paper_client.get(
-            f"/api/api/paper/accounts/{account_id}/performance"
-        )
+    response = await paper_client.get(
+        f"/api/api/paper/accounts/{account_id}/performance"
+    )
 
     assert response.status_code == 200
     data = response.json()

@@ -143,7 +143,7 @@ export function RelativePerformanceChart({
       {/* Chart */}
       <div
         ref={chartContainerRef}
-        className="w-full h-[400px] rounded-lg bg-gradient-to-br from-white/[0.02] to-white/[0.01] border border-white/5"
+        className="w-full h-[400px] rounded-lg bg-muted/20 border border-border"
       />
 
       {/* Note */}

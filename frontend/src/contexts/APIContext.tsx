@@ -1,6 +1,5 @@
 import { useMemo, type ReactNode } from 'react';
-import { APIClient } from '@/lib/apiClient';
-import { API_BASE_URL } from '@/lib/api';
+import { APIClient, API_BASE_URL } from '@/lib/apiClient';
 import { useAuth } from './AuthContext';
 import { APIContext } from './api-context';
 

@@ -12,7 +12,7 @@ const RecentOutcomes = () => {
   );
 
   return (
-    <div className="bg-gray-800 p-4 rounded-lg">
+    <div className="bg-card p-4 rounded-lg border border-border">
       <h2 className="text-lg font-semibold mb-2">Recent Outcomes</h2>
 
       <AsyncDataDisplay
@@ -26,7 +26,7 @@ const RecentOutcomes = () => {
         {(outcomes) => (
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left">
-              <thead className="text-xs text-gray-400 uppercase">
+              <thead className="text-xs text-muted-foreground uppercase">
                 <tr>
                   <th scope="col" className="py-2">Ticker</th>
                   <th scope="col" className="py-2">Recommendation</th>
@@ -38,7 +38,7 @@ const RecentOutcomes = () => {
               </thead>
               <tbody>
                 {outcomes.map((outcome) => (
-                  <tr key={outcome.id} className="border-b border-gray-700">
+                  <tr key={outcome.id} className="border-b border-border">
                     <td className="py-2 font-medium">{outcome.ticker}</td>
                     <td className="py-2 capitalize">{outcome.action}</td>
                     <td className="py-2 font-mono">${outcome.recommendation_price.toFixed(2)}</td>
