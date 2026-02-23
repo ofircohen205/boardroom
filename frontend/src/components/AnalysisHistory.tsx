@@ -3,6 +3,7 @@ import { useAPIClient } from '@/hooks/useAPIClient';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Loader2, History, CheckCircle, XCircle, ArrowUpCircle, ArrowDownCircle, MinusCircle } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface AnalysisSession {
   id: string;
@@ -18,7 +19,7 @@ export function AnalysisHistory({ ticker }: { ticker?: string }) {
   const api = useAPIClient();
   const [history, setHistory] = useState<AnalysisSession[]>([]);
   const [loading, setLoading] = useState(true);
-  const [limit] = useState(10);
+  const [limit, setLimit] = useState(10);
 
   const fetchHistory = useCallback(async () => {
     setLoading(true);
@@ -62,8 +63,22 @@ export function AnalysisHistory({ ticker }: { ticker?: string }) {
 
   return (
     <Card className="h-full bg-card/30 backdrop-blur-xl border-border flex flex-col">
-        <CardHeader className="py-3 border-b border-border">
+        <CardHeader className="py-2 border-b border-border flex flex-row items-center justify-between">
             <CardTitle className="text-sm font-medium flex items-center gap-2"><History className="w-4 h-4"/> Recent Analyses</CardTitle>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] uppercase text-muted-foreground font-semibold tracking-wider">Limit</span>
+              <Select value={limit.toString()} onValueChange={(v: string) => setLimit(parseInt(v))}>
+                <SelectTrigger className="h-7 w-[60px] text-xs bg-background/50 border-border">
+                  <SelectValue placeholder="Limit" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="5">5</SelectItem>
+                  <SelectItem value="10">10</SelectItem>
+                  <SelectItem value="20">20</SelectItem>
+                  <SelectItem value="50">50</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
         </CardHeader>
         <CardContent className="p-0 flex-1 overflow-hidden">
             <ScrollArea className="h-full">
