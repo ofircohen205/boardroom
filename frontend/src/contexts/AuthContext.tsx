@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { API_BASE_URL } from '@/lib/api';
+import { API_BASE_URL } from '@/lib/apiClient';
 
 interface User {
   id: string;

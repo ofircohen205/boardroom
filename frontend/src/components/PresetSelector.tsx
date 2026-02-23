@@ -56,7 +56,7 @@ export function PresetSelector({ value, onChange, disabled }: Props) {
               "flex flex-col items-start gap-1 h-auto py-2 px-3 transition-all",
               isSelected
                 ? "bg-primary text-primary-foreground border-primary shadow-md"
-                : "border-white/10 hover:bg-white/5 hover:border-primary/30"
+                : "border-border hover:bg-muted/30 hover:border-primary/30"
             )}
             title={preset.description}
           >

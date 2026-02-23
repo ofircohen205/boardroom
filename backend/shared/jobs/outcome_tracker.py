@@ -308,7 +308,7 @@ def _extract_agent_action(report_data: dict, agent_type: AgentType) -> Optional[
         else:
             return Action.HOLD
 
-    elif agent_type == AgentType.RISK:
+    elif agent_type == AgentType.RISK_MANAGER:
         # Risk manager doesn't make buy/sell decisions
         # Only vetos, which are handled separately
         return None

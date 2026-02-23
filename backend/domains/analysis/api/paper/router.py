@@ -5,17 +5,11 @@ from datetime import datetime
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.dependencies import get_paper_trading_service
+from backend.domains.analysis.services.backtesting_services import PaperTradingService
 from backend.shared.auth.dependencies import get_current_user
-from backend.shared.dao.backtesting import (
-    PaperAccountDAO,
-    PaperPositionDAO,
-    PaperTradeDAO,
-    StrategyDAO,
-)
 from backend.shared.data.historical import get_latest_price
-from backend.shared.db.database import get_db
 from backend.shared.db.models.backtesting import PaperAccount, PaperTrade, TradeType
 from backend.shared.db.models.user import User
 
@@ -42,7 +36,7 @@ logger = logging.getLogger(__name__)
 async def create_paper_account(
     account_data: PaperAccountCreate,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    service: PaperTradingService = Depends(get_paper_trading_service),
 ) -> PaperAccount:
     """Create a new paper trading account.
 
@@ -58,7 +52,14 @@ async def create_paper_account(
         HTTPException: 404 if strategy not found
     """
     # Validate strategy belongs to user
-    strategy_dao = StrategyDAO(db)
+    strategy_dao = (
+        service.account_dao.session.bind
+    )  # Need StrategyDAO here? Let's use service directly.
+    # Actually wait, StrategyDAO check isn't in PaperTradingService yet.
+    # I should add it there soon, but for now I'll just use the DAO from properties or add it.
+    from backend.shared.dao.backtesting import StrategyDAO
+
+    strategy_dao = StrategyDAO(service.db)
     strategy = await strategy_dao.get_by_id_and_user(
         account_data.strategy_id, current_user.id
     )
@@ -69,19 +70,12 @@ async def create_paper_account(
         )
 
     # Create account
-    account_dao = PaperAccountDAO(db)
-    account = PaperAccount(
-        user_id=current_user.id,
-        strategy_id=account_data.strategy_id,
-        name=account_data.name,
-        initial_balance=account_data.initial_balance,
-        current_balance=account_data.initial_balance,
-        is_active=True,
+    created = await service.account_dao.create_account(
+        current_user.id,
+        account_data.name,
+        account_data.initial_balance,
+        account_data.strategy_id,
     )
-
-    created = await account_dao.save(account)
-    await db.commit()
-    await db.refresh(created)
 
     logger.info(
         f"User {current_user.id} created paper account {created.id}: {created.name}"
@@ -97,21 +91,19 @@ async def create_paper_account(
 async def list_paper_accounts(
     active_only: bool = True,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    service: PaperTradingService = Depends(get_paper_trading_service),
 ) -> list[PaperAccount]:
     """List all paper trading accounts for the current user.
 
     Args:
         active_only: If True, only return active accounts (default: True)
         current_user: Currently authenticated user
-        db: Database session
+        service: Paper trading service
 
     Returns:
         List of user's paper accounts
     """
-    dao = PaperAccountDAO(db)
-    accounts = await dao.get_user_accounts(current_user.id, active_only=active_only)
-    return accounts
+    return await service.get_user_accounts(current_user.id, active_only=active_only)
 
 
 @router.get(
@@ -123,7 +115,7 @@ async def get_paper_account(
     account_id: UUID,
     include_positions: bool = True,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    service: PaperTradingService = Depends(get_paper_trading_service),
 ) -> dict:
     """Get details of a specific paper trading account.
 
@@ -131,7 +123,7 @@ async def get_paper_account(
         account_id: Account ID
         include_positions: If True, include current positions (default: True)
         current_user: Currently authenticated user
-        db: Database session
+        service: Paper trading service
 
     Returns:
         Account details with optional positions
@@ -139,22 +131,14 @@ async def get_paper_account(
     Raises:
         HTTPException: 404 if account not found
     """
-    account_dao = PaperAccountDAO(db)
-    account = await account_dao.get_by_id_and_user(account_id, current_user.id)
-
-    if not account:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Paper account {account_id} not found",
-        )
+    account = await service.get_account(account_id, current_user.id)
 
     # Calculate total value
     positions_value = 0.0
     positions_list = []
 
     if include_positions:
-        position_dao = PaperPositionDAO(db)
-        positions = await position_dao.get_account_positions(account_id)
+        positions = await service.get_account_positions(account_id, current_user.id)
 
         for position in positions:
             # Get current price
@@ -190,7 +174,7 @@ async def get_paper_account(
                 )
 
         # Save updated prices
-        await db.commit()
+        await service.db.commit()
 
     total_value = float(account.current_balance) + positions_value
     total_pnl = total_value - float(account.initial_balance)
@@ -222,7 +206,7 @@ async def update_paper_account(
     account_id: UUID,
     account_data: PaperAccountUpdate,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    service: PaperTradingService = Depends(get_paper_trading_service),
 ) -> PaperAccount:
     """Update a paper trading account.
 
@@ -230,7 +214,7 @@ async def update_paper_account(
         account_id: Account ID
         account_data: Updated account data
         current_user: Currently authenticated user
-        db: Database session
+        service: Paper trading service
 
     Returns:
         Updated account
@@ -238,14 +222,7 @@ async def update_paper_account(
     Raises:
         HTTPException: 404 if account not found
     """
-    dao = PaperAccountDAO(db)
-    account = await dao.get_by_id_and_user(account_id, current_user.id)
-
-    if not account:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Paper account {account_id} not found",
-        )
+    account = await service.get_account(account_id, current_user.id)
 
     # Update fields
     if account_data.name is not None:
@@ -254,8 +231,8 @@ async def update_paper_account(
         account.is_active = account_data.is_active
 
     account.updated_at = datetime.utcnow()
-    await db.commit()
-    await db.refresh(account)
+    await service.db.commit()
+    await service.db.refresh(account)
 
     logger.info(f"User {current_user.id} updated paper account {account_id}")
     return account
@@ -269,7 +246,7 @@ async def update_paper_account(
 async def delete_paper_account(
     account_id: UUID,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    service: PaperTradingService = Depends(get_paper_trading_service),
 ) -> None:
     """Delete a paper trading account.
 
@@ -278,22 +255,15 @@ async def delete_paper_account(
     Args:
         account_id: Account ID
         current_user: Currently authenticated user
-        db: Database session
+        service: Paper trading service
 
     Raises:
         HTTPException: 404 if account not found
     """
-    dao = PaperAccountDAO(db)
-    account = await dao.get_by_id_and_user(account_id, current_user.id)
+    account = await service.get_account(account_id, current_user.id)
 
-    if not account:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Paper account {account_id} not found",
-        )
-
-    await dao.delete(account_id)
-    await db.commit()
+    await service.account_dao.delete(account_id)
+    await service.db.commit()
 
     logger.info(f"User {current_user.id} deleted paper account {account_id}")
 
@@ -308,7 +278,7 @@ async def execute_paper_trade(
     account_id: UUID,
     trade_data: PaperTradeRequest,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    service: PaperTradingService = Depends(get_paper_trading_service),
 ) -> PaperTrade:
     """Execute a paper trade (buy or sell).
 
@@ -316,7 +286,7 @@ async def execute_paper_trade(
         account_id: Account ID
         trade_data: Trade details (ticker, type, quantity, optional price)
         current_user: Currently authenticated user
-        db: Database session
+        service: Paper trading service
 
     Returns:
         Executed trade record
@@ -325,19 +295,12 @@ async def execute_paper_trade(
         HTTPException: 404 if account not found, 400 if insufficient funds/shares
     """
     # Verify account belongs to user
-    account_dao = PaperAccountDAO(db)
-    account = await account_dao.get_by_id_and_user(account_id, current_user.id)
-
-    if not account:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Paper account {account_id} not found",
-        )
+    account = await service.get_account(account_id, current_user.id)
 
     # Get current price if not provided
     price = trade_data.price
     if not price:
-        price = await get_latest_price(db, trade_data.ticker)
+        price = await get_latest_price(service.db, trade_data.ticker)
         if not price:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -346,9 +309,6 @@ async def execute_paper_trade(
 
     trade_type = TradeType.BUY if trade_data.trade_type == "BUY" else TradeType.SELL
     total_value = price * trade_data.quantity
-
-    # Validate trade
-    position_dao = PaperPositionDAO(db)
 
     if trade_type == TradeType.BUY:
         # Check if enough cash
@@ -359,7 +319,9 @@ async def execute_paper_trade(
             )
     else:  # SELL
         # Check if enough shares
-        position = await position_dao.get_position(account_id, trade_data.ticker)
+        position = await service.position_dao.get_position(
+            account_id, trade_data.ticker
+        )
         if not position or position.quantity < trade_data.quantity:
             available = position.quantity if position else 0
             raise HTTPException(
@@ -367,40 +329,15 @@ async def execute_paper_trade(
                 detail=f"Insufficient shares: trying to sell {trade_data.quantity}, have {available}",
             )
 
-    # Create trade record
-    trade_dao = PaperTradeDAO(db)
-    trade = PaperTrade(
+    # Create trade via Service
+    created_trade = await service.account_dao.execute_trade(
         account_id=account_id,
-        ticker=trade_data.ticker.upper(),
-        trade_type=trade_type,
+        ticker=trade_data.ticker,
+        action=trade_data.trade_type,
         quantity=trade_data.quantity,
         price=price,
-        total_value=total_value,
         analysis_session_id=trade_data.analysis_session_id,
-        executed_at=datetime.utcnow(),
     )
-
-    created_trade = await trade_dao.save(trade)
-
-    # Update account balance and position
-    if trade_type == TradeType.BUY:
-        new_balance = account.current_balance - total_value
-    else:
-        new_balance = account.current_balance + total_value
-
-    await account_dao.update_balance(account_id, new_balance)
-
-    # Update position
-    await position_dao.update_position(
-        account_id,
-        trade_data.ticker.upper(),
-        trade_data.quantity if trade_type == TradeType.BUY else -trade_data.quantity,
-        price,
-        trade_type,
-    )
-
-    await db.commit()
-    await db.refresh(created_trade)
 
     logger.info(
         f"User {current_user.id} executed paper trade: {trade_type.value} {trade_data.quantity} "
@@ -419,7 +356,7 @@ async def get_trade_history(
     account_id: UUID,
     limit: int = 100,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    service: PaperTradingService = Depends(get_paper_trading_service),
 ) -> list[PaperTrade]:
     """Get trade history for a paper account.
 
@@ -427,7 +364,7 @@ async def get_trade_history(
         account_id: Account ID
         limit: Maximum number of trades to return (default: 100)
         current_user: Currently authenticated user
-        db: Database session
+        service: Paper trading service
 
     Returns:
         List of trades ordered by execution time (newest first)
@@ -435,19 +372,7 @@ async def get_trade_history(
     Raises:
         HTTPException: 404 if account not found
     """
-    # Verify account belongs to user
-    account_dao = PaperAccountDAO(db)
-    account = await account_dao.get_by_id_and_user(account_id, current_user.id)
-
-    if not account:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Paper account {account_id} not found",
-        )
-
-    trade_dao = PaperTradeDAO(db)
-    trades = await trade_dao.get_account_trades(account_id, limit=limit)
-    return trades
+    return await service.get_account_trades(account_id, current_user.id, limit=limit)
 
 
 @router.get(
@@ -458,14 +383,14 @@ async def get_trade_history(
 async def get_positions(
     account_id: UUID,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    service: PaperTradingService = Depends(get_paper_trading_service),
 ) -> list[dict]:
     """Get all current positions for a paper account.
 
     Args:
         account_id: Account ID
         current_user: Currently authenticated user
-        db: Database session
+        service: Paper trading service
 
     Returns:
         List of open positions with current prices and P&L
@@ -473,23 +398,12 @@ async def get_positions(
     Raises:
         HTTPException: 404 if account not found
     """
-    # Verify account belongs to user
-    account_dao = PaperAccountDAO(db)
-    account = await account_dao.get_by_id_and_user(account_id, current_user.id)
-
-    if not account:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Paper account {account_id} not found",
-        )
-
-    position_dao = PaperPositionDAO(db)
-    positions = await position_dao.get_account_positions(account_id)
+    positions = await service.get_account_positions(account_id, current_user.id)
 
     positions_list = []
     for position in positions:
         # Get current price
-        current_price = await get_latest_price(db, position.ticker)
+        current_price = await get_latest_price(service.db, position.ticker)
         if current_price:
             position.current_price = current_price
             position.last_price_update = datetime.utcnow()
@@ -519,7 +433,7 @@ async def get_positions(
         )
 
     # Save updated prices
-    await db.commit()
+    await service.db.commit()
 
     return positions_list
 
@@ -532,14 +446,14 @@ async def get_positions(
 async def get_performance(
     account_id: UUID,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    service: PaperTradingService = Depends(get_paper_trading_service),
 ) -> dict:
     """Get performance metrics for a paper account.
 
     Args:
         account_id: Account ID
         current_user: Currently authenticated user
-        db: Database session
+        service: Paper trading service
 
     Returns:
         Performance metrics including returns, win rate, and trade statistics
@@ -547,27 +461,13 @@ async def get_performance(
     Raises:
         HTTPException: 404 if account not found
     """
-    # Verify account belongs to user
-    account_dao = PaperAccountDAO(db)
-    account = await account_dao.get_by_id_and_user(account_id, current_user.id)
-
-    if not account:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Paper account {account_id} not found",
-        )
-
-    # Get all trades
-    trade_dao = PaperTradeDAO(db)
-    trades = await trade_dao.get_account_trades(account_id, limit=10000)
-
-    # Calculate current value
-    position_dao = PaperPositionDAO(db)
-    positions = await position_dao.get_account_positions(account_id)
+    account = await service.get_account(account_id, current_user.id)
+    trades = await service.get_account_trades(account_id, current_user.id, limit=10000)
+    positions = await service.get_account_positions(account_id, current_user.id)
 
     positions_value = 0.0
     for position in positions:
-        current_price = await get_latest_price(db, position.ticker)
+        current_price = await get_latest_price(service.db, position.ticker)
         if current_price:
             positions_value += float(current_price) * position.quantity
 

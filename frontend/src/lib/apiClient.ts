@@ -8,6 +8,8 @@ import { PerformanceAPI } from './api/performance';
 import { AnalysisAPI } from './api/analysis';
 import { ComparisonAPI } from './api/comparison';
 
+export const API_BASE_URL = (import.meta.env.VITE_API_URL as string | undefined) || 'http://localhost:8000';
+
 /**
  * Request options for API calls
  */
@@ -65,18 +67,28 @@ export class APIClient {
   /**
    * Build headers with automatic auth injection
    */
-  private buildHeaders(customHeaders?: HeadersInit): HeadersInit {
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-      ...customHeaders,
+  private buildHeaders(customHeaders?: HeadersInit, isFormData = false): HeadersInit {
+    const headers: Record<string, string> = {
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
+      ...(customHeaders as Record<string, string> || {}),
     };
 
     const token = this.getToken();
     if (token) {
-      (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
+      headers['Authorization'] = `Bearer ${token}`;
     }
 
     return headers;
+  }
+
+  /**
+   * Prepare request body and headers
+   */
+  private preparePayload(data: unknown, customHeaders?: HeadersInit) {
+    const isFormData = data instanceof FormData || data instanceof URLSearchParams;
+    const body = isFormData ? (data as BodyInit) : (data !== undefined ? JSON.stringify(data) : undefined);
+    const headers = this.buildHeaders(customHeaders, isFormData);
+    return { body, headers };
   }
 
   /**
@@ -133,10 +145,11 @@ export class APIClient {
     data?: unknown,
     options?: RequestOptions
   ): Promise<T> {
+    const { body, headers } = this.preparePayload(data, options?.headers);
     const response = await fetch(this.buildURL(endpoint), {
       method: 'POST',
-      headers: this.buildHeaders(options?.headers),
-      body: data ? JSON.stringify(data) : undefined,
+      headers,
+      body,
       signal: options?.signal,
       ...options,
     });
@@ -152,10 +165,11 @@ export class APIClient {
     data?: unknown,
     options?: RequestOptions
   ): Promise<T> {
+    const { body, headers } = this.preparePayload(data, options?.headers);
     const response = await fetch(this.buildURL(endpoint), {
       method: 'PATCH',
-      headers: this.buildHeaders(options?.headers),
-      body: data ? JSON.stringify(data) : undefined,
+      headers,
+      body,
       signal: options?.signal,
       ...options,
     });
@@ -185,10 +199,11 @@ export class APIClient {
     data?: unknown,
     options?: RequestOptions
   ): Promise<T> {
+    const { body, headers } = this.preparePayload(data, options?.headers);
     const response = await fetch(this.buildURL(endpoint), {
       method: 'PUT',
-      headers: this.buildHeaders(options?.headers),
-      body: data ? JSON.stringify(data) : undefined,
+      headers,
+      body,
       signal: options?.signal,
       ...options,
     });

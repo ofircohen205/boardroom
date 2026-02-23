@@ -42,11 +42,11 @@ export function AgentPanel({
   return (
     <Card
       className={cn(
-        "glass transition-all duration-500 overflow-hidden relative group border-white/10",
+        "glass transition-all duration-500 overflow-hidden relative group border-border",
         isActive && "border-primary/50 shadow-[0_0_40px_-10px] shadow-primary/30 bg-primary/5",
         isCompleted && "border-primary/30 bg-primary/5",
         isFailed && "border-destructive/50 bg-destructive/5",
-        !isActive && !isCompleted && !isFailed && !data && "opacity-40 grayscale hover:grayscale-0 hover:opacity-80 hover:bg-white/5",
+        !isActive && !isCompleted && !isFailed && !data && "opacity-40 grayscale hover:grayscale-0 hover:opacity-80 hover:bg-muted/30",
       )}
       style={{ animationDelay: `${index * 100}ms` }}
     >
@@ -63,7 +63,7 @@ export function AgentPanel({
               isActive && "bg-primary/20 text-primary border-primary/30 animate-pulse-glow",
               isCompleted && "bg-primary/10 text-primary border-primary/20",
               isFailed && "bg-destructive/20 text-destructive border-destructive/30",
-              !isActive && !isCompleted && !isFailed && "bg-white/5 text-muted-foreground border-white/10",
+              !isActive && !isCompleted && !isFailed && "bg-muted/30 text-muted-foreground border-border",
             )}
           >
             <Icon className="h-4 w-4" />
@@ -98,9 +98,9 @@ export function AgentPanel({
         {isActive && !data && (
           <div className="space-y-3 py-2">
             <div className="space-y-2">
-              <div className="h-2 w-3/4 rounded-full bg-white/10 animate-pulse" />
-              <div className="h-2 w-1/2 rounded-full bg-white/10 animate-pulse delay-75" />
-              <div className="h-2 w-2/3 rounded-full bg-white/10 animate-pulse delay-150" />
+              <div className="h-2 w-3/4 rounded-full bg-muted-foreground/20 animate-pulse" />
+              <div className="h-2 w-1/2 rounded-full bg-muted-foreground/20 animate-pulse delay-75" />
+              <div className="h-2 w-2/3 rounded-full bg-muted-foreground/20 animate-pulse delay-150" />
             </div>
             <p className="text-[11px] text-muted-foreground/50 font-mono animate-pulse">
               {LOADING_MESSAGES[agent] ?? "Analyzing..."}
@@ -112,7 +112,7 @@ export function AgentPanel({
         {data && (
           <div className="animate-fade-up space-y-4">
             {/* Key metrics row */}
-            <div className="grid grid-cols-3 gap-2 p-3 rounded-lg bg-black/20 border border-white/10 backdrop-blur-sm">
+            <div className="grid grid-cols-3 gap-2 p-3 rounded-lg bg-muted/30 border border-border backdrop-blur-sm">
               {agent === "fundamental" && (
                 <>
                   <Metric label="P/E Ratio" value={data.pe_ratio?.toFixed(1) ?? "N/A"} />
@@ -197,7 +197,7 @@ export function AgentPanel({
 
             {/* Secondary technical metrics row */}
             {agent === "technical" && (data.macd_histogram != null || data.bollinger_width_pct != null || data.atr != null) && (
-              <div className="grid grid-cols-3 gap-2 p-3 rounded-lg bg-black/20 border border-white/10 backdrop-blur-sm">
+              <div className="grid grid-cols-3 gap-2 p-3 rounded-lg bg-muted/30 border border-border backdrop-blur-sm">
                 <Metric
                   label="MACD"
                   value={data.macd_histogram != null ? data.macd_histogram.toFixed(4) : "—"}
@@ -217,8 +217,8 @@ export function AgentPanel({
 
             {/* Summary - the AI analysis text */}
             {data.summary && (
-              <div className="bg-white/5 rounded-lg p-3 border border-white/10 group-hover:bg-white/10 transition-colors">
-                <p className="text-sm leading-relaxed text-gray-300 font-mono">
+              <div className="bg-muted/30 rounded-lg p-3 border border-border group-hover:bg-muted/50 transition-colors">
+                <p className="text-sm leading-relaxed text-muted-foreground font-mono">
                   <span className="text-primary/70 mr-2">{">"}</span>
                   {data.summary}
                 </p>

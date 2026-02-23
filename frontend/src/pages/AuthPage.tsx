@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { API_BASE_URL } from '@/lib/api';
+import { useAPIClient } from '@/hooks/useAPIClient';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,35 +19,27 @@ export default function AuthPage() {
 
   const { login } = useAuth();
   const navigate = useNavigate();
+  const api = useAPIClient();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
 
-    const endpoint = isLogin ? `${API_BASE_URL}/api/auth/login` : `${API_BASE_URL}/api/auth/register`;
-    const payload = isLogin
-      // OAuth2PasswordRequestForm expects form data, register uses JSON (UserCreate)
-      ? new URLSearchParams({ username: email, password })
-      : JSON.stringify({ email, password, first_name: firstName, last_name: lastName });
-
-    const headers = isLogin
-      ? { 'Content-Type': 'application/x-www-form-urlencoded' }
-      : { 'Content-Type': 'application/json' };
+    const endpoint = isLogin ? `/api/auth/login` : `/api/auth/register`;
 
     try {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers,
-        body: payload,
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.detail || 'Authentication failed');
+      let data: { access_token: string };
+      if (isLogin) {
+        // OAuth2PasswordRequestForm expects form data
+        data = await api.post<{ access_token: string }>(endpoint, new URLSearchParams({ username: email, password }), {
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+        });
+      } else {
+        // register uses JSON
+        data = await api.post<{ access_token: string }>(endpoint, { email, password, first_name: firstName, last_name: lastName });
       }
 
-      const data = await response.json();
       login(data.access_token);
       navigate('/');
     } catch (err) {
@@ -61,7 +53,7 @@ export default function AuthPage() {
 
   return (
     <div className="flex items-center justify-center min-h-screen">
-      <Card className="w-full max-w-md bg-card/50 backdrop-blur-xl border-white/10 shadow-2xl">
+      <Card className="w-full max-w-md bg-card/50 backdrop-blur-xl border-border shadow-2xl">
         <CardHeader className="text-center space-y-2 pb-6">
           <div className="mx-auto w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center mb-2">
             <Lock className="w-6 h-6 text-primary" />
@@ -85,7 +77,7 @@ export default function AuthPage() {
                     id="firstName"
                     type="text"
                     placeholder="John"
-                    className="bg-background/50 border-white/10 focus:border-primary/50"
+                    className="bg-background/50 border-border focus:border-primary/50"
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
                     required
@@ -97,7 +89,7 @@ export default function AuthPage() {
                     id="lastName"
                     type="text"
                     placeholder="Doe"
-                    className="bg-background/50 border-white/10 focus:border-primary/50"
+                    className="bg-background/50 border-border focus:border-primary/50"
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
                     required
@@ -113,7 +105,7 @@ export default function AuthPage() {
                   id="email"
                   type="email"
                   placeholder="name@example.com"
-                  className="pl-9 bg-background/50 border-white/10 focus:border-primary/50"
+                  className="pl-9 bg-background/50 border-border focus:border-primary/50"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -128,7 +120,7 @@ export default function AuthPage() {
                   id="password"
                   type="password"
                   placeholder="••••••••"
-                  className="pl-9 bg-background/50 border-white/10 focus:border-primary/50"
+                  className="pl-9 bg-background/50 border-border focus:border-primary/50"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required

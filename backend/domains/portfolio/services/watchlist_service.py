@@ -4,7 +4,6 @@
 from typing import List
 from uuid import UUID
 
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.shared.ai.state.enums import Market
@@ -135,19 +134,8 @@ class WatchlistService(BaseService):
             if not watchlist:
                 raise WatchlistNotFoundError(f"Watchlist {watchlist_id} not found")
 
-            # Find the item to remove
-            result = await self.watchlist_dao.session.execute(
-                select(WatchlistItem)
-                .where(WatchlistItem.watchlist_id == watchlist_id)
-                .where(WatchlistItem.ticker == ticker)
-            )
-            item_to_remove = result.scalars().first()
-
-            if not item_to_remove:
-                return False
-
             # Delete the item
-            removed = await self.watchlist_dao.delete(item_to_remove.id)
+            removed = await self.watchlist_dao.remove_item(watchlist_id, ticker)
             await db.commit()
             return removed
         except WatchlistNotFoundError:

@@ -34,7 +34,7 @@ class AgentType(str, Enum):
     FUNDAMENTAL = "fundamental"
     SENTIMENT = "sentiment"
     TECHNICAL = "technical"
-    RISK = "risk"
+    RISK_MANAGER = "risk"
     CHAIRPERSON = "chairperson"
 
 

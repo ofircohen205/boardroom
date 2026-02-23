@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/contexts/AuthContext';
-import { API_BASE_URL } from '@/lib/api';
+import { useAPIClient } from '@/hooks/useAPIClient';
 import { useWebSocket } from '@/hooks/useWebSocket';
 
 interface Notification {
@@ -20,6 +20,7 @@ interface Notification {
 
 export function NotificationBell() {
   const { token, isAuthenticated } = useAuth();
+  const api = useAPIClient();
   const { latestNotification } = useWebSocket();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -31,41 +32,25 @@ export function NotificationBell() {
 
     setIsLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/notifications?limit=10`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setNotifications(data);
-      }
+      const data = await api.get<Notification[]>('/api/notifications?limit=10');
+      setNotifications(data);
     } catch (error) {
       console.error('Failed to fetch notifications:', error);
     } finally {
       setIsLoading(false);
     }
-  }, [token]);
+  }, [token, api]);
 
   const fetchUnreadCount = useCallback(async () => {
     if (!token) return;
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/notifications/unread-count`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setUnreadCount(data.unread_count);
-      }
+      const data = await api.get<{ unread_count: number }>('/api/notifications/unread-count');
+      setUnreadCount(data.unread_count);
     } catch (error) {
       console.error('Failed to fetch unread count:', error);
     }
-  }, [token]);
+  }, [token, api]);
 
   // Fetch notifications when popover opens
   useEffect(() => {
@@ -97,20 +82,12 @@ export function NotificationBell() {
     if (!token) return;
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/notifications/${notificationId}/read`, {
-        method: 'PATCH',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        // Update local state
-        setNotifications(prev =>
-          prev.map(n => (n.id === notificationId ? { ...n, read: true } : n))
-        );
-        setUnreadCount(prev => Math.max(0, prev - 1));
-      }
+      await api.patch<{ success: boolean }>(`/api/notifications/${notificationId}/read`);
+      // Update local state
+      setNotifications(prev =>
+        prev.map(n => (n.id === notificationId ? { ...n, read: true } : n))
+      );
+      setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (error) {
       console.error('Failed to mark notification as read:', error);
     }
@@ -120,18 +97,10 @@ export function NotificationBell() {
     if (!token) return;
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/notifications/read-all`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        // Update local state
-        setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-        setUnreadCount(0);
-      }
+      await api.post<{ success: boolean }>('/api/notifications/read-all');
+      // Update local state
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      setUnreadCount(0);
     } catch (error) {
       console.error('Failed to mark all as read:', error);
     }

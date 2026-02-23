@@ -76,6 +76,10 @@ def mock_performance_dao():
     dao.create = AsyncMock()
     dao.get_all = AsyncMock()
     dao.get_recent_outcomes = AsyncMock()
+    dao.get_analysis_session = AsyncMock()
+    dao.get_final_decision = AsyncMock()
+    dao.get_by_session_id = AsyncMock()
+    dao.create_outcome = AsyncMock()
     return dao
 
 
@@ -202,14 +206,10 @@ async def test_create_outcome_success(
         ticker="AAPL", action=Action.BUY, price_at_recommendation=155.0
     )
 
-    # Query 1 → session; Query 2 → decision; Query 3 → no existing outcome
-    mock_db.execute.side_effect = [
-        make_db_result(session),
-        make_db_result(decision),
-        make_db_result(None),
-    ]
-
-    mock_performance_dao.create.return_value = created_outcome
+    mock_performance_dao.get_analysis_session.return_value = session
+    mock_performance_dao.get_final_decision.return_value = decision
+    mock_performance_dao.get_by_session_id.return_value = None  # No existing outcome
+    mock_performance_dao.create_outcome.return_value = created_outcome
 
     mock_market_client = MagicMock()
     mock_market_client.get_stock_data = AsyncMock(return_value={"current_price": 155.0})
@@ -221,13 +221,11 @@ async def test_create_outcome_success(
         result = await performance_service.create_analysis_outcome(mock_db, session_id)
 
     assert result is created_outcome
-    mock_performance_dao.create.assert_awaited_once()
-    call_kwargs = mock_performance_dao.create.call_args.kwargs
+    mock_performance_dao.create_outcome.assert_awaited_once()
+    call_kwargs = mock_performance_dao.create_outcome.call_args.kwargs
     assert call_kwargs["ticker"] == "AAPL"
     assert call_kwargs["action_recommended"] == Action.BUY
     assert call_kwargs["price_at_recommendation"] == 155.0
-    mock_db.commit.assert_awaited_once()
-    mock_db.refresh.assert_awaited_once_with(created_outcome)
 
 
 async def test_create_outcome_success_passes_session_market_to_client(
@@ -239,12 +237,10 @@ async def test_create_outcome_success_passes_session_market_to_client(
     decision = make_decision(action=Action.SELL)
     created_outcome = make_outcome(ticker="TEVA", action=Action.SELL)
 
-    mock_db.execute.side_effect = [
-        make_db_result(session),
-        make_db_result(decision),
-        make_db_result(None),
-    ]
-    mock_performance_dao.create.return_value = created_outcome
+    mock_performance_dao.get_analysis_session.return_value = session
+    mock_performance_dao.get_final_decision.return_value = decision
+    mock_performance_dao.get_by_session_id.return_value = None
+    mock_performance_dao.create_outcome.return_value = created_outcome
 
     mock_market_client = MagicMock()
     mock_market_client.get_stock_data = AsyncMock(return_value={"current_price": 10.0})

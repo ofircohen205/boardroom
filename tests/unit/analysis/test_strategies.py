@@ -1,12 +1,14 @@
 """Unit tests for strategies API endpoints."""
 
 from datetime import datetime
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
 import pytest
+from fastapi import HTTPException, status
 from httpx import ASGITransport, AsyncClient
 
+from backend.dependencies import get_strategy_service
 from backend.main import app
 from backend.shared.auth.dependencies import get_current_user
 from backend.shared.db.database import get_db
@@ -66,6 +68,17 @@ def _make_strategy(user_id=None, strategy_id=None):
     return strategy
 
 
+def _make_mock_strategy_service():
+    """Build a mock StrategyService with all methods as AsyncMock."""
+    service = MagicMock()
+    service.create_strategy = AsyncMock()
+    service.get_user_strategies = AsyncMock()
+    service.get_strategy = AsyncMock()
+    service.update_strategy = AsyncMock()
+    service.delete_strategy = AsyncMock()
+    return service
+
+
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
@@ -91,17 +104,14 @@ async def strategies_client(mock_user, mock_db):
 async def test_create_strategy_success(strategies_client, mock_user):
     """Creating a strategy returns 201 with the strategy data."""
     mock_strategy = _make_strategy(user_id=mock_user.id)
+    mock_service = _make_mock_strategy_service()
+    mock_service.create_strategy.return_value = mock_strategy
 
-    mock_dao = MagicMock()
-    mock_dao.save = AsyncMock(return_value=mock_strategy)
+    app.dependency_overrides[get_strategy_service] = lambda: mock_service
 
-    with patch(
-        "backend.domains.analysis.api.strategies.router.StrategyDAO",
-        return_value=mock_dao,
-    ):
-        response = await strategies_client.post(
-            "/api/api/strategies", json=STRATEGY_CREATE_PAYLOAD
-        )
+    response = await strategies_client.post(
+        "/api/api/strategies", json=STRATEGY_CREATE_PAYLOAD
+    )
 
     assert response.status_code == 201
     data = response.json()
@@ -143,15 +153,12 @@ async def test_create_strategy_invalid_weights_sum(strategies_client):
 async def test_list_strategies_returns_list(strategies_client, mock_user):
     """Listing strategies returns 200 with a list."""
     mock_strategy = _make_strategy(user_id=mock_user.id)
+    mock_service = _make_mock_strategy_service()
+    mock_service.get_user_strategies.return_value = [mock_strategy]
 
-    mock_dao = MagicMock()
-    mock_dao.get_user_strategies = AsyncMock(return_value=[mock_strategy])
+    app.dependency_overrides[get_strategy_service] = lambda: mock_service
 
-    with patch(
-        "backend.domains.analysis.api.strategies.router.StrategyDAO",
-        return_value=mock_dao,
-    ):
-        response = await strategies_client.get("/api/api/strategies")
+    response = await strategies_client.get("/api/api/strategies")
 
     assert response.status_code == 200
     data = response.json()
@@ -161,33 +168,29 @@ async def test_list_strategies_returns_list(strategies_client, mock_user):
 
 async def test_list_strategies_empty(strategies_client):
     """Listing strategies when none exist returns 200 with empty list."""
-    mock_dao = MagicMock()
-    mock_dao.get_user_strategies = AsyncMock(return_value=[])
+    mock_service = _make_mock_strategy_service()
+    mock_service.get_user_strategies.return_value = []
 
-    with patch(
-        "backend.domains.analysis.api.strategies.router.StrategyDAO",
-        return_value=mock_dao,
-    ):
-        response = await strategies_client.get("/api/api/strategies")
+    app.dependency_overrides[get_strategy_service] = lambda: mock_service
+
+    response = await strategies_client.get("/api/api/strategies")
 
     assert response.status_code == 200
     assert response.json() == []
 
 
 async def test_list_strategies_active_only_param(strategies_client):
-    """The active_only query param is forwarded to the DAO."""
-    mock_dao = MagicMock()
-    mock_dao.get_user_strategies = AsyncMock(return_value=[])
+    """The active_only query param is forwarded to the service."""
+    mock_service = _make_mock_strategy_service()
+    mock_service.get_user_strategies.return_value = []
 
-    with patch(
-        "backend.domains.analysis.api.strategies.router.StrategyDAO",
-        return_value=mock_dao,
-    ):
-        response = await strategies_client.get("/api/api/strategies?active_only=false")
+    app.dependency_overrides[get_strategy_service] = lambda: mock_service
+
+    response = await strategies_client.get("/api/api/strategies?active_only=false")
 
     assert response.status_code == 200
-    mock_dao.get_user_strategies.assert_called_once()
-    _, kwargs = mock_dao.get_user_strategies.call_args
+    mock_service.get_user_strategies.assert_awaited_once()
+    _, kwargs = mock_service.get_user_strategies.call_args
     assert kwargs.get("active_only") is False
 
 
@@ -200,15 +203,12 @@ async def test_get_strategy_success(strategies_client, mock_user):
     """Getting an existing strategy returns 200."""
     strategy_id = uuid4()
     mock_strategy = _make_strategy(user_id=mock_user.id, strategy_id=strategy_id)
+    mock_service = _make_mock_strategy_service()
+    mock_service.get_strategy.return_value = mock_strategy
 
-    mock_dao = MagicMock()
-    mock_dao.get_by_id_and_user = AsyncMock(return_value=mock_strategy)
+    app.dependency_overrides[get_strategy_service] = lambda: mock_service
 
-    with patch(
-        "backend.domains.analysis.api.strategies.router.StrategyDAO",
-        return_value=mock_dao,
-    ):
-        response = await strategies_client.get(f"/api/api/strategies/{strategy_id}")
+    response = await strategies_client.get(f"/api/api/strategies/{strategy_id}")
 
     assert response.status_code == 200
     data = response.json()
@@ -218,15 +218,14 @@ async def test_get_strategy_success(strategies_client, mock_user):
 async def test_get_strategy_not_found(strategies_client):
     """Getting a non-existent strategy returns 404."""
     strategy_id = uuid4()
+    mock_service = _make_mock_strategy_service()
+    mock_service.get_strategy.side_effect = HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND, detail="Strategy not found"
+    )
 
-    mock_dao = MagicMock()
-    mock_dao.get_by_id_and_user = AsyncMock(return_value=None)
+    app.dependency_overrides[get_strategy_service] = lambda: mock_service
 
-    with patch(
-        "backend.domains.analysis.api.strategies.router.StrategyDAO",
-        return_value=mock_dao,
-    ):
-        response = await strategies_client.get(f"/api/api/strategies/{strategy_id}")
+    response = await strategies_client.get(f"/api/api/strategies/{strategy_id}")
 
     assert response.status_code == 404
 
@@ -240,18 +239,15 @@ async def test_update_strategy_success(strategies_client, mock_user):
     """Updating an existing strategy returns 200 with updated data."""
     strategy_id = uuid4()
     mock_strategy = _make_strategy(user_id=mock_user.id, strategy_id=strategy_id)
+    mock_service = _make_mock_strategy_service()
+    mock_service.update_strategy.return_value = mock_strategy
 
-    mock_dao = MagicMock()
-    mock_dao.get_by_id_and_user = AsyncMock(return_value=mock_strategy)
+    app.dependency_overrides[get_strategy_service] = lambda: mock_service
 
-    with patch(
-        "backend.domains.analysis.api.strategies.router.StrategyDAO",
-        return_value=mock_dao,
-    ):
-        response = await strategies_client.put(
-            f"/api/api/strategies/{strategy_id}",
-            json={"name": "Updated Name"},
-        )
+    response = await strategies_client.put(
+        f"/api/api/strategies/{strategy_id}",
+        json={"name": "Updated Name"},
+    )
 
     assert response.status_code == 200
 
@@ -259,18 +255,17 @@ async def test_update_strategy_success(strategies_client, mock_user):
 async def test_update_strategy_not_found(strategies_client):
     """Updating a non-existent strategy returns 404."""
     strategy_id = uuid4()
+    mock_service = _make_mock_strategy_service()
+    mock_service.update_strategy.side_effect = HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND, detail="Strategy not found"
+    )
 
-    mock_dao = MagicMock()
-    mock_dao.get_by_id_and_user = AsyncMock(return_value=None)
+    app.dependency_overrides[get_strategy_service] = lambda: mock_service
 
-    with patch(
-        "backend.domains.analysis.api.strategies.router.StrategyDAO",
-        return_value=mock_dao,
-    ):
-        response = await strategies_client.put(
-            f"/api/api/strategies/{strategy_id}",
-            json={"name": "Updated Name"},
-        )
+    response = await strategies_client.put(
+        f"/api/api/strategies/{strategy_id}",
+        json={"name": "Updated Name"},
+    )
 
     assert response.status_code == 404
 
@@ -283,17 +278,12 @@ async def test_update_strategy_not_found(strategies_client):
 async def test_delete_strategy_success(strategies_client, mock_user):
     """Deleting an existing strategy returns 204."""
     strategy_id = uuid4()
-    mock_strategy = _make_strategy(user_id=mock_user.id, strategy_id=strategy_id)
+    mock_service = _make_mock_strategy_service()
+    mock_service.delete_strategy.return_value = None
 
-    mock_dao = MagicMock()
-    mock_dao.get_by_id_and_user = AsyncMock(return_value=mock_strategy)
-    mock_dao.delete = AsyncMock()
+    app.dependency_overrides[get_strategy_service] = lambda: mock_service
 
-    with patch(
-        "backend.domains.analysis.api.strategies.router.StrategyDAO",
-        return_value=mock_dao,
-    ):
-        response = await strategies_client.delete(f"/api/api/strategies/{strategy_id}")
+    response = await strategies_client.delete(f"/api/api/strategies/{strategy_id}")
 
     assert response.status_code == 204
 
@@ -301,14 +291,13 @@ async def test_delete_strategy_success(strategies_client, mock_user):
 async def test_delete_strategy_not_found(strategies_client):
     """Deleting a non-existent strategy returns 404."""
     strategy_id = uuid4()
+    mock_service = _make_mock_strategy_service()
+    mock_service.delete_strategy.side_effect = HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND, detail="Strategy not found"
+    )
 
-    mock_dao = MagicMock()
-    mock_dao.get_by_id_and_user = AsyncMock(return_value=None)
+    app.dependency_overrides[get_strategy_service] = lambda: mock_service
 
-    with patch(
-        "backend.domains.analysis.api.strategies.router.StrategyDAO",
-        return_value=mock_dao,
-    ):
-        response = await strategies_client.delete(f"/api/api/strategies/{strategy_id}")
+    response = await strategies_client.delete(f"/api/api/strategies/{strategy_id}")
 
     assert response.status_code == 404

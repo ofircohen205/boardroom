@@ -6,18 +6,16 @@ When a stock analysis completes with a recommendation, we create an
 AnalysisOutcome record to track what actually happens to the price.
 """
 
-from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.shared.ai.state.enums import Action
+from backend.shared.ai.state.enums import Action, AgentType
 from backend.shared.ai.tools.market_data import get_market_data_client
 from backend.shared.core.logging import get_logger
 from backend.shared.dao.performance import PerformanceDAO
-from backend.shared.db.models import AnalysisOutcome, AnalysisSession, FinalDecision
+from backend.shared.db.models import AgentAccuracy, AnalysisOutcome
 from backend.shared.services.base import BaseService
 
 logger = get_logger(__name__)
@@ -44,7 +42,7 @@ class PerformanceService(BaseService):
         Create an AnalysisOutcome record for a completed analysis session.
 
         Args:
-            db: Database session
+            db: Database session (deprecated, use self.performance_dao.session)
             session_id: ID of the completed analysis session
 
         Returns:
@@ -52,33 +50,20 @@ class PerformanceService(BaseService):
         """
         try:
             # Get the analysis session
-            session_query = select(AnalysisSession).where(
-                AnalysisSession.id == session_id
-            )
-            session_result = await db.execute(session_query)
-            session = session_result.scalar_one_or_none()
-
+            session = await self.performance_dao.get_analysis_session(session_id)
             if not session:
                 logger.error(f"Session {session_id} not found")
                 return None
 
             # Get the final decision
-            decision_query = select(FinalDecision).where(
-                FinalDecision.session_id == session_id
-            )
-            decision_result = await db.execute(decision_query)
-            decision = decision_result.scalar_one_or_none()
-
+            decision = await self.performance_dao.get_final_decision(session_id)
             if not decision:
                 logger.error(f"No decision found for session {session_id}")
                 return None
 
             # Check if outcome already exists
-            existing_query = select(AnalysisOutcome).where(
-                AnalysisOutcome.session_id == session_id
-            )
-            existing_result = await db.execute(existing_query)
-            if existing_result.scalar_one_or_none():
+            existing_outcome = await self.performance_dao.get_by_session_id(session_id)
+            if existing_outcome:
                 logger.info(f"Outcome already exists for session {session_id}")
                 return None
 
@@ -94,18 +79,14 @@ class PerformanceService(BaseService):
                 return None
 
             # Create outcome record
-            outcome = await self.performance_dao.create(
+            outcome = await self.performance_dao.create_outcome(
                 session_id=session_id,
                 ticker=session.ticker,
                 action_recommended=decision.action,
                 price_at_recommendation=current_price,
-                created_at=datetime.now(),
-                last_updated=datetime.now(),
             )
 
-            await db.commit()
-            await db.refresh(outcome)
-
+            # Note: create() handles commit and refresh inside BaseDAO
             logger.info(
                 f"Created outcome for {session.ticker}: {decision.action.value} @ ${current_price:.2f}"
             )
@@ -114,7 +95,6 @@ class PerformanceService(BaseService):
 
         except Exception as e:
             logger.error(f"Failed to create analysis outcome: {e}", exc_info=True)
-            await db.rollback()
             return None
 
     async def get_performance_summary(self, db: AsyncSession) -> dict:
@@ -212,3 +192,78 @@ class PerformanceService(BaseService):
             )
 
         return outcomes
+
+    async def get_performance_timeline(
+        self, db: AsyncSession, days: int = 30
+    ) -> list[dict]:
+        """
+        Get accuracy timeline over the last N days.
+
+        Args:
+            db: Database session
+            days: Number of days to look back
+
+        Returns:
+            List of dictionaries with date, accuracy, and total_decisions
+        """
+        outcomes = await self.performance_dao.get_timeline_outcomes(days)
+
+        # Group by date (YYYY-MM-DD)
+        daily_stats = {}
+        for o in outcomes:
+            date_str = o.created_at.strftime("%Y-%m-%d")
+            if date_str not in daily_stats:
+                daily_stats[date_str] = {"total": 0, "correct": 0}
+
+            daily_stats[date_str]["total"] += 1
+            if o.outcome_correct:
+                daily_stats[date_str]["correct"] += 1
+
+        # Format the result
+        timeline = []
+        # Create a zeroed entry for missing days up to today to ensure a continuous line chart could be rendered if needed (optional, just building the existing points is safer for now based on the previous implementation)
+        for date_str, stats in daily_stats.items():
+            total = stats["total"]
+            correct = stats["correct"]
+            accuracy = correct / total if total > 0 else 0.0
+
+            timeline.append(
+                {
+                    "date": date_str,
+                    "accuracy": accuracy,
+                    "total_decisions": total,
+                }
+            )
+
+        return timeline
+
+    async def get_all_agent_accuracy(self) -> dict[str, dict]:
+        """Get accuracy metrics for all agents across periods."""
+        records = await self.performance_dao.get_all_agent_accuracy()
+
+        agent_metrics: dict[str, dict] = {}
+        for record in records:
+            agent_name = record.agent_type.value
+            if agent_name not in agent_metrics:
+                agent_metrics[agent_name] = {}
+
+            agent_metrics[agent_name][record.period] = {
+                "total_signals": record.total_signals,
+                "correct_signals": record.correct_signals,
+                "accuracy": record.accuracy,
+                "last_calculated": record.last_calculated.isoformat()
+                if record.last_calculated
+                else None,
+            }
+
+        return agent_metrics
+
+    async def get_agent_detailed_accuracy(
+        self, agent_enum: AgentType
+    ) -> list[AgentAccuracy]:
+        """Get detailed accuracy metrics for a specific agent."""
+        return await self.performance_dao.get_agent_detailed_accuracy(agent_enum)
+
+    async def get_ticker_history(self, ticker: str) -> list[AnalysisOutcome]:
+        """Get performance history for a specific ticker."""
+        return await self.performance_dao.get_ticker_history(ticker)

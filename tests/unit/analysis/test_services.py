@@ -253,7 +253,7 @@ async def test_save_agent_report_not_found_is_not_wrapped(
     try:
         await analysis_service.save_agent_report(
             session_id=uuid4(),
-            agent_type=AgentType.RISK,
+            agent_type=AgentType.RISK_MANAGER,
             report_data={},
             db=mock_db,
         )

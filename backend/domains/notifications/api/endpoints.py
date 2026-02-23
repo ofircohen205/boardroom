@@ -17,7 +17,7 @@ from backend.shared.auth.dependencies import get_current_user
 from backend.shared.core.logging import get_logger
 from backend.shared.db.models import User
 
-from .schemas import (
+from .schedules_schemas import (
     ScheduledAnalysisCreate,
     ScheduledAnalysisSchema,
     ScheduledAnalysisToggle,

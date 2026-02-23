@@ -74,7 +74,7 @@ export function Dashboard() {
 
       {/* Sidebar - overlay on mobile, inline on desktop */}
       <div className={cn(
-          "transition-all duration-300 border-r border-white/10 bg-card/10 backdrop-blur-xl",
+          "transition-all duration-300 border-r border-border bg-card/10 backdrop-blur-xl",
           "fixed md:relative z-[70] md:z-auto h-full",
           sidebarOpen
             ? "w-80 translate-x-0"
@@ -87,7 +87,7 @@ export function Dashboard() {
       <div className="flex-1 flex flex-col h-full overflow-hidden relative">
 
         {/* Minimal Header - just sidebar toggle and history */}
-        <header className="h-14 border-b border-white/10 bg-card/30 backdrop-blur-md px-4 flex items-center justify-between z-20 shrink-0">
+        <header className="h-14 border-b border-border bg-card/30 backdrop-blur-md px-4 flex items-center justify-between z-20 shrink-0">
             <div className="flex items-center gap-4">
                 <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(!sidebarOpen)}>
                     <Menu className="w-4 h-4" />
@@ -148,7 +148,7 @@ export function Dashboard() {
                     )}>
                         {!hasStarted && (
                              <div className="mb-10 space-y-4 px-4">
-                                <h1 className="text-5xl sm:text-7xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-white via-white/90 to-white/50 animate-fade-up">
+                                <h1 className="text-5xl sm:text-7xl font-black tracking-tighter text-slate-900 dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-br dark:from-white dark:via-white/90 dark:to-white/50 animate-fade-up border-transparent">
                                     The Boardroom
                                 </h1>
                                 <p className="text-muted-foreground text-lg max-w-2xl mx-auto leading-relaxed animate-fade-up delay-100">
@@ -203,7 +203,7 @@ export function Dashboard() {
                                            vetoReason={state.risk?.veto_reason}
                                        />
                                    </div>
-                               <div className="h-full glass rounded-3xl overflow-hidden p-1 min-h-[300px] border-white/5">
+                               <div className="h-full glass rounded-3xl overflow-hidden p-1 min-h-[300px] border-border">
                                    {state.technical?.price_history ? (
                                        <StockChart
                                            priceHistory={state.technical.price_history}

@@ -3,12 +3,11 @@
 import logging
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, Depends, status
 
+from backend.dependencies import get_backtest_service
+from backend.domains.analysis.services.backtesting_services import BacktestService
 from backend.shared.auth.dependencies import get_current_user
-from backend.shared.dao.backtesting import BacktestResultDAO
-from backend.shared.db.database import get_db
 from backend.shared.db.models.user import User
 
 from .schemas import BacktestResultResponse, EquityPointResponse, TradeResponse
@@ -27,7 +26,7 @@ async def list_backtest_results(
     ticker: str | None = None,
     strategy_id: UUID | None = None,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    service: BacktestService = Depends(get_backtest_service),
 ) -> list[BacktestResultResponse]:
     """List backtest results for the current user.
 
@@ -36,23 +35,21 @@ async def list_backtest_results(
         ticker: Optional filter by ticker symbol
         strategy_id: Optional filter by strategy ID
         current_user: Currently authenticated user
-        db: Database session
+        service: Backtest service
 
     Returns:
         List of backtest results ordered by creation date (newest first)
     """
-    dao = BacktestResultDAO(db)
-
     if ticker:
-        results = await dao.get_results_by_ticker(
+        results = await service.backtest_dao.get_results_by_ticker(
             current_user.id, ticker.upper(), limit=limit
         )
     elif strategy_id:
-        results = await dao.get_results_by_strategy(
+        results = await service.backtest_dao.get_results_by_strategy(
             current_user.id, strategy_id, limit=limit
         )
     else:
-        results = await dao.get_user_results(current_user.id, limit=limit)
+        results = await service.get_user_results(current_user.id, limit=limit)
 
     # Convert to response format
     return [
@@ -90,14 +87,14 @@ async def list_backtest_results(
 async def get_backtest_result(
     result_id: UUID,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    service: BacktestService = Depends(get_backtest_service),
 ) -> BacktestResultResponse:
     """Get details of a specific backtest result.
 
     Args:
         result_id: Backtest result ID
         current_user: Currently authenticated user
-        db: Database session
+        service: Backtest service
 
     Returns:
         Backtest result details
@@ -105,14 +102,7 @@ async def get_backtest_result(
     Raises:
         HTTPException: 404 if result not found or doesn't belong to user
     """
-    dao = BacktestResultDAO(db)
-    result = await dao.get_by_id(result_id)
-
-    if not result or result.user_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Backtest result {result_id} not found",
-        )
+    result = await service.get_result(result_id, current_user.id)
 
     return BacktestResultResponse(
         id=result.id,
@@ -144,28 +134,17 @@ async def get_backtest_result(
 async def delete_backtest_result(
     result_id: UUID,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    service: BacktestService = Depends(get_backtest_service),
 ) -> None:
     """Delete a backtest result.
 
     Args:
         result_id: Backtest result ID
         current_user: Currently authenticated user
-        db: Database session
+        service: Backtest service
 
     Raises:
         HTTPException: 404 if result not found or doesn't belong to user
     """
-    dao = BacktestResultDAO(db)
-    result = await dao.get_by_id(result_id)
-
-    if not result or result.user_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Backtest result {result_id} not found",
-        )
-
-    await dao.delete(result_id)
-    await db.commit()
-
+    await service.delete_result(result_id, current_user.id)
     logger.info(f"User {current_user.id} deleted backtest result {result_id}")

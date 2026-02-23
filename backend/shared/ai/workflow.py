@@ -219,7 +219,11 @@ class BoardroomGraph:
         sector = fundamental.get("sector") if fundamental else "Unknown"
 
         # Risk - only if we have at least one successful agent
-        yield {"type": WSMessageType.AGENT_STARTED, "agent": AgentType.RISK, "data": {}}
+        yield {
+            "type": WSMessageType.AGENT_STARTED,
+            "agent": AgentType.RISK_MANAGER,
+            "data": {},
+        }
         try:
             risk = await self.risk_manager.assess(
                 ticker=ticker,
@@ -231,14 +235,14 @@ class BoardroomGraph:
             )
             yield {
                 "type": WSMessageType.AGENT_COMPLETED,
-                "agent": AgentType.RISK,
+                "agent": AgentType.RISK_MANAGER,
                 "data": risk,
             }
 
             if risk["veto"]:
                 yield {
                     "type": WSMessageType.VETO,
-                    "agent": AgentType.RISK,
+                    "agent": AgentType.RISK_MANAGER,
                     "data": {"reason": risk["veto_reason"]},
                 }
                 return
@@ -246,7 +250,7 @@ class BoardroomGraph:
             error_msg = f"{type(e).__name__}: {e!s}"
             yield {
                 "type": WSMessageType.AGENT_ERROR,
-                "agent": AgentType.RISK,
+                "agent": AgentType.RISK_MANAGER,
                 "data": {"error": error_msg},
             }
             # Continue to chairperson even if risk assessment fails

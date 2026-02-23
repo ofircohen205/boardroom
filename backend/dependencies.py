@@ -8,12 +8,20 @@ configured service instances into endpoints.
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.domains.analysis.services.backtesting_services import (
+    BacktestService,
+    PaperTradingService,
+    StrategyService,
+)
 from backend.domains.analysis.services.service import AnalysisService
 from backend.domains.auth.services.service import AuthService
 from backend.domains.notifications.services import (
     AlertService,
     EmailService,
     ScheduleService,
+)
+from backend.domains.notifications.services.notification_service import (
+    NotificationService,
 )
 from backend.domains.performance.services.service import PerformanceService
 from backend.domains.portfolio.services import PortfolioService, WatchlistService
@@ -117,6 +125,20 @@ async def get_performance_service(
     return PerformanceService(PerformanceDAO(db))
 
 
+async def get_notification_service(
+    db: AsyncSession = Depends(get_db),
+) -> NotificationService:
+    """Factory function to create NotificationService with dependency injection.
+
+    Args:
+        db: Database session (injected by FastAPI)
+
+    Returns:
+        NotificationService instance with DAO injected
+    """
+    return NotificationService(NotificationDAO(db))
+
+
 async def get_settings_service(db: AsyncSession = Depends(get_db)) -> SettingsService:
     """Factory function to create SettingsService with dependency injection.
 
@@ -136,3 +158,45 @@ async def get_email_service() -> EmailService:
         EmailService instance
     """
     return EmailService()
+
+
+async def get_strategy_service(
+    db: AsyncSession = Depends(get_db),
+) -> StrategyService:
+    """Factory function to create StrategyService with dependency injection.
+
+    Args:
+        db: Database session (injected by FastAPI)
+
+    Returns:
+        StrategyService instance with DAO injected
+    """
+    return StrategyService(db)
+
+
+async def get_backtest_service(
+    db: AsyncSession = Depends(get_db),
+) -> BacktestService:
+    """Factory function to create BacktestService with dependency injection.
+
+    Args:
+        db: Database session (injected by FastAPI)
+
+    Returns:
+        BacktestService instance with DAO injected
+    """
+    return BacktestService(db)
+
+
+async def get_paper_trading_service(
+    db: AsyncSession = Depends(get_db),
+) -> PaperTradingService:
+    """Factory function to create PaperTradingService with dependency injection.
+
+    Args:
+        db: Database session (injected by FastAPI)
+
+    Returns:
+        PaperTradingService instance with DAO injected
+    """
+    return PaperTradingService(db)

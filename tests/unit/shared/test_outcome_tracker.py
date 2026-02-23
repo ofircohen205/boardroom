@@ -220,7 +220,7 @@ class TestExtractAgentAction:
 
     # --- RISK / UNKNOWN ---
     def test_risk_agent_returns_none(self):
-        assert _extract_agent_action({"signal": "ok"}, AgentType.RISK) is None
+        assert _extract_agent_action({"signal": "ok"}, AgentType.RISK_MANAGER) is None
 
     def test_chairperson_agent_returns_none(self):
         assert _extract_agent_action({"signal": "buy"}, AgentType.CHAIRPERSON) is None
@@ -433,7 +433,7 @@ class TestUpdateAgentAccuracy:
         assert AgentType.FUNDAMENTAL in called_agents
         assert AgentType.SENTIMENT in called_agents
         assert AgentType.TECHNICAL in called_agents
-        assert AgentType.RISK not in called_agents
+        assert AgentType.RISK_MANAGER not in called_agents
         assert AgentType.CHAIRPERSON not in called_agents
 
     async def test_covers_all_three_periods(self, mock_db):
@@ -709,7 +709,7 @@ class TestCalculateAgentAccuracy:
         mock_db.execute.side_effect = [_rows_result([row]), _accuracy_result(existing)]
 
         # Use RISK agent type, which causes _extract_agent_action to return None
-        await _calculate_agent_accuracy(mock_db, AgentType.RISK, "30d")
+        await _calculate_agent_accuracy(mock_db, AgentType.RISK_MANAGER, "30d")
 
         # Row was skipped, so total_signals remains 0
         assert existing.total_signals == 0

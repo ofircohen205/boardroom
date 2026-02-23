@@ -8,12 +8,12 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 from jose import JWTError, jwt
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.domains.analysis.engine import BacktestConfig, run_backtest
 from backend.shared.core.settings import settings
 from backend.shared.dao.backtesting import BacktestResultDAO, StrategyDAO
+from backend.shared.dao.user import UserDAO
 from backend.shared.data.historical import fetch_and_store_historical_prices
 from backend.shared.db.database import get_db
 from backend.shared.db.models.backtesting import BacktestFrequency, BacktestResult
@@ -39,8 +39,8 @@ async def get_current_user_ws(token: str, db: AsyncSession) -> User | None:
     except JWTError:
         return None
 
-    result = await db.execute(select(User).filter(User.email == email))
-    return result.scalars().first()
+    user_dao = UserDAO(db)
+    return await user_dao.find_by_email(email)
 
 
 @router.websocket("/backtest")

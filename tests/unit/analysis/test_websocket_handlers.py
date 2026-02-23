@@ -173,9 +173,9 @@ async def test_calculate_portfolio_sector_weight_single_matching_position(
 
     portfolio = MagicMock()
     portfolio.positions = [position]
-    portfolio_result = MagicMock()
-    portfolio_result.scalars.return_value.first.return_value = portfolio
-    mock_db.execute = AsyncMock(return_value=portfolio_result)
+
+    mock_portfolio_dao = MagicMock()
+    mock_portfolio_dao.get_user_portfolios = AsyncMock(return_value=[portfolio])
 
     async def fake_get_stock_data(ticker, market):
         return {"sector": "Technology", "current_price": 100.0}
@@ -183,9 +183,15 @@ async def test_calculate_portfolio_sector_weight_single_matching_position(
     mock_client = AsyncMock()
     mock_client.get_stock_data = AsyncMock(side_effect=fake_get_stock_data)
 
-    with patch(
-        "backend.domains.analysis.api.websocket.get_market_data_client",
-        return_value=mock_client,
+    with (
+        patch(
+            "backend.domains.analysis.api.websocket.PortfolioDAO",
+            return_value=mock_portfolio_dao,
+        ),
+        patch(
+            "backend.domains.analysis.api.websocket.get_market_data_client",
+            return_value=mock_client,
+        ),
     ):
         weight = await _calculate_portfolio_sector_weight(
             mock_db, mock_user, "AAPL", Market.US
@@ -208,9 +214,9 @@ async def test_calculate_portfolio_sector_weight_mixed_sectors(mock_user, mock_d
 
     portfolio = MagicMock()
     portfolio.positions = [tech_position, health_position]
-    portfolio_result = MagicMock()
-    portfolio_result.scalars.return_value.first.return_value = portfolio
-    mock_db.execute = AsyncMock(return_value=portfolio_result)
+
+    mock_portfolio_dao = MagicMock()
+    mock_portfolio_dao.get_user_portfolios = AsyncMock(return_value=[portfolio])
 
     async def fake_get_stock_data(ticker, market):
         if ticker in ("AAPL", "MSFT"):
@@ -220,9 +226,15 @@ async def test_calculate_portfolio_sector_weight_mixed_sectors(mock_user, mock_d
     mock_client = AsyncMock()
     mock_client.get_stock_data = AsyncMock(side_effect=fake_get_stock_data)
 
-    with patch(
-        "backend.domains.analysis.api.websocket.get_market_data_client",
-        return_value=mock_client,
+    with (
+        patch(
+            "backend.domains.analysis.api.websocket.PortfolioDAO",
+            return_value=mock_portfolio_dao,
+        ),
+        patch(
+            "backend.domains.analysis.api.websocket.get_market_data_client",
+            return_value=mock_client,
+        ),
     ):
         weight = await _calculate_portfolio_sector_weight(
             mock_db, mock_user, "AAPL", Market.US

@@ -46,7 +46,7 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="sticky top-0 z-50 bg-card/30 backdrop-blur-md border-b border-white/10">
+    <nav className="sticky top-0 z-50 bg-card/30 backdrop-blur-md border-b border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14">
           {/* Left: Logo/Branding */}
@@ -129,7 +129,7 @@ export default function Navbar() {
 
       {/* Mobile Navigation Drawer */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-white/10 bg-card/50 backdrop-blur-md">
+        <div className="md:hidden border-t border-border bg-card/50 backdrop-blur-md">
           <div className="px-4 py-4 space-y-1">
             {navLinks.map((link) => {
               const Icon = link.icon;
@@ -155,7 +155,7 @@ export default function Navbar() {
             })}
 
             {/* Mobile User Info, Theme Toggle & Logout */}
-            <div className="pt-4 border-t border-white/10 space-y-2">
+            <div className="pt-4 border-t border-border space-y-2">
               <div className="px-3 text-sm text-muted-foreground">{user?.email}</div>
               <Button
                 variant="ghost"

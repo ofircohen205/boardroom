@@ -12,14 +12,10 @@ Provides insights into:
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.dependencies import get_performance_service
 from backend.domains.performance.services.service import PerformanceService
 from backend.shared.ai.state.enums import AgentType
-from backend.shared.db.database import get_db
-from backend.shared.db.models import AgentAccuracy, AnalysisOutcome
 from backend.shared.jobs.scheduler import get_scheduler
 
 router = APIRouter(prefix="/performance", tags=["performance"])
@@ -69,8 +65,33 @@ async def get_recent(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.get("/timeline")
+async def get_timeline(
+    days: int = 30,
+    service: PerformanceService = Depends(get_performance_service),
+):
+    """
+    Get performance timeline data.
+
+    Args:
+        days: Number of days to include (default 30)
+
+    Returns:
+        List of daily accuracy metrics
+    """
+    try:
+        timeline = await service.get_performance_timeline(
+            service.performance_dao.session, days=days
+        )
+        return timeline
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.get("/agents")
-async def get_agent_accuracy(db: AsyncSession = Depends(get_db)):
+async def get_agent_accuracy(
+    service: PerformanceService = Depends(get_performance_service),
+):
     """
     Get accuracy metrics for all agents across different time periods.
 
@@ -78,24 +99,7 @@ async def get_agent_accuracy(db: AsyncSession = Depends(get_db)):
         Nested structure: agent_type -> period -> metrics
     """
     try:
-        query = select(AgentAccuracy)
-        result = await db.execute(query)
-        records = result.scalars().all()
-
-        # Organize by agent type and period
-        agent_metrics: dict[str, dict] = {}
-        for record in records:
-            agent_name = record.agent_type.value
-            if agent_name not in agent_metrics:
-                agent_metrics[agent_name] = {}
-
-            agent_metrics[agent_name][record.period] = {
-                "total_signals": record.total_signals,
-                "correct_signals": record.correct_signals,
-                "accuracy": record.accuracy,
-                "last_calculated": record.last_calculated.isoformat(),
-            }
-
+        agent_metrics = await service.get_all_agent_accuracy()
         return {"agents": agent_metrics}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -104,7 +108,7 @@ async def get_agent_accuracy(db: AsyncSession = Depends(get_db)):
 @router.get("/agent/{agent_type}")
 async def get_agent_details(
     agent_type: str,
-    db: AsyncSession = Depends(get_db),
+    service: PerformanceService = Depends(get_performance_service),
 ):
     """
     Get detailed accuracy metrics for a specific agent.
@@ -124,9 +128,7 @@ async def get_agent_details(
                 status_code=400, detail=f"Invalid agent type: {agent_type}"
             )
 
-        query = select(AgentAccuracy).where(AgentAccuracy.agent_type == agent_enum)
-        result = await db.execute(query)
-        records = result.scalars().all()
+        records = await service.get_agent_detailed_accuracy(agent_enum)
 
         if not records:
             return {
@@ -175,7 +177,7 @@ async def trigger_update():
 @router.get("/ticker/{ticker}")
 async def get_ticker_performance(
     ticker: str,
-    db: AsyncSession = Depends(get_db),
+    service: PerformanceService = Depends(get_performance_service),
 ):
     """
     Get performance history for a specific ticker.
@@ -188,14 +190,7 @@ async def get_ticker_performance(
     """
     try:
         ticker = ticker.upper()
-        query = (
-            select(AnalysisOutcome)
-            .where(AnalysisOutcome.ticker == ticker)
-            .order_by(AnalysisOutcome.created_at.desc())
-        )
-
-        result = await db.execute(query)
-        outcomes = result.scalars().all()
+        outcomes = await service.get_ticker_history(ticker)
 
         if not outcomes:
             return {

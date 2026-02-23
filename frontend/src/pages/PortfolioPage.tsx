@@ -77,7 +77,7 @@ export default function PortfolioPage() {
           return (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* Portfolio Stats Card */}
-              <Card className="md:col-span-3 bg-card/50 backdrop-blur border-white/10">
+              <Card className="md:col-span-3 bg-card/50 backdrop-blur border-border">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <PieChart className="w-5 h-5" /> Portfolio Summary
@@ -98,7 +98,7 @@ export default function PortfolioPage() {
               </Card>
 
               {/* Add Position Form */}
-              <Card className="bg-card/50 backdrop-blur border-white/10 h-fit">
+              <Card className="bg-card/50 backdrop-blur border-border h-fit">
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
                     <Plus className="w-4 h-4" /> Add Position
@@ -145,7 +145,7 @@ export default function PortfolioPage() {
               </Card>
 
               {/* Positions List */}
-              <Card className="md:col-span-2 bg-card/50 backdrop-blur border-white/10">
+              <Card className="md:col-span-2 bg-card/50 backdrop-blur border-border">
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
                     <TrendingUp className="w-4 h-4" /> Holdings
@@ -159,7 +159,7 @@ export default function PortfolioPage() {
                       {activePortfolio.positions.map((pos) => (
                         <div
                           key={pos.id}
-                          className="flex items-center justify-between p-3 rounded-md bg-background/40 hover:bg-background/60 transition-colors border border-white/5"
+                          className="flex items-center justify-between p-3 rounded-md bg-background/40 hover:bg-background/60 transition-colors border border-border"
                         >
                           <div className="flex items-center gap-3">
                             <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center font-bold text-xs text-primary">

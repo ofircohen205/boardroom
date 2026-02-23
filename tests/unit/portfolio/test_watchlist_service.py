@@ -28,6 +28,7 @@ def mock_watchlist_dao():
     dao.create = AsyncMock()
     dao.get_by_id = AsyncMock()
     dao.add_item = AsyncMock()
+    dao.remove_item = AsyncMock()
     dao.delete = AsyncMock()
     dao.get_default_watchlist = AsyncMock()
     return dao
@@ -302,17 +303,16 @@ class TestRemoveFromWatchlist:
     ):
         """Returns True after successfully removing an existing item."""
         mock_watchlist_dao.get_by_id.return_value = sample_watchlist
-        mock_watchlist_dao.session.execute = AsyncMock(
-            return_value=self._make_execute_result(sample_item)
-        )
-        mock_watchlist_dao.delete.return_value = True
+        mock_watchlist_dao.remove_item.return_value = True
 
         result = await watchlist_service.remove_from_watchlist(
             watchlist_id=sample_watchlist_id, ticker="AAPL", db=mock_db
         )
 
         assert result is True
-        mock_watchlist_dao.delete.assert_awaited_once_with(sample_item.id)
+        mock_watchlist_dao.remove_item.assert_awaited_once_with(
+            sample_watchlist_id, "AAPL"
+        )
         mock_db.commit.assert_awaited_once()
         mock_db.rollback.assert_not_awaited()
 
@@ -326,17 +326,17 @@ class TestRemoveFromWatchlist:
     ):
         """Returns False when the ticker is not in the watchlist (no deletion performed)."""
         mock_watchlist_dao.get_by_id.return_value = sample_watchlist
-        mock_watchlist_dao.session.execute = AsyncMock(
-            return_value=self._make_execute_result(None)
-        )
+        mock_watchlist_dao.remove_item.return_value = False
 
         result = await watchlist_service.remove_from_watchlist(
             watchlist_id=sample_watchlist_id, ticker="UNKNOWN", db=mock_db
         )
 
         assert result is False
-        mock_watchlist_dao.delete.assert_not_awaited()
-        mock_db.commit.assert_not_awaited()
+        mock_watchlist_dao.remove_item.assert_awaited_once_with(
+            sample_watchlist_id, "UNKNOWN"
+        )
+        mock_db.commit.assert_awaited_once()
         mock_db.rollback.assert_not_awaited()
 
     async def test_watchlist_not_found_raises_not_found_error(
@@ -381,11 +381,9 @@ class TestRemoveFromWatchlist:
         sample_watchlist_id,
         sample_watchlist,
     ):
-        """DAO session.execute failure triggers rollback and raises WatchlistError."""
+        """DAO remove_item failure triggers rollback and raises WatchlistError."""
         mock_watchlist_dao.get_by_id.return_value = sample_watchlist
-        mock_watchlist_dao.session.execute = AsyncMock(
-            side_effect=RuntimeError("query failed")
-        )
+        mock_watchlist_dao.remove_item.side_effect = RuntimeError("query failed")
 
         with pytest.raises(WatchlistError) as exc_info:
             await watchlist_service.remove_from_watchlist(
@@ -405,12 +403,10 @@ class TestRemoveFromWatchlist:
         sample_watchlist,
         sample_item,
     ):
-        """DAO delete failure triggers rollback and raises WatchlistError."""
+        """DAO commit failure triggers rollback and raises WatchlistError."""
         mock_watchlist_dao.get_by_id.return_value = sample_watchlist
-        mock_watchlist_dao.session.execute = AsyncMock(
-            return_value=self._make_execute_result(sample_item)
-        )
-        mock_watchlist_dao.delete.side_effect = RuntimeError("delete failed")
+        mock_watchlist_dao.remove_item.return_value = True
+        mock_db.commit.side_effect = RuntimeError("commit failed")
 
         with pytest.raises(WatchlistError):
             await watchlist_service.remove_from_watchlist(

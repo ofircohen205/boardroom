@@ -13,6 +13,9 @@ from backend.domains.notifications.api.alerts import router as alerts_router
 from backend.domains.notifications.api.endpoints import (
     router as notifications_router,
 )
+from backend.domains.notifications.api.notifications import (
+    router as new_notifications_router,
+)
 from backend.domains.notifications.api.schedules import router as schedules_router
 from backend.domains.performance.api.endpoints import router as performance_router
 from backend.domains.portfolio.api.portfolios import router as portfolios_router
@@ -32,6 +35,7 @@ api_router.include_router(analysis_router)
 api_router.include_router(alerts_router)
 api_router.include_router(schedules_router)
 api_router.include_router(notifications_router)
+api_router.include_router(new_notifications_router)
 api_router.include_router(performance_router)
 api_router.include_router(settings_router)
 api_router.include_router(sectors_router)

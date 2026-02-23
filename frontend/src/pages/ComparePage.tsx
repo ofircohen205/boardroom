@@ -143,7 +143,7 @@ export function ComparePage() {
                       onChange={(e) => setCurrentTicker(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && addTicker()}
                       placeholder="Enter ticker (e.g., AAPL)"
-                      className="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+                      className="flex-1 bg-muted/30 border border-border rounded-lg px-4 py-2 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
                       maxLength={10}
                     />
                     <Button onClick={addTicker} disabled={!currentTicker.trim() || tickers.length >= 4}>
@@ -255,7 +255,7 @@ export function ComparePage() {
                     key={ranking.ticker}
                     className={cn(
                       'p-4 rounded-lg border transition-colors',
-                      ranking.rank === 1 ? 'bg-primary/10 border-primary/30' : 'bg-white/5 border-white/10'
+                      ranking.rank === 1 ? 'bg-primary/10 border-primary/30' : 'bg-muted/30 border-border'
                     )}
                   >
                     <div className="flex items-start justify-between mb-2">
@@ -263,7 +263,7 @@ export function ComparePage() {
                         <div
                           className={cn(
                             'flex items-center justify-center w-8 h-8 rounded-full font-bold',
-                            ranking.rank === 1 ? 'bg-yellow-500/20 text-yellow-500' : 'bg-white/10 text-muted-foreground'
+                            ranking.rank === 1 ? 'bg-yellow-500/20 text-yellow-500' : 'bg-muted/30 text-muted-foreground'
                           )}
                         >
                           {ranking.rank}
@@ -312,7 +312,7 @@ export function ComparePage() {
                 <CardContent>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {Object.entries(comparison.relative_strength.relative_performance).map(([ticker, performance]) => (
-                      <div key={ticker} className="bg-white/5 rounded-lg p-4 border border-white/10">
+                      <div key={ticker} className="bg-muted/30 rounded-lg p-4 border border-border">
                         <div className="font-mono font-bold mb-1">{ticker}</div>
                         <div
                           className={cn('text-2xl font-bold', performance > 0 ? 'text-success' : 'text-destructive')}

@@ -38,6 +38,6 @@ export class PerformanceAPI {
    * @param limit - Maximum number of outcomes to return
    */
   async getOutcomes(limit = 20): Promise<AnalysisOutcome[]> {
-    return this.client.get<AnalysisOutcome[]>(`/api/performance/outcomes?limit=${limit}`);
+    return this.client.get<AnalysisOutcome[]>(`/api/performance/recent?limit=${limit}`);
   }
 }
