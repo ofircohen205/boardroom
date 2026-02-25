@@ -51,6 +51,10 @@ export function Dashboard() {
 
   const isLoading = state.activeAgents.size > 0;
   const hasStarted = state.ticker !== null;
+  const allPhase1Complete =
+    state.completedAgents.has("fundamental") &&
+    state.completedAgents.has("sentiment") &&
+    state.completedAgents.has("technical");
 
   const handleTickerSelect = (ticker: string) => {
       analyze(ticker, "US", analysisMode);
@@ -179,53 +183,8 @@ export function Dashboard() {
                             hasDecision={state.decision !== null || state.vetoed}
                         />
 
-                        {/* Results Area */}
-                        {(state.decision !== null || state.vetoed) && (
-                           <div className="space-y-4 animate-fade-up">
-                               {/* Quick Actions */}
-                               <div className="flex justify-end">
-                                   <Button
-                                       variant="outline"
-                                       size="sm"
-                                       onClick={() => navigate(`/compare?ticker=${state.ticker}`)}
-                                       className="gap-2"
-                                   >
-                                       <GitCompare className="w-4 h-4"/>
-                                       Compare with others
-                                   </Button>
-                               </div>
-
-                               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                   <div className="h-full">
-                                       <DecisionCard
-                                           decision={state.decision}
-                                           vetoed={state.vetoed}
-                                           vetoReason={state.risk?.veto_reason}
-                                       />
-                                   </div>
-                               <div className="h-full glass rounded-3xl overflow-hidden p-1 min-h-[300px] border-border">
-                                   {state.technical?.price_history ? (
-                                       <StockChart
-                                           priceHistory={state.technical.price_history}
-                                           ticker={state.ticker!}
-                                           ma50={state.technical.ma_50}
-                                           ma200={state.technical.ma_200}
-                                           rsi={state.technical.rsi}
-                                           bollingerUpper={state.technical.bollinger_upper}
-                                           bollingerLower={state.technical.bollinger_lower}
-                                       />
-                                   ) : (
-                                       <div className="h-full flex items-center justify-center text-muted-foreground/20 text-sm font-mono uppercase tracking-widest">
-                                           Market Data Unavailable
-                                       </div>
-                                   )}
-                               </div>
-                           </div>
-                           </div>
-                        )}
-
-                        {/* Agents Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 min-w-0">
+                        {/* Phase 1 — Agent Cards (always visible once analysis starts) */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <AgentPanel
                                 agent="fundamental"
                                 title="Fundamental"
@@ -262,7 +221,29 @@ export function Dashboard() {
                                 index={2}
                                 onRetry={retry}
                             />
-                            <AgentPanel
+                        </div>
+
+                        {/* Phase 2 — Risk + Decision (appears after Phase 1 completes) */}
+                        {allPhase1Complete && (
+                          <div className="space-y-6 animate-fade-up">
+                            {/* Quick Actions */}
+                            {(state.decision !== null || state.vetoed) && (
+                              <div className="flex justify-end">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => navigate(`/compare?ticker=${state.ticker}`)}
+                                  className="gap-2"
+                                >
+                                  <GitCompare className="w-4 h-4" />
+                                  Compare with others
+                                </Button>
+                              </div>
+                            )}
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              {/* Risk agent card */}
+                              <AgentPanel
                                 agent="risk"
                                 title="Risk"
                                 icon={Shield}
@@ -273,21 +254,49 @@ export function Dashboard() {
                                 data={state.risk}
                                 index={3}
                                 onRetry={retry}
-                            />
-                        </div>
+                              />
 
-                         {/* News Feed */}
-                         {state.sentiment && (
-                            <div className="glass rounded-xl p-6 mb-8">
+                              {/* Decision + Chart stacked */}
+                              <div className="flex flex-col gap-4">
+                                <DecisionCard
+                                  decision={state.decision}
+                                  vetoed={state.vetoed}
+                                  vetoReason={state.risk?.veto_reason}
+                                />
+                                <div className="glass rounded-3xl overflow-hidden p-1 min-h-[240px] border-border">
+                                  {state.technical?.price_history ? (
+                                    <StockChart
+                                      priceHistory={state.technical.price_history}
+                                      ticker={state.ticker!}
+                                      ma50={state.technical.ma_50}
+                                      ma200={state.technical.ma_200}
+                                      rsi={state.technical.rsi}
+                                      bollingerUpper={state.technical.bollinger_upper}
+                                      bollingerLower={state.technical.bollinger_lower}
+                                    />
+                                  ) : (
+                                    <div className="h-full flex items-center justify-center text-muted-foreground/20 text-sm font-mono uppercase tracking-widest">
+                                      Market Data Unavailable
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* News Feed */}
+                            {state.sentiment && (
+                              <div className="glass rounded-xl p-6">
                                 <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-4 flex items-center gap-2">
-                                    <MessageSquare className="w-4 h-4" />
-                                    Market Intelligence
+                                  <MessageSquare className="w-4 h-4" />
+                                  Market Intelligence
                                 </h3>
                                 <NewsFeed
-                                    newsItems={state.sentiment.news_items}
-                                    socialMentions={state.sentiment.social_mentions}
+                                  newsItems={state.sentiment.news_items}
+                                  socialMentions={state.sentiment.social_mentions}
                                 />
-                            </div>
+                              </div>
+                            )}
+                          </div>
                         )}
                     </div>
                 </div>
